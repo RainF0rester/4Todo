@@ -1,0 +1,113 @@
+/* task-group-card.css */
+.cards-group {
+    display: flex;
+    flex-direction: column;
+    height: 350px;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+/* header */
+.cards-group .header {
+    padding: 16px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #fff;
+}
+
+.cards-group .title {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.cards-group .add-btn {
+    border: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+/* body */
+.cards-group .card-body {
+    padding: 10px 12px 12px 12px;
+    height: 300px;
+}
+
+.cards-group .task-list .ant-list-item {
+    padding: 12px 8px;
+    min-height: 40%;
+}
+
+.cards-group .task-list .ant-spin-container {
+    height: 200px;
+}
+
+/* row layout */
+.cards-group .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cards-group .left {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.cards-group .text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cards-group .name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.cards-group .meta {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.cards-group .done {
+    text-decoration: line-through;
+    color: #9ca3af;
+}
+
+.cards-group .right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cards-group .mini {
+    opacity: 0.7;
+}
+
+/* footer */
+.cards-group .footer {
+    margin-top: 6px;
+    padding: 10px 8px;
+    color: #6b7280;
+    cursor: pointer;
+    border-top: 1px dashed #e5e7eb;
+}
+
+.cards-group .footer:hover {
+    color: #111827;
+}
+
+.cards-group .overdue-btn,
+.cards-group .overdue-btn.ant-btn-text:hover {
+    color: #dc2626;
+}
+
+.cards-group .warning-btn,
+.cards-group .warning-btn.ant-btn-text:hover {
+    color: #f59e0b;
+}
