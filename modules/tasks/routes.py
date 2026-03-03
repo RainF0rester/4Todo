@@ -40,3 +40,10 @@ def restore_task(task_id: int):
         return jsonify({"status": "ok"}), 200
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
+    
+@bp.get("")
+def list_tasks():
+    session = get_session()
+    include_deleted = request.args.get("include_deleted") in ("1", "true", "True")
+    tasks = service.list_tasks(session, include_deleted=include_deleted)
+    return jsonify([t.to_dict() for t in tasks]), 200

@@ -45,12 +45,27 @@ def get_task(session: Session, task_id: int) -> Task:
         raise ValueError("Task not found")
     return task
 
-def delete_task(session: Session, task_id: int) -> None:
+def soft_delete_task(session: Session, task_id: int) -> None:
+    """
+    Soft delete a task by setting is_deleted to 1.
+    Raises ValueError if task does not exist.
+    """
     ok = repo.soft_delete_task(session, task_id)
     if not ok:
         raise ValueError("Task not found")
 
 def restore_task(session: Session, task_id: int) -> None:
+    """
+    Restore a previously soft-deleted task.
+    Raises ValueError if task does not exist.
+    """
     ok = repo.restore_task(session, task_id)
     if not ok:
         raise ValueError("Task not found")
+    
+def list_tasks(session: Session, include_deleted: bool = False) -> list[Task]:
+    """
+    Return all tasks.
+    By default excludes soft-deleted tasks.
+    """
+    return repo.list_tasks(session, include_deleted=include_deleted)
