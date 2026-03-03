@@ -1,3 +1,19 @@
-.idea
-.venv
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+
+# Local database
+*.db
 taskmaster.db
+
+# macOS
+.DS_Store
