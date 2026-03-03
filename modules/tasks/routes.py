@@ -22,3 +22,21 @@ def get_task(task_id: int):
         return jsonify(task.to_dict()), 200
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
+
+@bp.patch("/<int:task_id>/delete")
+def delete_task(task_id: int):
+    session = get_session()
+    try:
+        service.soft_delete_task(session, task_id)
+        return jsonify({"status": "ok"}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+@bp.patch("/<int:task_id>/restore")
+def restore_task(task_id: int):
+    session = get_session()
+    try:
+        service.restore_task(session, task_id)
+        return jsonify({"status": "ok"}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400

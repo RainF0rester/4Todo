@@ -39,8 +39,18 @@ def create_task(session: Session, payload: dict) -> Task:
     task = Task(**data)
     return repo.create_task(session, task)
 
-def get_task(session: Session, task_id: str) -> Task:
+def get_task(session: Session, task_id: int) -> Task:
     task = repo.get_task(session, task_id)
-    if task is None:
-        raise KeyError("not found")
+    if task is None or task.is_deleted == 1:
+        raise ValueError("Task not found")
     return task
+
+def delete_task(session: Session, task_id: int) -> None:
+    ok = repo.soft_delete_task(session, task_id)
+    if not ok:
+        raise ValueError("Task not found")
+
+def restore_task(session: Session, task_id: int) -> None:
+    ok = repo.restore_task(session, task_id)
+    if not ok:
+        raise ValueError("Task not found")
