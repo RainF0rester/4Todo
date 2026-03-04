@@ -12,10 +12,10 @@ def get_task(session: Session, task_id: int) -> Task | None:
     return session.get(Task, task_id)
 
 def list_tasks(session: Session, include_deleted: bool = False) -> list[Task]:
-    stmt = select(Task)
+    statement = select(Task)
     if not include_deleted:
-        stmt = stmt.where(Task.is_deleted == 0)
-    return list(session.scalars(stmt).all())
+        statement = statement.where(Task.is_deleted == 0)
+    return list(session.scalars(statement).all())
 
 def soft_delete_task(session: Session, task_id: int) -> bool:
     task = session.get(Task, task_id)
