@@ -25,3 +25,11 @@ export async function addTask(task) {
     return res.json()
 }
 
+export async function deleteTask(id) {
+    const res = await fetch(`/api/tasks/${id}/delete`,{
+        method: 'PATCH',
+    })
+    if(!res.ok) 
+        throw new Error('Unable to delete task')
+    return res.json()
+}

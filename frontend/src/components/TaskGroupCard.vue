@@ -50,12 +50,13 @@
 </template>
 
 <script setup>
-import { computed, ref, watchEffect } from 'vue'
+import { computed, ref, watchEffect} from 'vue'
+import { Modal } from 'ant-design-vue'
 import { DeleteOutlined, ExclamationCircleOutlined, EditOutlined, WarningOutlined } from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
 import '../styles/task-group-card.css'
 import TaskModal from '../components/TaskModal.vue'
-import { addTask } from '../api/tasks'
+import { addTask, deleteTask } from '../api/tasks'
 
 
 const props = defineProps({
@@ -64,6 +65,8 @@ const props = defineProps({
   initialItems: { type: Array, default: () => [] },
   taskLevel: { type: Number, default: 0 },
 })
+
+const emit = defineEmits(['reload'])
 
 const peopleOptions = [
   { label: 'Lucia', value: 'Lucia' },
@@ -135,7 +138,21 @@ function dueText(dueDateStr) {
 }
 
 function remove(id) {
-  task_info.value = task_info.value.filter(x => x.id !== id)
+  Modal.confirm({
+    title:'Delete Task',
+    content:'Do you want to delete this task?',
+    okText:'Delete',
+    cancelText:'Cancel',
+    onOk: async() => {
+      try {
+        await deleteTask(id)
+        task_info.value = task_info.value.filter(x => x.id !== id)
+        emit('reload')
+      } catch (e) {
+        console.error(e)
+      }
+    }
+  })
 }
 
 const modalMode = ref('add') // 'add' | 'edit'
@@ -159,17 +176,17 @@ async function handleSubmit(payload) {
       const t = await addTask({
         task_title: payload.title,
         task_due: payload.dueDate || null,
-        task_level: props.taskLevel,
+        task_level: props.taskLevel
       })
       const newTask = {
         id: t.id,
         title: t.task_title,
         dueDate:t.task_due ? t.task_due : '',
         done: t.is_finished ? true : false,
-        task_level: t.task_level != null ? t.task_level : 0,
+        task_level: t.task_level != null ? t.task_level : 0
       }
       task_info.value.unshift(newTask)
-    }catch (e) {
+    }catch(e){
       console.error(e)
     }
     return
