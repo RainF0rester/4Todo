@@ -50,17 +50,19 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import { DeleteOutlined, ExclamationCircleOutlined, EditOutlined, WarningOutlined } from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
 import '../styles/task-group-card.css'
 import TaskModal from '../components/TaskModal.vue'
+import { addTask } from '../api/tasks'
 
 
 const props = defineProps({
   title: { type: String, required: true },
   color: { type: String, default: 'blue' }, // red | yellow | blue | green
   initialItems: { type: Array, default: () => [] },
+  taskLevel: { type: Number, default: 0 },
 })
 
 const peopleOptions = [
@@ -70,7 +72,10 @@ const peopleOptions = [
   { label: 'Shiro', value: 'shiro' },
 ]
 
-const task_info = ref(props.initialItems.map(x => ({ ...x })))
+const task_info = ref([])
+watchEffect(() => {
+  task_info.value = (props.initialItems || []).map(x => ({ ...x }))
+})
 
 const palette = {
   red: {
@@ -148,29 +153,52 @@ function showEditDialog(item) {
   open.value = true
 }
 
-function handleSubmit(payload) {
-  if (payload.mode === 'add') {
-    task_info.value.unshift({
-      id: Date.now(),
-      title: payload.title,
-      dueDate: payload.dueDate,
-      assignee: payload.assignee,
-      done: false,
-    })
-    return
-  }
-
-  // edit
-  const idx = task_info.value.findIndex(x => x.id === payload.id)
-  if (idx !== -1) {
-    task_info.value[idx] = {
-      ...task_info.value[idx],
-      title: payload.title,
-      dueDate: payload.dueDate,
-      assignee: payload.assignee,
+async function handleSubmit(payload) {
+  if(payload.mode === 'add'){
+    try {
+      const t = await addTask({
+        task_title: payload.title,
+        task_due: payload.dueDate || null,
+        task_level: props.taskLevel,
+      })
+      const newTask = {
+        id: t.id,
+        title: t.task_title,
+        dueDate:t.task_due ? t.task_due : '',
+        done: t.is_finished ? true : false,
+        task_level: t.task_level != null ? t.task_level : 0,
+      }
+      task_info.value.unshift(newTask)
+    }catch (e) {
+      console.error(e)
     }
-  }
-}
+    return
+}}
+
+  
+// function handleSubmit(payload) {
+//   if (payload.mode === 'add') {
+//     task_info.value.unshift({
+//       id: Date.now(),
+//       title: payload.title,
+//       dueDate: payload.dueDate,
+//       assignee: payload.assignee,
+//       done: false,
+//     })
+//     return
+//   }
+
+//   // edit
+//   const idx = task_info.value.findIndex(x => x.id === payload.id)
+//   if (idx !== -1) {
+//     task_info.value[idx] = {
+//       ...task_info.value[idx],
+//       title: payload.title,
+//       dueDate: payload.dueDate,
+//       assignee: payload.assignee,
+//     }
+//   }
+// }
 
 function getDueStatus(dueDateStr) {
   if (!dueDateStr) return 'normal'
