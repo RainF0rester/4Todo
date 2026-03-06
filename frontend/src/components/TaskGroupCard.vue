@@ -148,8 +148,10 @@ function remove(id) {
         await deleteTask(id)
         task_info.value = task_info.value.filter(x => x.id !== id)
         emit('reload')
+        message.success('Task deleted successfully.')
       } catch (e) {
         console.error(e)
+        message.error('Failed to delete task. Please try again later.')
       }
     }
   })
@@ -183,8 +185,10 @@ async function handleSubmit(payload) {
         message.error('Network error. Please try creating the task again.')
       }
       task_info.value.unshift(newTask)
+      message.success('Task created successfully.')
     }catch(e){
       console.error(e)
+      message.error('Failed to create task. Please try again later.')
     }
     return
 }}
