@@ -51,19 +51,19 @@
 
 <script setup>
 import { computed, ref, watchEffect} from 'vue'
-import { Modal } from 'ant-design-vue'
+import { Modal, message } from 'ant-design-vue'
 import { DeleteOutlined, ExclamationCircleOutlined, EditOutlined, WarningOutlined } from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
 import '../styles/task-group-card.css'
 import TaskModal from '../components/TaskModal.vue'
-import { addTask, deleteTask } from '../api/tasks'
+import { addTask, deleteTask, normalizeTask} from '../api/tasks'
 
 
 const props = defineProps({
   title: { type: String, required: true },
   color: { type: String, default: 'blue' }, // red | yellow | blue | green
   initialItems: { type: Array, default: () => [] },
-  taskLevel: { type: Number, default: 0 },
+  taskLevel: { type: Number, required: true },
 })
 
 const emit = defineEmits(['reload'])
@@ -178,12 +178,9 @@ async function handleSubmit(payload) {
         task_due: payload.dueDate || null,
         task_level: props.taskLevel
       })
-      const newTask = {
-        id: t.id,
-        title: t.task_title,
-        dueDate:t.task_due ? t.task_due : '',
-        done: t.is_finished ? true : false,
-        task_level: t.task_level != null ? t.task_level : 0
+      const newTask = normalizeTask(t)
+      if (newTask.task_level === null) {
+        message.error('Network error. Please try creating the task again.')
       }
       task_info.value.unshift(newTask)
     }catch(e){
