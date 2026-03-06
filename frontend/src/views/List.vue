@@ -1,34 +1,53 @@
 <template>
   <div class="body-container">
     <div class="grid">
-      <TaskGroupCard title="Important & Urgent" color="red" :initialItems="urgentImportant" />
-      <TaskGroupCard title="Important but Not Urgent" color="yellow" :initialItems="importantNotUrgent" />
-      <TaskGroupCard title="Not Important but Urgent" color="blue" :initialItems="urgentNotImportant" />
-      <TaskGroupCard title="Not Important & Not Urgent" color="green" :initialItems="notUrgentNotImportant" />
+      <TaskGroupCard title="Important & Urgent" color="red" :task-level="1" :initialItems="urgentImportant" @reload="loadTasks" />
+      <TaskGroupCard title="Important but Not Urgent" color="yellow" :task-level="2" :initialItems="importantNotUrgent" @reload="loadTasks" />
+      <TaskGroupCard title="Not Important but Urgent" color="blue" :task-level="3" :initialItems="urgentNotImportant" @reload="loadTasks" />
+      <TaskGroupCard title="Not Important & Not Urgent" color="green" :task-level="4" :initialItems="notUrgentNotImportant" @reload="loadTasks" />
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref, computed, onMounted } from 'vue'
 import TaskGroupCard from '../components/TaskGroupCard.vue'
+import { getTaskList } from '../api/tasks'
 
-const urgentImportant = [
-  {
-    id: 1, title: 'mock1', dueDate: '2026-03-05', done: false
-  },
-  {
-    id: 2, title: 'mock2', dueDate: '2025-07-05', done: false
-  },
-  {
-    id: 3, title: 'mock2', dueDate: '2026-07-05', done: true
-  },
-  {
-    id: 4, title: 'mock2', dueDate: '2025-12-05', done: false
-  },
-]
-const importantNotUrgent = []
-const urgentNotImportant = []
-const notUrgentNotImportant = []
+const taskList = ref([])
+async function loadTasks() {
+  try {
+    taskList.value = await getTaskList()
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+onMounted(() => {
+  loadTasks()
+})
+
+function getUrgentImportantTasks() {
+  return taskList.value.filter(t => t.task_level === 1)
+}
+function getImportantNotUrgentTasks() {
+  return taskList.value.filter(t => t.task_level === 2)
+}
+function getUrgentNotImportantTasks() {
+  return taskList.value.filter(t => t.task_level === 3)
+}
+
+function getNotUrgentNotImportantTasks() {
+  return taskList.value.filter(t => t.task_level === 4)
+}
+
+
+const urgentImportant = computed(getUrgentImportantTasks)
+const importantNotUrgent = computed(getImportantNotUrgentTasks)
+const urgentNotImportant = computed(getUrgentNotImportantTasks)
+const notUrgentNotImportant = computed(getNotUrgentNotImportantTasks)
+
+
 </script>
 
 <style scoped>

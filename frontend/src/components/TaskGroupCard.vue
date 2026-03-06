@@ -50,18 +50,23 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watchEffect} from 'vue'
+import { Modal, message } from 'ant-design-vue'
 import { DeleteOutlined, ExclamationCircleOutlined, EditOutlined, WarningOutlined } from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
 import '../styles/task-group-card.css'
 import TaskModal from '../components/TaskModal.vue'
+import { addTask, deleteTask, normalizeTask} from '../api/tasks'
 
 
 const props = defineProps({
   title: { type: String, required: true },
   color: { type: String, default: 'blue' }, // red | yellow | blue | green
   initialItems: { type: Array, default: () => [] },
+  taskLevel: { type: Number, required: true },
 })
+
+const emit = defineEmits(['reload'])
 
 const peopleOptions = [
   { label: 'Lucia', value: 'Lucia' },
@@ -70,7 +75,10 @@ const peopleOptions = [
   { label: 'Shiro', value: 'shiro' },
 ]
 
-const task_info = ref(props.initialItems.map(x => ({ ...x })))
+const task_info = ref([])
+watchEffect(() => {
+  task_info.value = (props.initialItems || []).map(x => ({ ...x }))
+})
 
 const palette = {
   red: {
@@ -130,7 +138,23 @@ function dueText(dueDateStr) {
 }
 
 function remove(id) {
-  task_info.value = task_info.value.filter(x => x.id !== id)
+  Modal.confirm({
+    title:'Delete Task',
+    content:'Do you want to delete this task?',
+    okText:'Delete',
+    cancelText:'Cancel',
+    onOk: async() => {
+      try {
+        await deleteTask(id)
+        task_info.value = task_info.value.filter(x => x.id !== id)
+        emit('reload')
+        message.success('Task deleted successfully.')
+      } catch (e) {
+        console.error(e)
+        message.error('Failed to delete task. Please try again later.')
+      }
+    }
+  })
 }
 
 const modalMode = ref('add') // 'add' | 'edit'
@@ -148,29 +172,51 @@ function showEditDialog(item) {
   open.value = true
 }
 
-function handleSubmit(payload) {
-  if (payload.mode === 'add') {
-    task_info.value.unshift({
-      id: Date.now(),
-      title: payload.title,
-      dueDate: payload.dueDate,
-      assignee: payload.assignee,
-      done: false,
-    })
-    return
-  }
-
-  // edit
-  const idx = task_info.value.findIndex(x => x.id === payload.id)
-  if (idx !== -1) {
-    task_info.value[idx] = {
-      ...task_info.value[idx],
-      title: payload.title,
-      dueDate: payload.dueDate,
-      assignee: payload.assignee,
+async function handleSubmit(payload) {
+  if(payload.mode === 'add'){
+    try {
+      const t = await addTask({
+        task_title: payload.title,
+        task_due: payload.dueDate || null,
+        task_level: props.taskLevel
+      })
+      const newTask = normalizeTask(t)
+      if (newTask.task_level === null) {
+        message.error('Network error. Please try creating the task again.')
+      }
+      task_info.value.unshift(newTask)
+      message.success('Task created successfully.')
+    }catch(e){
+      console.error(e)
+      message.error('Failed to create task. Please try again later.')
     }
-  }
-}
+    return
+}}
+
+  
+// function handleSubmit(payload) {
+//   if (payload.mode === 'add') {
+//     task_info.value.unshift({
+//       id: Date.now(),
+//       title: payload.title,
+//       dueDate: payload.dueDate,
+//       assignee: payload.assignee,
+//       done: false,
+//     })
+//     return
+//   }
+
+//   // edit
+//   const idx = task_info.value.findIndex(x => x.id === payload.id)
+//   if (idx !== -1) {
+//     task_info.value[idx] = {
+//       ...task_info.value[idx],
+//       title: payload.title,
+//       dueDate: payload.dueDate,
+//       assignee: payload.assignee,
+//     }
+//   }
+// }
 
 function getDueStatus(dueDateStr) {
   if (!dueDateStr) return 'normal'
