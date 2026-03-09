@@ -8,8 +8,8 @@ class Task(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
     task_title: Mapped[str] = mapped_column(String(200), nullable=False)
-    task_due: Mapped[str or None] = mapped_column(String(10), nullable=True) # 'YYYY-MM-DD'
-    task_description: Mapped[str or None] = mapped_column(Text, nullable=True)
+    task_due: Mapped[str | None] = mapped_column(String(10), nullable=True) # 'YYYY-MM-DD'
+    task_description: Mapped[str | None] = mapped_column(Text, nullable=True)
     task_level: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     is_finished: Mapped[int] = mapped_column(Integer, nullable=False ,default=0) # 0/1
