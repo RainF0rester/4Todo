@@ -10,31 +10,24 @@ import pytest
 from app import create_app
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def app():
     """
-    Create and configure a Flask application instance for testing.
+    Create a Flask application instance for the entire test session.
 
-    The TESTING flag enables Flask's testing mode, which:
-    - Propagates exceptions instead of handling them internally
-    - Provides better error reporting for tests
+    Using session scope prevents Flask from re-registering blueprints
+    multiple times across tests.
     """
     app = create_app()
-    app.config.update({
-        "TESTING": True
-    })
+    app.config.update(
+        TESTING=True
+    )
     return app
 
 
-@pytest.fixture
+@pytest.fixture()
 def client(app):
     """
-    Create a Flask test client for sending HTTP requests to the application.
-
-    The test client simulates requests to the Flask app without running
-    a real server, allowing tests to call endpoints such as:
-
-        client.get("/tasks")
-        client.post("/tasks", json={...})
+    Provide a Flask test client for each test.
     """
     return app.test_client()
