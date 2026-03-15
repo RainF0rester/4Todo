@@ -15,9 +15,11 @@
             <div class="left">
               <a-checkbox :disabled="!canComplete(item.dueDate)" v-model:checked="item.done" />
               <div class="text">
-                <div class="name" :class="{ done: item.done }" @click="showEditDialog(item)">
-                  {{ item.title }}
-                </div>
+                <a-tooltip :title="item.title.length > 15 ? item.title : null">
+                  <div class="name" :class="{ done: item.done }" @click="showEditDialog(item)">
+                    {{ item.title }}
+                  </div>
+                </a-tooltip>
                 <div v-if="item.dueDate" class="meta">{{ dueText(item.dueDate) }}</div>
               </div>
             </div>
@@ -192,31 +194,6 @@ async function handleSubmit(payload) {
     }
     return
 }}
-
-  
-// function handleSubmit(payload) {
-//   if (payload.mode === 'add') {
-//     task_info.value.unshift({
-//       id: Date.now(),
-//       title: payload.title,
-//       dueDate: payload.dueDate,
-//       assignee: payload.assignee,
-//       done: false,
-//     })
-//     return
-//   }
-
-//   // edit
-//   const idx = task_info.value.findIndex(x => x.id === payload.id)
-//   if (idx !== -1) {
-//     task_info.value[idx] = {
-//       ...task_info.value[idx],
-//       title: payload.title,
-//       dueDate: payload.dueDate,
-//       assignee: payload.assignee,
-//     }
-//   }
-// }
 
 function getDueStatus(dueDateStr) {
   if (!dueDateStr) return 'normal'
