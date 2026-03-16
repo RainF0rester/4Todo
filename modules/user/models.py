@@ -1,6 +1,7 @@
 from sqlalchemy import Integer, String, Text, Date, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column
 from db import Base
+from werkzeug.security import generate_password_hash, check_password_hash
 
 class User(Base):
     __tablename__ = 'users'
@@ -14,6 +15,12 @@ class User(Base):
     is_deleted: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[str] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     update_at: Mapped[str] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    def set_password(self, password: str) -> None:
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password: str) -> bool:
+        return check_password_hash(self.password_hash, password)
 
     def to_dict(self) -> dict:
         return {

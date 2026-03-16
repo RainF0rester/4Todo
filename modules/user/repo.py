@@ -9,5 +9,5 @@ def create_user(session: Session, user: User) -> User:
     return user
 
 def get_user_by_username_or_email(session: Session, identify: str) -> User | None:
-    stmt = select(User).where(or_(User.email == identify, User.email == identify))
+    stmt = select(User).where(or_(User.username == identify, User.email == identify))
     return session.scalar(stmt)
