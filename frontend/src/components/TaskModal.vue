@@ -38,7 +38,9 @@ const formState = reactive({
     assignee: null
 })
 const rules = {
-    title: [{ required: true, message: 'Task title is required', trigger: 'blur' }],
+    title: [{ required: true, message: 'Task title is required', trigger: 'blur' },
+            { max: 100, message: 'Task title cannot exceed 100 characters', trigger: ['blur', 'change'] }
+    ],
 }
 
 function resetForAdd() {

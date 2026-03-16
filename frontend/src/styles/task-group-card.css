@@ -67,6 +67,10 @@
     font-size: 14px;
     font-weight: 600;
     color: #1f2937;
+    width: 190px;
+    overflow: clip;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .cards-group .meta {
