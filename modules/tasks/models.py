@@ -16,7 +16,7 @@ class Task(Base):
     is_deleted: Mapped[int] = mapped_column(Integer, nullable=False ,default=0) # 0/1
 
     created_at: Mapped[str] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    update_at: Mapped[str] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at: Mapped[str] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
     def to_dict(self) -> dict:
         # Convert to JSON serializable dict
@@ -28,6 +28,6 @@ class Task(Base):
             "task_level": self.task_level,
             "is_finished": self.is_finished,
             "created_at": str(self.created_at),
-            "update_at": str(self.update_at),
+            "updated_at": str(self.updated_at),
             "is_deleted": self.is_deleted,
         }
