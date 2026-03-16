@@ -7,8 +7,9 @@
             </a-form-item>
 
             <a-form-item name="dueDate" label="Due date">
-                <a-date-picker v-model:value="formState.dueDate" style="width:100%;" format="YYYY-MM-DD"
-                    valueFormat="YYYY-MM-DD" />
+                <a-date-picker v-model:value="formState.dueDate" style="width: 100%" format="YYYY-MM-DD HH:mm"
+                    valueFormat="YYYY-MM-DD HH:mm" :show-time="{ format: 'HH:mm' }" :disabled-date="disabledDate"
+                    :disabled-time="disabledDateTime" />
             </a-form-item>
 
             <a-form-item name="assignee" label="Assignee">
@@ -34,7 +35,7 @@ const formRef = ref()
 const formState = reactive({
     id: null,
     title: '',
-    dueDate: dayjs().format('YYYY-MM-DD'),
+    dueDate: dayjs().format('YYYY-MM-DD HH:mm'),
     assignee: null
 })
 const rules = {
@@ -46,7 +47,7 @@ const rules = {
 function resetForAdd() {
     formState.id = null
     formState.title = ''
-    formState.dueDate = dayjs().format('YYYY-MM-DD')
+    formState.dueDate = dayjs().format('YYYY-MM-DD HH:mm')
     formRef.value?.clearValidate?.()
     formState.assignee = null
 }
@@ -54,7 +55,7 @@ function resetForAdd() {
 function fillForEdit(t) {
     formState.id = t?.id ?? null
     formState.title = t?.title ?? ''
-    formState.dueDate = t?.dueDate ?? dayjs().format('YYYY-MM-DD')
+    formState.dueDate = normalizeDueDate(t?.dueDate)
     formState.assignee = t?.assignee ?? null
     formRef.value?.clearValidate?.()
 }
@@ -81,6 +82,34 @@ function close() {
     emit('update:open', false)
 }
 
+function disabledDate(current) {
+    if (!current) return false
+    return current.isBefore(dayjs().startOf('day'))
+}
+
+function disabledDateTime(current) {
+    if (!current) return {}
+    const now = dayjs()
+    if (!current.isSame(now, 'day')) {
+        return {}
+    }
+
+    const currentHour = now.hour()
+    const currentMinute = now.minute()
+
+    return {
+        disabledHours: () =>
+            Array.from({ length: currentHour }, (_, i) => i),
+
+        disabledMinutes: (selectedHour) => {
+            if (selectedHour === currentHour) {
+                return Array.from({ length: currentMinute }, (_, i) => i)
+            }
+            return []
+        }
+    }
+}
+
 function submitForm() {
     formRef.value
         .validate()
@@ -88,12 +117,33 @@ function submitForm() {
             emit('submit', {
                 id: formState.id,
                 title: formState.title.trim(),
-                dueDate: formState.dueDate,
+                dueDate: toBackendDueDate(formState.dueDate),
                 assignee: formState.assignee,
                 mode: props.mode,
             })
             close()
         })
         .catch(() => { })
+}
+
+function normalizeDueDate(value) {
+    if (!value) return dayjs().format('YYYY-MM-DD HH:mm')
+
+    const dateTime = dayjs(value, 'YYYY-MM-DD HH:mm', true)
+    if (dateTime.isValid()) {
+        return dateTime.format('YYYY-MM-DD HH:mm')
+    }
+
+    const dateOnly = dayjs(value, 'YYYY-MM-DD', true)
+    if (dateOnly.isValid()) {
+        return `${dateOnly.format('YYYY-MM-DD')} 00:00`
+    }
+
+    return dayjs().format('YYYY-MM-DD HH:mm')
+}
+
+function toBackendDueDate(value) {
+    if (!value) return null
+    return normalizeDueDate(value).slice(0, 10)
 }
 </script>
