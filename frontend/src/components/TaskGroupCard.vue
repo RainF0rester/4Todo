@@ -14,7 +14,7 @@
           <a-list-item class="row">
             <div class="left">
               <a-checkbox :disabled="!canComplete(item.dueDate)" v-model:checked="item.done" />
-              <div class="text">
+              <div class="text" @click="showEditDialog(item)">
                 <a-tooltip :title="item.title.length > 15 ? item.title : null">
                   <div class="name" :class="{ done: item.done }" @click="showEditDialog(item)">
                     {{ item.title }}
@@ -36,9 +36,9 @@
                   <WarningOutlined />
                 </a-button>
               </a-tooltip>
-              <a-button type="text" @click="showEditDialog(item)">
+              <!-- <a-button type="text" @click="showEditDialog(item)">
                 <EditOutlined />
-              </a-button>
+              </a-button> -->
               <a-button type="text" danger @click="remove(item.id)">
                 <DeleteOutlined />
               </a-button>
