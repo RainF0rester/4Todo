@@ -11,12 +11,16 @@
     <div class="card-body" :style="{ backgroundColor: palette[color]?.body }">
       <a-list :data-source="task_info" class="task-list" :pagination="{ pageSize: 3 }">
         <template #renderItem="{ item }">
-          <a-list-item class="row">
+          <a-list-item class="row" :class="{
+            'pending-delete-row': item.pendingDelete,
+            'deleting-row': item.deleting
+          }">
             <div class="left">
-              <a-checkbox :disabled="!canComplete(item.dueDate)" v-model:checked="item.done" />
+              <a-checkbox :class="{ invisible: item.pendingDelete }" :disabled="!canComplete(item.dueDate)"
+                v-model:checked="item.done" />
               <div class="text">
                 <a-tooltip :title="item.title.length > 15 ? item.title : null">
-                  <div class="name" :class="{ done: item.done }" @click="showEditDialog(item)">
+                  <div class="name" :class="{ done: item.done }" @click="!item.pendingDelete && showEditDialog(item)">
                     {{ item.title }}
                   </div>
                 </a-tooltip>
@@ -26,21 +30,27 @@
             <div class="right">
               <a-tooltip v-if="!item.done && getDueStatus(item.dueDate) === 'overdue'" :title="dueTooltip(item.dueDate)"
                 placement="top">
-                <a-button type="text" class="overdue-btn">
+                <a-button type="text" class="overdue-btn" :class="{ invisible: item.pendingDelete }">
                   <ExclamationCircleOutlined />
                 </a-button>
               </a-tooltip>
+
               <a-tooltip v-else-if="getDueStatus(item.dueDate) === 'warning'" :title="dueTooltip(item.dueDate)"
                 placement="top">
-                <a-button type="text" class="warning-btn">
+                <a-button type="text" class="warning-btn" :class="{ invisible: item.pendingDelete }">
                   <WarningOutlined />
                 </a-button>
               </a-tooltip>
-              <a-button type="text" @click="showEditDialog(item)">
+
+              <a-button type="text" :class="{ invisible: item.pendingDelete }" @click="showEditDialog(item)">
                 <EditOutlined />
               </a-button>
-              <a-button type="text" danger @click="remove(item.id)">
+
+              <a-button v-if="!item.pendingDelete" type="text" danger @click="remove(item.id)">
                 <DeleteOutlined />
+              </a-button>
+              <a-button v-else type="text" class="undo-btn countdown" @click="undoRemove(item.id)">
+                <RedoOutlined />
               </a-button>
             </div>
           </a-list-item>
@@ -52,15 +62,15 @@
 </template>
 
 <script setup>
-import { computed, ref, watchEffect} from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import { Modal, message } from 'ant-design-vue'
-import { DeleteOutlined, ExclamationCircleOutlined, EditOutlined, WarningOutlined } from '@ant-design/icons-vue'
+import { DeleteOutlined, ExclamationCircleOutlined, EditOutlined, WarningOutlined, RedoOutlined } from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
 import '../styles/task-group-card.css'
 import TaskModal from '../components/TaskModal.vue'
-import { addTask, deleteTask, normalizeTask} from '../api/tasks'
+import { addTask, deleteTask, normalizeTask } from '../api/tasks'
 
-
+const deleteTimers = new Map()
 const props = defineProps({
   title: { type: String, required: true },
   color: { type: String, default: 'blue' }, // red | yellow | blue | green
@@ -79,7 +89,11 @@ const peopleOptions = [
 
 const task_info = ref([])
 watchEffect(() => {
-  task_info.value = (props.initialItems || []).map(x => ({ ...x }))
+  task_info.value = (props.initialItems || []).map(x => ({
+    ...x,
+    pendingDelete: false,
+    deleting: false,
+  }))
 })
 
 const palette = {
@@ -141,22 +155,64 @@ function dueText(dueDateStr) {
 
 function remove(id) {
   Modal.confirm({
-    title:'Delete Task',
-    content:'Do you want to delete this task?',
-    okText:'Delete',
-    cancelText:'Cancel',
-    onOk: async() => {
-      try {
-        await deleteTask(id)
-        task_info.value = task_info.value.filter(x => x.id !== id)
-        emit('reload')
-        message.success('Task deleted successfully.')
-      } catch (e) {
-        console.error(e)
-        message.error('Failed to delete task. Please try again later.')
-      }
+    title: 'Delete Task',
+    content: 'Do you want to delete this task?',
+    okText: 'Delete',
+    cancelText: 'Cancel',
+    onOk: () => {
+      const task = task_info.value.find(x => x.id === id)
+      if (!task) return
+
+      task.pendingDelete = true
+      message.info('Task will be deleted in 5 seconds. Click redo to undo.')
+
+      const timer = setTimeout(() => {
+        finalizeRemove(id)
+      }, 5000)
+
+      deleteTimers.set(id, timer)
     }
   })
+}
+
+function undoRemove(id) {
+  const task = task_info.value.find(x => x.id === id)
+  if (!task) return
+
+  const timer = deleteTimers.get(id)
+  if (timer) {
+    clearTimeout(timer)
+    deleteTimers.delete(id)
+  }
+
+  task.pendingDelete = false
+  task.deleting = false
+  message.success('Task deletion undone.')
+}
+
+async function finalizeRemove(id) {
+  const task = task_info.value.find(x => x.id === id)
+  if (!task) return
+
+  task.deleting = true
+
+  setTimeout(async () => {
+    try {
+      await deleteTask(id)
+      task_info.value = task_info.value.filter(x => x.id !== id)
+      deleteTimers.delete(id)
+      emit('reload')
+      message.success('Task deleted successfully.')
+    } catch (e) {
+      console.error(e)
+
+      task.deleting = false
+      task.pendingDelete = false
+      deleteTimers.delete(id)
+
+      message.error('Failed to delete task. Please try again later.')
+    }
+  }, 400)
 }
 
 const modalMode = ref('add') // 'add' | 'edit'
@@ -175,25 +231,34 @@ function showEditDialog(item) {
 }
 
 async function handleSubmit(payload) {
-  if(payload.mode === 'add'){
+  if (payload.mode === 'add') {
     try {
       const t = await addTask({
         task_title: payload.title,
         task_due: payload.dueDate || null,
         task_level: props.taskLevel
       })
-      const newTask = normalizeTask(t)
-      if (newTask.task_level === null) {
+      const normalized = normalizeTask(t)
+      if (normalized.task_level === null) {
         message.error('Network error. Please try creating the task again.')
+        return
       }
+
+      const newTask = {
+        ...normalized,
+        pendingDelete: false,
+        deleting: false,
+      }
+
       task_info.value.unshift(newTask)
       message.success('Task created successfully.')
-    }catch(e){
+    } catch (e) {
       console.error(e)
       message.error('Failed to create task. Please try again later.')
     }
     return
-}}
+  }
+}
 
 function getDueStatus(dueDateStr) {
   if (!dueDateStr) return 'normal'
