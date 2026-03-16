@@ -18,7 +18,7 @@
             <div class="left">
               <a-checkbox :class="{ invisible: item.pendingDelete }" :disabled="!canComplete(item.dueDate)"
                 v-model:checked="item.done" />
-              <div class="text">
+              <div class="text" @click="showEditDialog(item)">
                 <a-tooltip :title="item.title.length > 15 ? item.title : null">
                   <div class="name" :class="{ done: item.done }" @click="!item.pendingDelete && showEditDialog(item)">
                     {{ item.title }}
@@ -41,11 +41,6 @@
                   <WarningOutlined />
                 </a-button>
               </a-tooltip>
-
-              <a-button type="text" :class="{ invisible: item.pendingDelete }" @click="showEditDialog(item)">
-                <EditOutlined />
-              </a-button>
-
               <a-button v-if="!item.pendingDelete" type="text" danger @click="remove(item.id)">
                 <DeleteOutlined />
               </a-button>
