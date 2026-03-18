@@ -1,2 +1,4 @@
-Flask==3.0.0
-SQLAlchemy==2.0.36
+APIFlask==3.0.2
+SQLAlchemy==2.0.48
+PyJWT==2.10.1
+Werkzeug>=3.1.3

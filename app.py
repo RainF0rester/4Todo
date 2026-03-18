@@ -1,13 +1,13 @@
 # Minimal Flask app
-from flask import Flask, render_template
+from apiflask import APIFlask
 from db import init_db, close_session
 from modules.tasks.routes import bp as tasks_bp
 
-app = Flask(__name__)
+app = APIFlask(__name__)
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+# @app.route('/')
+# def index():
+#     return render_template('index.html')
 
 def create_app():
     # create tables
