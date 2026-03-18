@@ -154,23 +154,27 @@ function dueText(dueDateStr) {
 }
 
 function remove(id) {
+  const DELETE_MODAL_TITLE = 'Delete Task'
+  const DELETE_MODAL_CONTENT = 'Do you want to delete this task?'
+  const DELETE_OK_TEXT = 'Delete'
+  const DELETE_CANCEL_TEXT = 'Cancel'
+  const DELETE_DELAY_MS = 5000
+  const DELETE_UNDO_MESSAGE = 'Task will be deleted in 5 seconds. Click redo to undo.'
   Modal.confirm({
-    title: 'Delete Task',
-    content: 'Do you want to delete this task?',
-    okText: 'Delete',
-    cancelText: 'Cancel',
+    title: DELETE_MODAL_TITLE,
+    content: DELETE_MODAL_CONTENT,
+    okText: DELETE_OK_TEXT,
+    cancelText: DELETE_CANCEL_TEXT,
     onOk: () => {
       const task = task_info.value.find(x => x.id === id)
       if (!task) return
 
       task.pendingDelete = true
-      message.info('Task will be deleted in 5 seconds. Click redo to undo.')
+      message.info(DELETE_UNDO_MESSAGE)
 
       const timer = setTimeout(() => {
         finalizeRemove(id)
-      }, 5000)
-
-      deleteTimers.set(id, timer)
+      }, DELETE_DELAY_MS)
     }
   })
 }
@@ -191,6 +195,9 @@ function undoRemove(id) {
 }
 
 async function finalizeRemove(id) {
+  const DELETE_SUCCESS_MESSAGE = 'Task deleted successfully.'
+  const DELETE_ERROR_MESSAGE = 'Failed to delete task. Please try again later.'
+  const DELETE_MESSAGE_DURATION = 400
   const task = task_info.value.find(x => x.id === id)
   if (!task) return
 
@@ -202,7 +209,7 @@ async function finalizeRemove(id) {
       task_info.value = task_info.value.filter(x => x.id !== id)
       deleteTimers.delete(id)
       emit('reload')
-      message.success('Task deleted successfully.')
+      message.success(DELETE_SUCCESS_MESSAGE)
     } catch (e) {
       console.error(e)
 
@@ -210,9 +217,9 @@ async function finalizeRemove(id) {
       task.pendingDelete = false
       deleteTimers.delete(id)
 
-      message.error('Failed to delete task. Please try again later.')
+      message.error(DELETE_ERROR_MESSAGE)
     }
-  }, 400)
+  }, DELETE_MESSAGE_DURATION)
 }
 
 const modalMode = ref('add') // 'add' | 'edit'
