@@ -32,3 +32,10 @@ class User(Base):
             'created_at': self.created_at,
             'update_at': self.update_at,
         }
+
+    def to_json(self) -> dict:
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+        }
