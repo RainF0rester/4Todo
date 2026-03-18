@@ -115,3 +115,39 @@
 .cards-group .warning-btn.ant-btn-text:hover {
     color: #f59e0b;
 }
+
+.pending-delete-row {
+  opacity: 0.7;
+}
+
+.deleting-row {
+  opacity: 0;
+  transform: translateX(8px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.undo-btn {
+  color: #1677ff;
+}
+
+.pending-delete-row .name,
+.pending-delete-row .meta {
+  opacity: 0.6;
+}
+
+.invisible {
+  visibility: hidden;
+}
+
+.countdown .anticon {
+  animation: spinCountdown 5s linear forwards;
+}
+
+@keyframes spinCountdown {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
