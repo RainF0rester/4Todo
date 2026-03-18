@@ -122,6 +122,28 @@ const cardStyle = computed(() => {
 
 const open = ref(false)
 
+function parseDueDate(value) {
+  if (!value) return null
+
+  const dateTime = dayjs(value, 'YYYY-MM-DD HH:mm', true)
+  if (dateTime.isValid()) return dateTime
+
+  const dateOnly = dayjs(value, 'YYYY-MM-DD', true)
+  if (dateOnly.isValid()) return dateOnly.startOf('day')
+
+  return null
+}
+
+function formatRemaining(diffMinutes) {
+  const days = Math.floor(diffMinutes / (24 * 60))
+  const hours = Math.floor((diffMinutes % (24 * 60)) / 60)
+  const minutes = diffMinutes % 60
+
+  if (days > 0) return `In ${days}d ${hours ? hours + 'h' : ''}`
+  if (hours > 0) return `In ${hours}h ${minutes ? minutes + 'm' : ''}`
+  return `In ${minutes}m`
+}
+
 function canComplete(dueDateStr) {
   return getDueStatus(dueDateStr) !== 'overdue'
 }
@@ -130,13 +152,17 @@ function canComplete(dueDateStr) {
 function dueText(dueDateStr) {
   if (!dueDateStr) return ''
 
-  const today = dayjs().startOf('day')
-  const due = dayjs(dueDateStr, 'YYYY-MM-DD').startOf('day')
-  const diff = due.diff(today, 'day')
+  const due = parseDueDate(dueDateStr)
+  if (!due) return ''
 
-  if (diff === 0) return `${dueDateStr} · Due today`
-  if (diff > 0) return `${dueDateStr} · Due in ${diff} days`
-  return `${dueDateStr} · Overdue ${Math.abs(diff)} days`
+  const diffMinutes = due.diff(dayjs(), 'minute')
+  const displayText = due.format('YYYY-MM-DD HH:mm')
+
+  if (diffMinutes < 0) {
+    return `${displayText} · Overdue`
+  }
+
+  return `${displayText} · ${formatRemaining(diffMinutes)}`
 }
 
 function remove(id) {
@@ -198,25 +224,41 @@ async function handleSubmit(payload) {
 function getDueStatus(dueDateStr) {
   if (!dueDateStr) return 'normal'
 
-  const today = dayjs().startOf('day')
-  const due = dayjs(dueDateStr, 'YYYY-MM-DD').startOf('day')
-  const diff = due.diff(today, 'day')
+  const now = dayjs()
+  const due = parseDueDate(dueDateStr)
+  if (!due) return 'normal'
 
-  if (diff < 0) return 'overdue'
-  if (diff <= 3) return 'warning'
+  const diffMinutes = due.diff(now, 'minute')
+
+  if (diffMinutes < 0) return 'overdue'
+  if (diffMinutes <= 3 * 24 * 60) return 'warning'
   return 'normal'
 }
 
 function dueTooltip(dueDateStr) {
   if (!dueDateStr) return ''
 
-  const today = dayjs().startOf('day')
-  const due = dayjs(dueDateStr, 'YYYY-MM-DD').startOf('day')
-  const diff = due.diff(today, 'day')
+  const now = dayjs()
+  const due = parseDueDate(dueDateStr)
+  if (!due) return ''
 
-  if (diff < 0) return `Overdue ${Math.abs(diff)} day(s)`
-  if (diff <= 3) return `Due in ${diff} day(s)`
+  const diffMinutes = due.diff(now, 'minute')
+
+  if (diffMinutes < 0) {
+    const overdueMinutes = Math.abs(diffMinutes)
+    const days = Math.floor(overdueMinutes / (24 * 60))
+    const hours = Math.floor((overdueMinutes % (24 * 60)) / 60)
+    const minutes = overdueMinutes % 60
+
+    if (days > 0) return `Overdue ${days} day ${hours} hours ${minutes} minutes`
+    if (hours > 0) return `Overdue ${hours} hours ${minutes} minutes`
+    return `Overdue ${minutes} minutes`
+  }
+
+  if (diffMinutes <= 3 * 24 * 60) {
+    return formatRemaining(diffMinutes)
+  }
+
   return ''
 }
-
 </script>
