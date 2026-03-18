@@ -12,10 +12,10 @@
                     :disabled-time="disabledDateTime" />
             </a-form-item>
 
-            <a-form-item name="assignee" label="Assignee">
+            <!-- <a-form-item name="assignee" label="Assignee">
                 <a-select v-model:value="formState.assignee" :options="props.people" placeholder="Select a person"
                     allowClear style="width:100%;" />
-            </a-form-item>
+            </a-form-item> -->
         </a-form>
     </a-modal>
 </template>
