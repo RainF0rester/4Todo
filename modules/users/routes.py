@@ -13,6 +13,8 @@ def register(json_data):
     try:
         register_user(session, username=json_data['username'], email=json_data["email"], password=json_data['password'])
         return { "status" : "ok"}
+    except ConflictError as e:
+        abort(400, str(e))
     except ValueError as e:
         abort(400, message=str(e))
 

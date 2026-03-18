@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from utils.jwt_utils import create_token
 from .models import User
-from .repo import create_user, get_user_by_username_or_email
+from .repo import create_user, get_user_by_username_or_email, get_user_by_email, get_user_by_username
 
 class AuthError(Exception):
     pass
@@ -25,6 +25,12 @@ def register_user(session: Session, username: str, email: str, password: str) ->
 
     if not password:
         raise ValueError("password is required")
+
+    if get_user_by_email(session, email):
+        raise ConflictError("email has already been registered")
+
+    if get_user_by_username(session, username):
+        raise ConflictError("username has already been registered")
 
     user = User(username=username, email=email, password_hash="")
     user.set_password(password)
