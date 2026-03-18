@@ -8,12 +8,11 @@ bp = APIBlueprint('users', __name__, url_prefix='/users', tag="User")
 
 @bp.post("/register")
 @bp.input(RegisterReqSchema)
-@bp.output(RegisterRespSchema)
 def register(json_data):
     session = get_session()
     try:
-        result = register_user(session, username=json_data['username'], email=json_data["email"], password=json_data['password'])
-        return result
+        register_user(session, username=json_data['username'], email=json_data["email"], password=json_data['password'])
+        return { "status" : "ok"}
     except ValueError as e:
         abort(400, message=str(e))
 

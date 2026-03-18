@@ -15,7 +15,7 @@ class RegisterRespSchema(Schema):
     user = Nested(UserSchema)
 
 class LoginReqSchema(Schema):
-    identity = String(required=True)
+    identify = String(required=True)
     password = String(required=True)
 
 class LoginRespSchema(Schema):
