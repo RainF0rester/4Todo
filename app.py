@@ -3,13 +3,14 @@ from apiflask import APIFlask
 from db import init_db, close_session
 from modules.tasks.routes import bp as tasks_bp
 
-app = APIFlask(__name__)
 
 # @app.route('/')
 # def index():
 #     return render_template('index.html')
 
 def create_app():
+    app = APIFlask(__name__)
+
     # create tables
     init_db()
     app.register_blueprint(tasks_bp)
@@ -20,6 +21,8 @@ def create_app():
 
     return app
 
+app = create_app()
+
 if __name__ == '__main__':
-    app = create_app()
+
     app.run(debug=True)

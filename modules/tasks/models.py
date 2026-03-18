@@ -31,3 +31,13 @@ class Task(Base):
             "updated_at": str(self.updated_at),
             "is_deleted": self.is_deleted,
         }
+
+    def to_json(self) -> dict:
+        return {
+            "id": self.id,
+            "task_title": self.task_title,
+            "task_due": self.task_due,
+            "task_description": self.task_description,
+            "task_level": self.task_level,
+            "is_finished": self.is_finished,
+        }
