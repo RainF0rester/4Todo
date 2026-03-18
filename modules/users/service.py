@@ -3,8 +3,8 @@ from __future__ import annotations
 from sqlalchemy.orm import Session
 
 from utils.jwt_utils import create_token
-from models import User
-from repo import create_user, get_user_by_username_or_email
+from .models import User
+from .repo import create_user, get_user_by_username_or_email
 
 class AuthError(Exception):
     pass
