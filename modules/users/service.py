@@ -51,6 +51,6 @@ def login_user(session: Session, identify: str, password: str) -> dict:
     token = create_token(user_id=user.id, username=user.username, email=user.email)
 
     return {
-        "user": user.to_json(),
+        "users": user.to_json(),
         "token": token,
     }

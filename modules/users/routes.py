@@ -4,7 +4,7 @@ from db import get_session
 from .service import AuthError, ConflictError, login_user, register_user
 from .schemas import LoginReqSchema, LoginRespSchema, RegisterReqSchema, RegisterRespSchema
 
-bp = APIBlueprint('user', __name__, url_prefix='/user', tag="User")
+bp = APIBlueprint('users', __name__, url_prefix='/users', tag="User")
 
 @bp.post("/register")
 @bp.input(RegisterReqSchema)

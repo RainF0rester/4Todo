@@ -2,6 +2,7 @@
 from apiflask import APIFlask
 from db import init_db, close_session
 from modules.tasks.routes import bp as tasks_bp
+from modules.users.routes import bp as users_bp
 
 
 # @app.route('/')
@@ -14,6 +15,7 @@ def create_app():
     # create tables
     init_db()
     app.register_blueprint(tasks_bp)
+    app.register_blueprint(users_bp)
 
     @app.teardown_appcontext
     def _teardown(exception):
