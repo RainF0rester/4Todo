@@ -8,9 +8,9 @@ from modules.tasks.routes import bp as tasks_bp
 # def index():
 #     return render_template('index.html')
 
-def create_app():
-    app = APIFlask(__name__)
+app = APIFlask(__name__)
 
+def create_app():
     # create tables
     init_db()
     app.register_blueprint(tasks_bp)
@@ -21,8 +21,6 @@ def create_app():
 
     return app
 
-app = create_app()
-
 if __name__ == '__main__':
-
+    app = create_app()
     app.run(debug=True)
