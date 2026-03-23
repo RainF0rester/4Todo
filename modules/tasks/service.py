@@ -9,10 +9,7 @@ def _normalize(payload: dict) -> dict:
         raise ValueError("Task title is required")
 
     due = _parse_due_time(payload.get("task_due"))
-    if isinstance(due, str):
-        due = due.strip() or None
-    if due is not None:
-        datetime.strptime(due, "%Y-%m-%d %H:%M")
+
     desc = payload.get("task_description")
     if isinstance(desc, str):
         desc = desc.strip() or None
