@@ -8,7 +8,7 @@ def _normalize(payload: dict) -> dict:
     if not title:
         raise ValueError("Task title is required")
 
-    due = payload.get("task_due")
+    due = _parse_due_time(payload.get("task_due"))
     if isinstance(due, str):
         due = due.strip() or None
     if due is not None:
@@ -69,3 +69,27 @@ def list_tasks(session: Session, include_deleted: bool = False) -> list[Task]:
     By default excludes soft-deleted tasks.
     """
     return repo.list_tasks(session, include_deleted=include_deleted)
+
+def _parse_due_time(due: str | None) -> str | None:
+    """
+    Parse and validate task due time.
+
+    - Accepts due time as string in format "YYYY-MM-DD HH:MM"
+    - Returns None if due is empty
+    - Raises ValueError if format is invalid or time is in the past
+
+    This function is shared by create and update operations.
+    """
+
+    if isinstance(due, str):
+        due = due.strip() or None
+
+    if due is None:
+        return None
+
+    parsed_due = datetime.strptime(due, "%Y-%m-%d %H:%M")
+
+    if parsed_due < datetime.now():
+        raise ValueError("Task due time cannot be in the past")
+
+    return due
