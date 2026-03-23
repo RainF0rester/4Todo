@@ -12,18 +12,18 @@ from modules.users.routes import bp as users_bp
 
 def create_app():
 
-    app = APIFlask(__name__)
+    flaskapp = APIFlask(__name__)
 
     # create tables
     init_db()
-    app.register_blueprint(tasks_bp)
-    app.register_blueprint(users_bp)
+    flaskapp.register_blueprint(tasks_bp)
+    flaskapp.register_blueprint(users_bp)
 
-    @app.teardown_appcontext
+    @flaskapp.teardown_appcontext
     def _teardown(exception):
         close_session()
 
-    return app
+    return flaskapp
 
 if __name__ == '__main__':
     app = create_app()
