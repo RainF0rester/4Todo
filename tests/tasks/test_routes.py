@@ -3,9 +3,10 @@ from unittest.mock import patch
 
 
 class DummyTask:
-    def __init__(self, task_id=1, task_title="test task"):
+    def __init__(self, task_id=1, task_title="test task", task_due="2026-01-01 14:30"):
         self.task_id = task_id
         self.task_title = task_title
+        self.task_due = task_due
 
     def to_dict(self):
         return {
@@ -21,7 +22,7 @@ class DummyTask:
 def valid_payload():
     return {
         "task_title": "test task",
-        "task_due": "2026-01-01",
+        "task_due": "2026-01-01 14:30",
         "task_description": "test desc",
         "task_level": 1
     }

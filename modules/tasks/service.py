@@ -12,7 +12,7 @@ def _normalize(payload: dict) -> dict:
     if isinstance(due, str):
         due = due.strip() or None
     if due is not None:
-        datetime.strptime(due, "%Y-%m-%d")
+        datetime.strptime(due, "%Y-%m-%d %H:%M")
     desc = payload.get("task_description")
     if isinstance(desc, str):
         desc = desc.strip() or None
