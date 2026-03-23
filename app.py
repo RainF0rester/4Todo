@@ -9,9 +9,11 @@ from modules.users.routes import bp as users_bp
 # def index():
 #     return render_template('index.html')
 
-app = APIFlask(__name__)
 
 def create_app():
+
+    app = APIFlask(__name__)
+
     # create tables
     init_db()
     app.register_blueprint(tasks_bp)
