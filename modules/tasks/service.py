@@ -4,9 +4,7 @@ from .models import Task
 from . import repo
 
 def _normalize(payload: dict) -> dict:
-    title = (payload.get("task_title") or "").strip()
-    if not title:
-        raise ValueError("Task title is required")
+    title = _validate_task_title(payload.get("task_title"))
 
     due = _parse_due_time(payload.get("task_due"))
 
@@ -90,3 +88,11 @@ def _parse_due_time(due: str | None) -> str | None:
         raise ValueError("Task due time cannot be in the past")
 
     return due
+
+def _validate_task_title(title: str | None) -> str:
+    title = (title or "").strip()
+    if not title:
+        raise ValueError("Task title is required")
+    if len(title) > 100:
+        raise ValueError("Task title must not exceed 100 characters")
+    return title
