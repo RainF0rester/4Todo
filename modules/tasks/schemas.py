@@ -1,5 +1,5 @@
 from apiflask import Schema
-from apiflask.fields import Integer, String, List, Boolean
+from apiflask.fields import Integer, String
 
 class TaskSchema(Schema):
     id = Integer()
@@ -14,6 +14,13 @@ class TaskCreateSchema(Schema):
     task_due = String()
     task_description = String()
     task_level = Integer()
+
+class TaskUpdateSchema(Schema):
+    task_title = String(required=False)
+    task_due = String(required=False, allow_none=True)
+    task_description = String(required=False, allow_none=True)
+    task_level = Integer(required=False)
+    is_finished = Integer(required=False)
 
 class StatusSchema(Schema):
     status = String()
