@@ -98,3 +98,27 @@ def test_list_tasks(client):
     data = response.get_json()
     assert isinstance(data, list)
     assert len(data) == 2
+
+def test_update_task_success(client):
+    payload = {
+        "task_title": "updated task",
+        "task_due": "2099-01-02 15:45"
+    }
+
+    with patch(
+        "modules.tasks.service.update_task",
+        return_value=DummyTask(
+            task_id=1,
+            task_title="updated task",
+            task_due="2099-01-02 15:45"
+        )
+    ):
+        response = client.patch("/tasks/1", json=payload)
+
+    assert response.status_code == 200
+
+    data = response.get_json()
+    assert data["id"] == 1
+    assert data["task_title"] == "updated task"
+    assert data["task_due"] == "2099-01-02 15:45"
+
