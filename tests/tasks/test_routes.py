@@ -3,19 +3,30 @@ from unittest.mock import patch
 
 
 class DummyTask:
-    def __init__(self, task_id=1, task_title="test task", task_due="2099-01-01 14:30"):
+    def __init__(
+        self,
+        task_id=1,
+        task_title="test task",
+        task_due="2099-01-01 10:30",
+        task_description=None,
+        task_level=1,
+        is_finished=0
+    ):
         self.task_id = task_id
         self.task_title = task_title
         self.task_due = task_due
+        self.task_description = task_description
+        self.task_level = task_level
+        self.is_finished = is_finished
 
     def to_dict(self):
         return {
             "id": self.task_id,
             "task_title": self.task_title,
-            "task_due": None,
-            "task_description": None,
-            "task_level": 1,
-            "is_finished": 0
+            "task_due": self.task_due,
+            "task_description": self.task_description,
+            "task_level": self.task_level,
+            "is_finished": self.is_finished,
         }
 
 
