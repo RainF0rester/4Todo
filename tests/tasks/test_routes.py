@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 
 class DummyTask:
-    def __init__(self, task_id=1, task_title="test task", task_due="2026-01-01 14:30"):
+    def __init__(self, task_id=1, task_title="test task", task_due="2099-01-01 14:30"):
         self.task_id = task_id
         self.task_title = task_title
         self.task_due = task_due
@@ -122,3 +122,46 @@ def test_update_task_success(client):
     assert data["task_title"] == "updated task"
     assert data["task_due"] == "2099-01-02 15:45"
 
+def test_update_task_not_found(client):
+    payload = {
+        "task_title": "updated task"
+    }
+
+    with patch(
+        "modules.tasks.service.update_task",
+        side_effect=ValueError("Task not found")
+    ):
+        response = client.patch("/tasks/999", json=payload)
+
+    assert response.status_code == 400
+
+    data = response.get_json()
+    assert "message" in data
+
+def test_update_task_invalid_due(client):
+    payload = {
+        "task_due": "2020-01-01 10:30"
+    }
+
+    with patch(
+        "modules.tasks.service.update_task",
+        side_effect=ValueError("Task due time cannot be in the past")
+    ):
+        response = client.patch("/tasks/1", json=payload)
+
+    assert response.status_code == 400
+
+    data = response.get_json()
+    assert "message" in data
+
+def test_update_task_empty_payload(client):
+    with patch(
+        "modules.tasks.service.update_task",
+        side_effect=ValueError("No fields to update")
+    ):
+        response = client.patch("/tasks/1", json={})
+
+    assert response.status_code == 400
+
+    data = response.get_json()
+    assert "message" in data
