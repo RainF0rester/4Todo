@@ -63,7 +63,7 @@ import { DeleteOutlined, ExclamationCircleOutlined, EditOutlined, WarningOutline
 import dayjs from 'dayjs'
 import '../styles/task-group-card.css'
 import TaskModal from '../components/TaskModal.vue'
-import { addTask, deleteTask, updateTask, normalizeTask } from '../api/tasks'
+import { addTask, deleteTask, restoreTask,updateTask, normalizeTask } from '../api/tasks'
 
 const deleteTimers = new Map()
 const props = defineProps({
@@ -174,7 +174,7 @@ function dueText(dueDateStr) {
   return `${displayText} · ${formatRemaining(diffMinutes)}`
 }
 
-function remove(id) {
+async function remove(id) {
   const DELETE_MODAL_TITLE = 'Delete Task'
   const DELETE_MODAL_CONTENT = 'Do you want to delete this task?'
   const DELETE_OK_TEXT = 'Delete'
@@ -186,21 +186,28 @@ function remove(id) {
     content: DELETE_MODAL_CONTENT,
     okText: DELETE_OK_TEXT,
     cancelText: DELETE_CANCEL_TEXT,
-    onOk: () => {
+    onOk: async() => {
       const task = task_info.value.find(x => x.id === id)
       if (!task) return
-
-      task.pendingDelete = true
-      message.info(DELETE_UNDO_MESSAGE)
-
-      const timer = setTimeout(() => {
-        finalizeRemove(id)
-      }, DELETE_DELAY_MS)
-    }
+      try{
+        await deleteTask(id)
+        task.pendingDelete = true
+        task.deleting = false
+        message.info(DELETE_UNDO_MESSAGE)
+        const timer = setTimeout(()=>{
+          task_info.value = task_info.value.filter(x => x.id !== id)
+          deleteTimers.delete(id)
+          emit('reload')
+        },DELETE_DELAY_MS)
+        deleteTimers.set(id,timer)}catch(e){
+          console.error(e)
+          message.error(e?.message || 'Failed to delete task.')
+        }
+      }
   })
 }
 
-function undoRemove(id) {
+async function undoRemove(id) {
   const task = task_info.value.find(x => x.id === id)
   if (!task) return
 
@@ -209,38 +216,15 @@ function undoRemove(id) {
     clearTimeout(timer)
     deleteTimers.delete(id)
   }
-
-  task.pendingDelete = false
-  task.deleting = false
-  message.success('Task deletion undone.')
-}
-
-async function finalizeRemove(id) {
-  const DELETE_SUCCESS_MESSAGE = 'Task deleted successfully.'
-  const DELETE_ERROR_MESSAGE = 'Failed to delete task. Please try again later.'
-  const DELETE_MESSAGE_DURATION = 400
-  const task = task_info.value.find(x => x.id === id)
-  if (!task) return
-
-  task.deleting = true
-
-  setTimeout(async () => {
-    try {
-      await deleteTask(id)
-      task_info.value = task_info.value.filter(x => x.id !== id)
-      deleteTimers.delete(id)
-      emit('reload')
-      message.success(DELETE_SUCCESS_MESSAGE)
-    } catch (e) {
-      console.error(e)
-
-      task.deleting = false
-      task.pendingDelete = false
-      deleteTimers.delete(id)
-
-      message.error(DELETE_ERROR_MESSAGE)
-    }
-  }, DELETE_MESSAGE_DURATION)
+  try{
+    await restoreTask(id)
+    task.pendingDelete = false
+    task.deleting = false
+    message.success('Task deletion undone.')
+  }catch (e) {
+    console.error(e)
+    message.error(e?.message || 'Failed to restore task.')
+  }
 }
 
 const modalMode = ref('add') // 'add' | 'edit'

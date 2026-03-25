@@ -62,4 +62,13 @@ export async function deleteTask(id) {
     return res.json()
 }
 
-
+export async function restoreTask(id){
+   const res = await fetch(`${TASKS_API}/${id}/restore`, {
+    method: 'PATCH',
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => null)
+    throw new Error(data?.message || 'Unable to restore task')
+  }
+  return res.json()
+}
