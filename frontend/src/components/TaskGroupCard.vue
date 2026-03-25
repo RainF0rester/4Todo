@@ -63,7 +63,7 @@ import { DeleteOutlined, ExclamationCircleOutlined, EditOutlined, WarningOutline
 import dayjs from 'dayjs'
 import '../styles/task-group-card.css'
 import TaskModal from '../components/TaskModal.vue'
-import { addTask, deleteTask, normalizeTask } from '../api/tasks'
+import { addTask, deleteTask, updateTask, normalizeTask } from '../api/tasks'
 
 const deleteTimers = new Map()
 const props = defineProps({
@@ -271,13 +271,11 @@ async function handleSubmit(payload) {
       message.error(e?.message || 'Failed to create task. Please try again later.')
         return
       }
-
       const newTask = {
         ...normalized,
         pendingDelete: false,
         deleting: false,
       }
-
       task_info.value.unshift(newTask)
       message.success('Task created successfully.')
     } catch (e) {
@@ -286,7 +284,29 @@ async function handleSubmit(payload) {
       }
     return
   }
-}
+
+  if (payload.mode === 'edit'){
+    try{
+      const t = await updateTask(payload.id, {
+        task_title: payload.title,
+        task_due: payload.dueDate || null
+      })
+      const normalized = normalizeTask(t)
+      const index = task_info.value.findIndex(x => x.id === normalized.id)
+      if (index !== -1) {
+        task_info.value[index] = {
+          ...task_info.value[index],
+          ...normalized,
+        }
+        message.success('Task updated successfully.')
+      } }catch (e) {
+      console.error(e)
+      message.error(e?.message || 'Failed to update task.')
+      }
+    return
+    }
+  }
+
 
 function getDueStatus(dueDateStr) {
   if (!dueDateStr) return 'normal'

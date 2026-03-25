@@ -17,6 +17,8 @@ export function normalizeTask(t){
         task_level: limitTaskLevel(t.task_level)}
 }
 
+
+
 export async function getTaskList(){
     const res = await fetch(TASKS_API)
     if(!res.ok) 
@@ -32,10 +34,24 @@ export async function addTask(task) {
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify(task),
     })
-    if (!res.ok) {
-    const data = await res.json().catch(() => null)
-    throw new Error(data?.message || 'Unable to add task')}
+    if(!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.message || 'Unable to add task')}
+    return res.json()
 }
+
+//edit task
+export async function updateTask(id,task){
+    const res = await fetch(`${TASKS_API}/${id}`,{
+        method: 'PATCH',
+        headers:{ 'Content-Type': 'application/json'},
+        body: JSON.stringify(task)})
+        if(!res.ok) {
+            const data = await res.json().catch(() => null)
+            throw new Error(data?.message || 'Unable to update task')}
+            return res.json()
+}
+        
 //delete task
 export async function deleteTask(id) {
     const res = await fetch(`${TASKS_API}/${id}/delete`,{
@@ -45,3 +61,5 @@ export async function deleteTask(id) {
         throw new Error('Unable to delete task')
     return res.json()
 }
+
+
