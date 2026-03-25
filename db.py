@@ -18,7 +18,8 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, futu
 
 def init_db():
     # Import models so Base can see them
-    from modules.tasks import models  # noqa: F401
+    from modules.tasks import models
+    from modules.users import models
     Base.metadata.create_all(bind=engine)
 
 def get_session():

@@ -17,3 +17,8 @@ taskmaster.db
 
 # macOS
 .DS_Store
+
+# coverage files
+.coverage
+.coverage.*
+htmlcov/
