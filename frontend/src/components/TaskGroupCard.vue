@@ -268,7 +268,7 @@ async function handleSubmit(payload) {
       })
       const normalized = normalizeTask(t)
       if (normalized.task_level === null) {
-        message.error('Network error. Please try creating the task again.')
+      message.error(e?.message || 'Failed to create task. Please try again later.')
         return
       }
 
@@ -282,8 +282,8 @@ async function handleSubmit(payload) {
       message.success('Task created successfully.')
     } catch (e) {
       console.error(e)
-      message.error('Failed to create task. Please try again later.')
-    }
+      message.error(e?.message || 'Failed to create task. Please try again later.')
+      }
     return
   }
 }

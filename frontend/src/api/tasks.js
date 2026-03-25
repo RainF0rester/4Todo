@@ -32,9 +32,9 @@ export async function addTask(task) {
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify(task),
     })
-    if(!res.ok) 
-        throw new Error('Unable to add task')
-    return res.json()
+    if (!res.ok) {
+    const data = await res.json().catch(() => null)
+    throw new Error(data?.message || 'Unable to add task')}
 }
 //delete task
 export async function deleteTask(id) {
