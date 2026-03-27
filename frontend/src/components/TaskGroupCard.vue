@@ -57,7 +57,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watchEffect } from 'vue'
+import { computed, ref, watchEffect,onBeforeUnmount } from 'vue'
 import { Modal, message } from 'ant-design-vue'
 import { DeleteOutlined, ExclamationCircleOutlined, EditOutlined, WarningOutlined, RedoOutlined } from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
@@ -341,4 +341,11 @@ function dueTooltip(dueDateStr) {
 
   return ''
 }
+
+onBeforeUnmount(() => {
+  for (const t of deleteTimers.values()) {
+    clearTimeout(t)
+  }
+  deleteTimers.clear()
+})
 </script>
