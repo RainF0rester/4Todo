@@ -63,7 +63,7 @@ import { DeleteOutlined, ExclamationCircleOutlined, EditOutlined, WarningOutline
 import dayjs from 'dayjs'
 import '../styles/task-group-card.css'
 import TaskModal from '../components/TaskModal.vue'
-import { addTask, deleteTask, normalizeTask } from '../api/tasks'
+import { addTask, deleteTask, updateTask, normalizeTask } from '../api/tasks'
 
 const deleteTimers = new Map()
 const props = defineProps({
@@ -258,35 +258,64 @@ function showEditDialog(item) {
   open.value = true
 }
 
+//Set default due date 
+const TASK_DUE_SUBMIT_DEFAULT = 6
+function setDefaultDueDate(dueDate) {
+  return dueDate
+    ? dayjs(dueDate).add(TASK_DUE_SUBMIT_DEFAULT,'minute').format('YYYY-MM-DD HH:mm')
+    : null
+}
+
+
 async function handleSubmit(payload) {
   if (payload.mode === 'add') {
     try {
       const t = await addTask({
         task_title: payload.title,
-        task_due: payload.dueDate || null,
+        task_due: setDefaultDueDate(payload.dueDate),
         task_level: props.taskLevel
       })
       const normalized = normalizeTask(t)
       if (normalized.task_level === null) {
-        message.error('Network error. Please try creating the task again.')
-        return
+      console.log('Invalid task! Please check database.')
+      return
       }
-
       const newTask = {
         ...normalized,
         pendingDelete: false,
         deleting: false,
       }
-
       task_info.value.unshift(newTask)
       message.success('Task created successfully.')
     } catch (e) {
       console.error(e)
-      message.error('Failed to create task. Please try again later.')
-    }
+      message.error(e?.message || 'Failed to create task. Please try again later.')
+      }
     return
   }
-}
+
+  if (payload.mode === 'edit'){
+    try{
+      const t = await updateTask(payload.id, {
+        task_title: payload.title,
+        task_due: setDefaultDueDate(payload.dueDate),
+      })
+      const normalized = normalizeTask(t)
+      const index = task_info.value.findIndex(x => x.id === normalized.id)
+      if (index !== -1) {
+        task_info.value[index] = {
+          ...task_info.value[index],
+          ...normalized,
+        }
+        message.success('Task updated successfully.')
+      } }catch (e) {
+      console.error(e)
+      message.error(e?.message || 'Failed to update task.')
+      }
+    return
+    }
+  }
+
 
 function getDueStatus(dueDateStr) {
   if (!dueDateStr) return 'normal'

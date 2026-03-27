@@ -9,7 +9,7 @@
             <a-form-item name="dueDate" label="Due date">
                 <a-date-picker v-model:value="formState.dueDate" style="width: 100%" format="YYYY-MM-DD HH:mm"
                     valueFormat="YYYY-MM-DD HH:mm" :show-time="{ format: 'HH:mm' }" :disabled-date="disabledDate"
-                    :disabled-time="disabledDateTime" />
+                    :disabled-time="disabledDateTime" :allow-clear="false"/>
             </a-form-item>
 
             <!-- <a-form-item name="assignee" label="Assignee">
@@ -144,6 +144,6 @@ function normalizeDueDate(value) {
 
 function toBackendDueDate(value) {
     if (!value) return null
-    return normalizeDueDate(value).slice(0, 10)
+    return normalizeDueDate(value)
 }
 </script>
