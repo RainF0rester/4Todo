@@ -277,8 +277,8 @@ async function handleSubmit(payload) {
       })
       const normalized = normalizeTask(t)
       if (normalized.task_level === null) {
-      message.error(e?.message || 'Failed to create task. Please try again later.')
-        return
+      console.log('Invalid task! Please check database.')
+      return
       }
       const newTask = {
         ...normalized,

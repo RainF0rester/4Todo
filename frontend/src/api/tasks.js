@@ -13,7 +13,7 @@ export function normalizeTask(t){
         id: t.id,
         title: t.task_title,
         dueDate: t.task_due ? t.task_due : '',
-        done: t.id_finished ? true : false,
+        done: t.is_finished ? true : false,
         task_level: limitTaskLevel(t.task_level)}
 }
 
