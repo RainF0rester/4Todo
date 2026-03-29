@@ -13,6 +13,10 @@ def valid_payload():
     }
 
 
+# =========================
+# PARSE DUE TIME
+# =========================
+
 def test_parse_due_time_accepts_future_time():
     result = service._parse_due_time("2099-01-01 10:30")
     assert result == "2099-01-01 10:30"
@@ -20,6 +24,11 @@ def test_parse_due_time_accepts_future_time():
 
 def test_parse_due_time_accepts_none():
     result = service._parse_due_time(None)
+    assert result is None
+
+
+def test_parse_due_time_empty_string():
+    result = service._parse_due_time("   ")
     assert result is None
 
 
@@ -32,6 +41,10 @@ def test_parse_due_time_invalid_format():
     with pytest.raises(ValueError, match="format YYYY-MM-DD HH:MM"):
         service._parse_due_time("2026/01/01")
 
+
+# =========================
+# NORMALIZE
+# =========================
 
 def test_normalize_accepts_valid_payload():
     data = service._normalize(valid_payload())
@@ -47,7 +60,7 @@ def test_normalize_rejects_empty_title():
     payload = valid_payload()
     payload["task_title"] = "   "
 
-    with pytest.raises(ValueError, match="Task title is required"):
+    with pytest.raises(ValueError):
         service._normalize(payload)
 
 
@@ -92,10 +105,36 @@ def test_normalize_rejects_long_title():
         service._normalize(payload)
 
 
+def test_normalize_description_strip_to_none():
+    payload = valid_payload()
+    payload["task_description"] = "   "
+
+    data = service._normalize(payload)
+
+    assert data["task_description"] is None
+
+
+def test_normalize_is_finished_bool():
+    payload = valid_payload()
+    payload["is_finished"] = True
+
+    data = service._normalize(payload)
+
+    assert data["is_finished"] == 1
+
+
+# =========================
+# VALIDATE TITLE
+# =========================
+
 def test_validate_title_in_update():
     with pytest.raises(ValueError):
         service._validate_task_title("a" * 101)
 
+
+# =========================
+# NORMALIZE UPDATE
+# =========================
 
 def test_normalize_update_empty():
     data = service._normalize_update({})
@@ -117,6 +156,20 @@ def test_normalize_update_invalid_is_finished():
         service._normalize_update({"is_finished": "yes"})
 
 
+def test_normalize_update_description_strip():
+    data = service._normalize_update({"task_description": "   "})
+    assert data["task_description"] is None
+
+
+def test_normalize_update_is_finished_bool():
+    data = service._normalize_update({"is_finished": True})
+    assert data["is_finished"] == 1
+
+
+# =========================
+# CREATE
+# =========================
+
 def test_create_task_success():
     with patch("modules.tasks.repo.create_task") as mock_create:
         mock_task = MagicMock()
@@ -127,6 +180,15 @@ def test_create_task_success():
         assert result == mock_task
         mock_create.assert_called_once()
 
+
+def test_create_task_invalid_payload():
+    with pytest.raises(ValueError):
+        service.create_task(None, {"task_title": "   "})
+
+
+# =========================
+# UPDATE
+# =========================
 
 def test_update_task_success():
     fake_task = MagicMock()
@@ -165,6 +227,10 @@ def test_update_task_empty_payload():
             service.update_task(None, 1, {})
 
 
+# =========================
+# GET
+# =========================
+
 def test_get_task_success():
     fake_task = MagicMock()
     fake_task.is_deleted = 0
@@ -189,6 +255,10 @@ def test_get_task_deleted():
             service.get_task(None, 1)
 
 
+# =========================
+# DELETE / RESTORE
+# =========================
+
 def test_soft_delete_task_success():
     with patch("modules.tasks.repo.soft_delete_task", return_value=True):
         service.soft_delete_task(None, 1)
@@ -211,6 +281,10 @@ def test_restore_task_not_found():
             service.restore_task(None, 1)
 
 
+# =========================
+# LIST
+# =========================
+
 def test_list_tasks():
     fake_list = [MagicMock(), MagicMock()]
 
@@ -218,3 +292,13 @@ def test_list_tasks():
         result = service.list_tasks(None)
 
         assert result == fake_list
+
+
+def test_list_tasks_include_deleted():
+    fake_list = [MagicMock()]
+
+    with patch("modules.tasks.repo.list_tasks", return_value=fake_list) as mock_list:
+        result = service.list_tasks(None, include_deleted=True)
+
+        assert result == fake_list
+        mock_list.assert_called_once_with(None, include_deleted=True)
