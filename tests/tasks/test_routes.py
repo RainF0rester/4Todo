@@ -65,7 +65,7 @@ def test_create_task_validation_error(client):
 
 def test_create_task_invalid_due_format(client):
     payload = valid_payload()
-    payload["task_due"] = "2099-01-01"  # ❌ no HH:MM
+    payload["task_due"] = "2099-01-01"
 
     with patch(
         "modules.tasks.service.create_task",
@@ -113,6 +113,22 @@ def test_get_task_success(client):
     assert response.get_json()["id"] == 1
 
 
+def test_get_task_not_found(client):
+    with patch(
+        "modules.tasks.service.get_task",
+        side_effect=ValueError("Task not found")
+    ):
+        response = client.get("/tasks/999")
+
+    assert response.status_code == 400
+    assert "message" in response.get_json()
+
+
+def test_get_task_invalid_id(client):
+    response = client.get("/tasks/abc")
+    assert response.status_code in (400, 404)
+
+
 # =========================
 # DELETE / RESTORE
 # =========================
@@ -125,12 +141,32 @@ def test_delete_task_success(client):
     assert response.get_json()["status"] == "ok"
 
 
+def test_delete_task_not_found(client):
+    with patch(
+        "modules.tasks.service.soft_delete_task",
+        side_effect=ValueError("Task not found")
+    ):
+        response = client.patch("/tasks/999/delete")
+
+    assert response.status_code == 400
+
+
 def test_restore_task_success(client):
     with patch("modules.tasks.service.restore_task", return_value=None):
         response = client.patch("/tasks/1/restore")
 
     assert response.status_code == 200
     assert response.get_json()["status"] == "ok"
+
+
+def test_restore_task_not_found(client):
+    with patch(
+        "modules.tasks.service.restore_task",
+        side_effect=ValueError("Task not found")
+    ):
+        response = client.patch("/tasks/999/restore")
+
+    assert response.status_code == 400
 
 
 # =========================
@@ -147,6 +183,16 @@ def test_list_tasks(client):
     data = response.get_json()
     assert isinstance(data, list)
     assert len(data) == 2
+
+
+def test_list_tasks_error(client):
+    with patch(
+        "modules.tasks.service.list_tasks",
+        side_effect=ValueError("error")
+    ):
+        response = client.get("/tasks")
+
+    assert response.status_code == 400
 
 
 # =========================
@@ -200,7 +246,7 @@ def test_update_task_invalid_due(client):
 
 
 def test_update_task_invalid_due_format(client):
-    payload = {"task_due": "2099-01-01"}  # ❌ no HH:MM
+    payload = {"task_due": "2099-01-01"}
 
     with patch(
         "modules.tasks.service.update_task",
