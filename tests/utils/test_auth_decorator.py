@@ -1,0 +1,324 @@
+"""
+Test cases for authentication decorator.
+"""
+
+import pytest
+from unittest.mock import MagicMock, patch
+from utils.auth_decorator import (
+    require_auth,
+    require_auth_optional,
+    require_auth_with_scope
+)
+
+
+class TestRequireAuth:
+    """Test cases for require_auth decorator."""
+
+    def test_require_auth_missing_header(self, client):
+        """Test that request without Authorization header is rejected."""
+        # Create a test route with the decorator
+        from app import create_app
+        app = create_app()
+        
+        @app.route('/test_auth')
+        @require_auth
+        def test_route(user_id, payload):
+            return {"user_id": user_id}
+        
+        test_client = app.test_client()
+        response = test_client.get('/test_auth')
+        
+        assert response.status_code == 401
+        assert 'Missing authorization token' in response.json.get('message', '')
+
+    def test_require_auth_invalid_scheme(self, client):
+        """Test that invalid authorization scheme is rejected."""
+        from app import create_app
+        app = create_app()
+        
+        @app.route('/test_auth')
+        @require_auth
+        def test_route(user_id, payload):
+            return {"user_id": user_id}
+        
+        test_client = app.test_client()
+        response = test_client.get('/test_auth', headers={
+            'Authorization': 'Basic invalid_token'
+        })
+        
+        assert response.status_code == 401
+        assert 'Invalid authorization scheme' in response.json.get('message', '')
+
+    def test_require_auth_malformed_header(self, client):
+        """Test that malformed Authorization header is rejected."""
+        from app import create_app
+        app = create_app()
+        
+        @app.route('/test_auth')
+        @require_auth
+        def test_route(user_id, payload):
+            return {"user_id": user_id}
+        
+        test_client = app.test_client()
+        response = test_client.get('/test_auth', headers={
+            'Authorization': 'onlytoken'
+        })
+        
+        assert response.status_code == 401
+        assert 'Invalid authorization header format' in response.json.get('message', '')
+
+    @patch('utils.auth_decorator.validate_token')
+    def test_require_auth_valid_token(self, mock_validate, client):
+        """Test that valid token grants access."""
+        from app import create_app
+        app = create_app()
+        
+        mock_validate.return_value = {
+            'state': 'active',
+            'payload': {
+                'user_id': 123,
+                'username': 'testuser',
+                'email': 'test@example.com'
+            }
+        }
+        
+        @app.route('/test_auth')
+        @require_auth
+        def test_route(user_id, payload):
+            return {"user_id": user_id, "username": payload['username']}
+        
+        test_client = app.test_client()
+        response = test_client.get('/test_auth', headers={
+            'Authorization': 'Bearer valid_token'
+        })
+        
+        assert response.status_code == 200
+        assert response.json['user_id'] == 123
+        assert response.json['username'] == 'testuser'
+
+    @patch('utils.auth_decorator.validate_token')
+    def test_require_auth_refreshable_token(self, mock_validate, client):
+        """Test that refreshable (expired) token is rejected with 403."""
+        from app import create_app
+        app = create_app()
+        
+        mock_validate.return_value = {
+            'state': 'refreshable',
+            'payload': {
+                'user_id': 123,
+                'username': 'testuser'
+            }
+        }
+        
+        @app.route('/test_auth')
+        @require_auth
+        def test_route(user_id, payload):
+            return {"user_id": user_id}
+        
+        test_client = app.test_client()
+        response = test_client.get('/test_auth', headers={
+            'Authorization': 'Bearer expired_token'
+        })
+        
+        assert response.status_code == 403
+        assert 'Token expired' in response.json.get('message', '')
+
+    @patch('utils.auth_decorator.validate_token')
+    def test_require_auth_invalid_token(self, mock_validate, client):
+        """Test that invalid token raises 401."""
+        from app import create_app
+        from utils.jwt_utils import TokenError
+        app = create_app()
+        
+        mock_validate.side_effect = TokenError("Invalid token")
+        
+        @app.route('/test_auth')
+        @require_auth
+        def test_route(user_id, payload):
+            return {"user_id": user_id}
+        
+        test_client = app.test_client()
+        response = test_client.get('/test_auth', headers={
+            'Authorization': 'Bearer invalid_token'
+        })
+        
+        assert response.status_code == 401
+        assert 'Invalid token' in response.json.get('message', '')
+
+
+class TestRequireAuthOptional:
+    """Test cases for require_auth_optional decorator."""
+
+    def test_require_auth_optional_no_token(self, client):
+        """Test that request without token is allowed but user_id is None."""
+        from app import create_app
+        app = create_app()
+        
+        @app.route('/test_optional')
+        @require_auth_optional
+        def test_route(user_id=None, payload=None):
+            return {"user_id": user_id, "authenticated": user_id is not None}
+        
+        test_client = app.test_client()
+        response = test_client.get('/test_optional')
+        
+        assert response.status_code == 200
+        assert response.json['user_id'] is None
+        assert response.json['authenticated'] is False
+
+    def test_require_auth_optional_invalid_scheme(self, client):
+        """Test that invalid scheme is treated as unauthenticated."""
+        from app import create_app
+        app = create_app()
+        
+        @app.route('/test_optional')
+        @require_auth_optional
+        def test_route(user_id=None, payload=None):
+            return {"user_id": user_id, "authenticated": user_id is not None}
+        
+        test_client = app.test_client()
+        response = test_client.get('/test_optional', headers={
+            'Authorization': 'Basic invalid'
+        })
+        
+        assert response.status_code == 200
+        assert response.json['user_id'] is None
+
+    @patch('utils.auth_decorator.validate_token')
+    def test_require_auth_optional_valid_token(self, mock_validate, client):
+        """Test that valid token is used if provided."""
+        from app import create_app
+        app = create_app()
+        
+        mock_validate.return_value = {
+            'state': 'active',
+            'payload': {
+                'user_id': 456,
+                'username': 'testuser'
+            }
+        }
+        
+        @app.route('/test_optional')
+        @require_auth_optional
+        def test_route(user_id=None, payload=None):
+            return {"user_id": user_id, "authenticated": user_id is not None}
+        
+        test_client = app.test_client()
+        response = test_client.get('/test_optional', headers={
+            'Authorization': 'Bearer valid_token'
+        })
+        
+        assert response.status_code == 200
+        assert response.json['user_id'] == 456
+        assert response.json['authenticated'] is True
+
+    @patch('utils.auth_decorator.validate_token')
+    def test_require_auth_optional_invalid_token_ignored(self, mock_validate, client):
+        """Test that invalid token is ignored in optional auth."""
+        from app import create_app
+        from utils.jwt_utils import TokenError
+        app = create_app()
+        
+        mock_validate.side_effect = TokenError("Invalid token")
+        
+        @app.route('/test_optional')
+        @require_auth_optional
+        def test_route(user_id=None, payload=None):
+            return {"user_id": user_id, "authenticated": user_id is not None}
+        
+        test_client = app.test_client()
+        response = test_client.get('/test_optional', headers={
+            'Authorization': 'Bearer invalid_token'
+        })
+        
+        assert response.status_code == 200
+        assert response.json['user_id'] is None
+
+
+class TestRequireAuthWithScope:
+    """Test cases for require_auth_with_scope decorator."""
+
+    @patch('utils.auth_decorator.validate_token')
+    def test_require_auth_with_scope_valid(self, mock_validate, client):
+        """Test that user with required scope gains access."""
+        from app import create_app
+        app = create_app()
+        
+        mock_validate.return_value = {
+            'state': 'active',
+            'payload': {
+                'user_id': 789,
+                'username': 'admin',
+                'scopes': ['admin', 'user:read']
+            }
+        }
+        
+        @app.route('/test_scope')
+        @require_auth_with_scope('admin')
+        def test_route(user_id, payload):
+            return {"user_id": user_id, "scopes": payload['scopes']}
+        
+        test_client = app.test_client()
+        response = test_client.get('/test_scope', headers={
+            'Authorization': 'Bearer admin_token'
+        })
+        
+        assert response.status_code == 200
+        assert response.json['user_id'] == 789
+        assert 'admin' in response.json['scopes']
+
+    @patch('utils.auth_decorator.validate_token')
+    def test_require_auth_with_scope_insufficient(self, mock_validate, client):
+        """Test that user without required scope is denied."""
+        from app import create_app
+        app = create_app()
+        
+        mock_validate.return_value = {
+            'state': 'active',
+            'payload': {
+                'user_id': 789,
+                'username': 'user',
+                'scopes': ['user:read']
+            }
+        }
+        
+        @app.route('/test_scope')
+        @require_auth_with_scope('admin')
+        def test_route(user_id, payload):
+            return {"user_id": user_id}
+        
+        test_client = app.test_client()
+        response = test_client.get('/test_scope', headers={
+            'Authorization': 'Bearer user_token'
+        })
+        
+        assert response.status_code == 403
+        assert 'Insufficient permissions' in response.json.get('message', '')
+
+    @patch('utils.auth_decorator.validate_token')
+    def test_require_auth_with_scope_multiple_scopes(self, mock_validate, client):
+        """Test that user needs only one of multiple required scopes."""
+        from app import create_app
+        app = create_app()
+        
+        mock_validate.return_value = {
+            'state': 'active',
+            'payload': {
+                'user_id': 789,
+                'username': 'moderator',
+                'scopes': ['moderator']
+            }
+        }
+        
+        @app.route('/test_scope')
+        @require_auth_with_scope('admin', 'moderator')
+        def test_route(user_id, payload):
+            return {"user_id": user_id}
+        
+        test_client = app.test_client()
+        response = test_client.get('/test_scope', headers={
+            'Authorization': 'Bearer moderator_token'
+        })
+        
+        assert response.status_code == 200
+
