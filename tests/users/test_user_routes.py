@@ -1,0 +1,175 @@
+"""
+Test cases for user routes (register and login endpoints).
+"""
+
+import pytest
+from unittest.mock import patch, MagicMock
+from modules.users.service import AuthError, ConflictError
+
+
+class TestRegisterRoute:
+    """Test cases for user registration endpoint."""
+
+    @patch('modules.users.routes.register_user')
+    def test_register_success(self, mock_register_user, client):
+        """Test successful user registration via POST /users/register."""
+        mock_register_user.return_value = {
+            "id": 1,
+            "username": "testuser",
+            "email": "test@example.com"
+        }
+
+        response = client.post('/users/register', json={
+            'username': 'testuser',
+            'email': 'test@example.com',
+            'password': 'password123'
+        })
+
+        assert response.status_code == 200
+        assert response.json['status'] == 'ok'
+        mock_register_user.assert_called_once()
+
+    @patch('modules.users.routes.register_user')
+    def test_register_email_conflict(self, mock_register_user, client):
+        """Test registration fails when email is already registered."""
+        mock_register_user.side_effect = ConflictError("email has already been registered")
+
+        response = client.post('/users/register', json={
+            'username': 'newuser',
+            'email': 'existing@example.com',
+            'password': 'password123'
+        })
+
+        assert response.status_code == 400
+        assert 'email has already been registered' in response.json.get('message', '')
+
+    @patch('modules.users.routes.register_user')
+    def test_register_username_conflict(self, mock_register_user, client):
+        """Test registration fails when username is already registered."""
+        mock_register_user.side_effect = ConflictError("username has already been registered")
+
+        response = client.post('/users/register', json={
+            'username': 'existinguser',
+            'email': 'new@example.com',
+            'password': 'password123'
+        })
+
+        assert response.status_code == 400
+        assert 'username has already been registered' in response.json.get('message', '')
+
+    @patch('modules.users.routes.register_user')
+    def test_register_invalid_input(self, mock_register_user, client):
+        """Test registration fails with invalid input."""
+        mock_register_user.side_effect = ValueError("email is required")
+
+        response = client.post('/users/register', json={
+            'username': 'testuser',
+            'email': '',
+            'password': 'password123'
+        })
+
+        assert response.status_code == 400
+        assert 'email is required' in response.json.get('message', '')
+
+
+class TestLoginRoute:
+    """Test cases for user login endpoint."""
+
+    @patch('modules.users.routes.login_user')
+    def test_login_success(self, mock_login_user, client):
+        """Test successful user login via POST /users/login."""
+        mock_login_user.return_value = {
+            "user": {
+                "id": 1,
+                "username": "testuser",
+                "email": "test@example.com"
+            },
+            "token": "eyJhbGc..."
+        }
+
+        response = client.post('/users/login', json={
+            'identify': 'testuser',
+            'password': 'password123'
+        })
+
+        assert response.status_code == 200
+        assert 'token' in response.json
+        assert 'user' in response.json
+        mock_login_user.assert_called_once()
+
+    @patch('modules.users.routes.login_user')
+    def test_login_with_email(self, mock_login_user, client):
+        """Test login with email instead of username."""
+        mock_login_user.return_value = {
+            "user": {
+                "id": 1,
+                "username": "testuser",
+                "email": "test@example.com"
+            },
+            "token": "eyJhbGc..."
+        }
+
+        response = client.post('/users/login', json={
+            'identify': 'test@example.com',
+            'password': 'password123'
+        })
+
+        assert response.status_code == 200
+        assert 'token' in response.json
+        assert 'user' in response.json
+        mock_login_user.assert_called_once()
+
+    @patch('modules.users.routes.login_user')
+    def test_login_invalid_credentials(self, mock_login_user, client):
+        """Test login fails with invalid credentials."""
+        mock_login_user.side_effect = AuthError("Invalid credentials")
+
+        response = client.post('/users/login', json={
+            'identify': 'testuser',
+            'password': 'wrongpassword'
+        })
+
+        assert response.status_code == 401
+        assert 'Invalid credentials' in response.json.get('message', '')
+
+    @patch('modules.users.routes.login_user')
+    def test_login_user_not_found(self, mock_login_user, client):
+        """Test login fails when user is not found."""
+        mock_login_user.side_effect = AuthError("User not found")
+
+        response = client.post('/users/login', json={
+            'identify': 'nonexistent',
+            'password': 'password123'
+        })
+
+        assert response.status_code == 401
+        assert 'User not found' in response.json.get('message', '')
+
+    @patch('modules.users.routes.login_user')
+    def test_login_invalid_input(self, mock_login_user, client):
+        """Test login fails with invalid input (missing fields)."""
+        mock_login_user.side_effect = ValueError("identify is required")
+
+        response = client.post('/users/login', json={
+            'identify': '',
+            'password': 'password123'
+        })
+
+        assert response.status_code == 400
+        assert 'identify is required' in response.json.get('message', '')
+
+    @patch('modules.users.routes.login_user')
+    def test_login_empty_password(self, mock_login_user, client):
+        """Test login fails with empty password."""
+        mock_login_user.side_effect = ValueError("password is required")
+
+        response = client.post('/users/login', json={
+            'identify': 'testuser',
+            'password': ''
+        })
+
+        assert response.status_code == 400
+        assert 'password is required' in response.json.get('message', '')
+
+
+

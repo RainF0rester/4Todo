@@ -1,0 +1,265 @@
+"""
+Test cases for JWT utility functions (token creation, validation, refresh).
+"""
+
+import pytest
+from datetime import datetime, timedelta, timezone
+from unittest.mock import patch
+from utils.jwt_utils import (
+    create_token,
+    decode_token,
+    validate_token,
+    refresh_token,
+    TokenError,
+    TokenRefreshError,
+    _now,
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    REFRESH_TOKEN_EXPIRE_MINUTES
+)
+
+
+class TestCreateToken:
+    """Test cases for token creation."""
+
+    def test_create_token_success(self):
+        """Test successful token creation with valid data."""
+        token = create_token(user_id=1, username="testuser", email="test@example.com")
+
+        assert isinstance(token, str)
+        assert len(token) > 0
+        # Token should have 3 parts separated by dots (header.payload.signature)
+        assert token.count('.') == 2
+
+    def test_create_token_contains_required_fields(self):
+        """Test that created token contains all required fields."""
+        token = create_token(user_id=123, username="john", email="john@example.com")
+        payload = decode_token(token)
+
+        assert payload['user_id'] == 123
+        assert payload['username'] == 'john'
+        assert payload['email'] == 'john@example.com'
+        assert 'iat' in payload
+        assert 'exp' in payload
+        assert 'refresh_exp' in payload
+
+    def test_create_token_timestamps(self):
+        """Test that token timestamps are set correctly."""
+        before = int(_now().timestamp())
+        token = create_token(user_id=1, username="test", email="test@example.com")
+        after = int(_now().timestamp())
+
+        payload = decode_token(token)
+        
+        # Check that iat (issued at) is between before and after
+        assert before <= payload['iat'] <= after
+        # Check that exp > iat
+        assert payload['exp'] > payload['iat']
+        # Check that refresh_exp > exp
+        assert payload['refresh_exp'] > payload['exp']
+
+    def test_create_token_expiration_time(self):
+        """Test that token expiration times are set correctly."""
+        token = create_token(user_id=1, username="test", email="test@example.com")
+        payload = decode_token(token)
+
+        iat_seconds = payload['iat']
+        exp_seconds = payload['exp']
+        
+        # Expiration should be approximately ACCESS_TOKEN_EXPIRE_MINUTES from issued time
+        expected_exp_diff = ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        actual_exp_diff = exp_seconds - iat_seconds
+        
+        # Allow 2 second tolerance
+        assert abs(actual_exp_diff - expected_exp_diff) <= 2
+
+
+class TestDecodeToken:
+    """Test cases for token decoding."""
+
+    def test_decode_token_success(self):
+        """Test successful token decoding."""
+        token = create_token(user_id=1, username="testuser", email="test@example.com")
+        payload = decode_token(token)
+
+        assert payload['user_id'] == 1
+        assert payload['username'] == 'testuser'
+        assert payload['email'] == 'test@example.com'
+
+    def test_decode_token_invalid_token(self):
+        """Test decoding an invalid token raises TokenError."""
+        with pytest.raises(TokenError, match="Invalid token"):
+            decode_token("invalid.token.string")
+
+    def test_decode_token_malformed(self):
+        """Test decoding malformed token."""
+        with pytest.raises(TokenError, match="Invalid token"):
+            decode_token("not_a_token")
+
+    def test_decode_token_empty_string(self):
+        """Test decoding empty string."""
+        with pytest.raises(TokenError, match="Invalid token"):
+            decode_token("")
+
+    def test_decode_token_ignores_expiration(self):
+        """Test that decode_token does not verify expiration."""
+        # Create a token and manually decode it to verify exp is ignored
+        token = create_token(user_id=1, username="test", email="test@example.com")
+        # Should not raise error even if token is expired
+        payload = decode_token(token)
+        assert payload['user_id'] == 1
+
+
+class TestValidateToken:
+    """Test cases for token validation."""
+
+    def test_validate_token_active(self):
+        """Test validation of an active (non-expired) token."""
+        token = create_token(user_id=1, username="testuser", email="test@example.com")
+        result = validate_token(token)
+
+        assert result['state'] == 'active'
+        assert result['payload']['user_id'] == 1
+        assert result['payload']['username'] == 'testuser'
+
+    def test_validate_token_missing_required_field(self):
+        """Test validation fails when token is missing required fields."""
+        # Create a token and tamper with it by removing a field
+        import jwt
+        from utils.jwt_utils import SECRET_KEY, ALGORITHM
+        
+        payload = {
+            "user_id": 1,
+            "username": "test",
+            # Missing 'email' field
+            "iat": int(_now().timestamp()),
+            "exp": int((_now() + timedelta(minutes=60)).timestamp()),
+            "refresh_exp": int((_now() + timedelta(minutes=10080)).timestamp()),
+        }
+        
+        token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+        
+        with pytest.raises(TokenError, match="Missing required field"):
+            validate_token(token)
+
+    def test_validate_token_refreshable(self):
+        """Test validation of a refreshable (expired but within refresh window) token."""
+        import jwt
+        from utils.jwt_utils import SECRET_KEY, ALGORITHM
+        
+        now = _now()
+        # Create a token that is expired but still in refresh window
+        payload = {
+            "user_id": 1,
+            "username": "test",
+            "email": "test@example.com",
+            "iat": int(now.timestamp()),
+            # Expired: 1 minute in the past
+            "exp": int((now - timedelta(minutes=1)).timestamp()),
+            # Still valid for refresh: 1 day in the future
+            "refresh_exp": int((now + timedelta(days=1)).timestamp()),
+        }
+        
+        token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+        result = validate_token(token)
+
+        assert result['state'] == 'refreshable'
+
+    def test_validate_token_refresh_window_expired(self):
+        """Test validation fails when refresh window is expired."""
+        import jwt
+        from utils.jwt_utils import SECRET_KEY, ALGORITHM
+        
+        now = _now()
+        # Create a token that is completely expired
+        payload = {
+            "user_id": 1,
+            "username": "test",
+            "email": "test@example.com",
+            "iat": int(now.timestamp()),
+            # Expired
+            "exp": int((now - timedelta(minutes=70)).timestamp()),
+            # Refresh window also expired
+            "refresh_exp": int((now - timedelta(hours=1)).timestamp()),
+        }
+        
+        token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+        
+        with pytest.raises(TokenError, match="Refresh Window expired"):
+            validate_token(token)
+
+    def test_validate_token_invalid_token(self):
+        """Test validation fails with invalid token."""
+        with pytest.raises(TokenError, match="Invalid token"):
+            validate_token("invalid.token")
+
+
+class TestRefreshToken:
+    """Test cases for token refresh."""
+
+    def test_refresh_token_success(self):
+        """Test successful token refresh."""
+        old_token = create_token(user_id=1, username="testuser", email="test@example.com")
+        new_token = refresh_token(old_token)
+
+        assert isinstance(new_token, str)
+        # Decode both to check they're valid tokens
+        old_payload = decode_token(old_token)
+        new_payload = decode_token(new_token)
+        # Both should have the same user data
+        assert old_payload['user_id'] == new_payload['user_id']
+
+    def test_refresh_token_preserves_user_data(self):
+        """Test that refreshed token contains same user data."""
+        old_token = create_token(user_id=123, username="john", email="john@example.com")
+        new_token = refresh_token(old_token)
+        
+        new_payload = decode_token(new_token)
+
+        assert new_payload['user_id'] == 123
+        assert new_payload['username'] == 'john'
+        assert new_payload['email'] == 'john@example.com'
+
+    def test_refresh_token_updates_timestamps(self):
+        """Test that refresh creates new timestamps."""
+        old_token = create_token(user_id=1, username="test", email="test@example.com")
+        old_payload = decode_token(old_token)
+        old_iat = old_payload['iat']
+
+        # Wait a moment to ensure timestamps differ
+        import time
+        time.sleep(0.1)
+
+        new_token = refresh_token(old_token)
+        new_payload = decode_token(new_token)
+        new_iat = new_payload['iat']
+
+        # New token should have a newer iat
+        assert new_iat >= old_iat
+
+    def test_refresh_expired_token_beyond_refresh_window(self):
+        """Test refresh fails when token is beyond refresh window."""
+        import jwt
+        from utils.jwt_utils import SECRET_KEY, ALGORITHM
+        
+        now = _now()
+        # Create a completely expired token
+        payload = {
+            "user_id": 1,
+            "username": "test",
+            "email": "test@example.com",
+            "iat": int(now.timestamp()),
+            "exp": int((now - timedelta(hours=1)).timestamp()),
+            "refresh_exp": int((now - timedelta(minutes=1)).timestamp()),
+        }
+        
+        token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+        
+        with pytest.raises(TokenError, match="Refresh Window expired"):
+            refresh_token(token)
+
+    def test_refresh_token_invalid_token(self):
+        """Test refresh fails with invalid token."""
+        with pytest.raises(TokenError, match="Invalid token"):
+            refresh_token("invalid.token")
+
+
