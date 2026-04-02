@@ -58,6 +58,7 @@
 
 <script setup>
 import { computed, ref, watchEffect, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
 import { Modal, message } from 'ant-design-vue'
 import { DeleteOutlined, ExclamationCircleOutlined, WarningOutlined, RedoOutlined } from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
@@ -74,6 +75,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['reload'])
+const router = useRouter()
 
 const peopleOptions = [
   { label: 'Lucia', value: 'Lucia' },
@@ -232,6 +234,31 @@ const modalMode = ref('add') // 'add' | 'edit'
 const editingTask = ref(null)
 
 function showAddDialog() {
+  const isGuest = !!localStorage.getItem('authGuest')
+  if (isGuest) {
+    let guestTasks = []
+    try {
+      const raw = localStorage.getItem('guest_tasks')
+      guestTasks = raw ? JSON.parse(raw) : []
+    } catch (err) {
+      guestTasks = []
+    }
+    const GUEST_LIMIT = 8
+    if (guestTasks.length >= GUEST_LIMIT) {
+      Modal.confirm({
+        title: 'Guest task limit reached',
+        content: 'You have reached the 8-task limit for guest accounts. Please login to create more tasks.',
+        okText: 'Login',
+        cancelText: 'Cancel',
+        onOk: () => {
+          localStorage.removeItem('authGuest')
+          router.push({ path: '/auth', query: { mode: 'login' } })
+        },
+      })
+      return
+    }
+  }
+
   modalMode.value = 'add'
   editingTask.value = null
   open.value = true
