@@ -6,7 +6,7 @@
         </div>
 
         <a-form :layout="'vertical'" @submit.prevent>
-            <a-form-item label="Username">
+            <a-form-item v-if="mode === 'register'" label="Username">
                 <a-input v-model:value="username" @input="onUsernameInput" @blur="onUsernameBlur"
                     placeholder="Enter username" />
                 <div v-if="errors.username" class="ant-form-item-explain">{{ errors.username }}</div>
@@ -123,11 +123,23 @@ function onPasswordBlur() { validatePasswordField() }
 
 // reuse field validators in overall validate
 function validate() {
-    // resetErrors() intentionally not called here to preserve per-field messages during typing
-    const u = validateUsernameField()
-    const e = validateEmailField()
-    const p = validatePasswordField()
-    return u && e && p
+    // register requires all fields, login requires email + password
+    if (mode.value === 'register') {
+        const u = validateUsernameField()
+        const e = validateEmailField()
+        const p = validatePasswordField()
+        return u && e && p
+    } else {
+        // login: require email and password only
+        const hasEmail = !!email.value && email.value.trim() !== ''
+        if (!hasEmail) {
+            errors.value.email = 'Email is required.'
+            return false
+        }
+        errors.value.email = ''
+        const p = validatePasswordField()
+        return p
+    }
 }
 
 async function handleSubmit() {
@@ -136,13 +148,13 @@ async function handleSubmit() {
     loading.value = true
 
     try {
-        const payload = {
-            username: username.value.trim(),
-            email: email.value.trim(),
-            password: password.value, // plain text per acceptance
-        }
-
         if (mode.value === 'register') {
+            const payload = {
+                username: username.value.trim(),
+                email: email.value.trim(),
+                password: password.value,
+            }
+
             const res = await fetch('/api/users/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -158,7 +170,6 @@ async function handleSubmit() {
                 message.error(errMsg)
                 return
             }
-            // store token if backend returned one
             const token = data?.token || data?.access_token || data?.auth_token
             if (token) {
                 localStorage.setItem('authToken', token)
@@ -166,6 +177,13 @@ async function handleSubmit() {
             message.success('Registration successful. Redirecting...')
             router.push('/')
         } else {
+            // login: send identify (email only)
+            const identify = email.value.trim()
+            const payload = {
+                identify,
+                password: password.value,
+            }
+
             const res = await fetch('/api/users/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -181,7 +199,6 @@ async function handleSubmit() {
                 message.error(errMsg)
                 return
             }
-            // store token if backend returned one
             const token = data?.token || data?.access_token || data?.auth_token
             if (token) {
                 localStorage.setItem('authToken', token)
