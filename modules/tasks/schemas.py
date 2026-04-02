@@ -10,10 +10,10 @@ class TaskSchema(Schema):
     is_finished = Integer()
 
 class TaskCreateSchema(Schema):
-    task_title = String()
-    task_due = String()
-    task_description = String()
-    task_level = Integer()
+    task_title = String(required=True)
+    task_due = String(allow_none=True)
+    task_description = String(allow_none=True)
+    task_level = Integer(required=True)
 
 class TaskUpdateSchema(Schema):
     task_title = String(required=False)

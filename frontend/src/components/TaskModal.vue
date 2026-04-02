@@ -9,7 +9,7 @@
             <a-form-item name="dueDate" label="Due date">
                 <a-date-picker v-model:value="formState.dueDate" style="width: 100%" format="YYYY-MM-DD HH:mm"
                     valueFormat="YYYY-MM-DD HH:mm" :show-time="{ format: 'HH:mm' }" :disabled-date="disabledDate"
-                    :disabled-time="disabledDateTime" :allow-clear="false"/>
+                    :allowClear="true" :disabled-time="disabledDateTime" />
             </a-form-item>
 
             <!-- <a-form-item name="assignee" label="Assignee">
@@ -35,19 +35,19 @@ const formRef = ref()
 const formState = reactive({
     id: null,
     title: '',
-    dueDate: dayjs().format('YYYY-MM-DD HH:mm'),
+    dueDate: null,
     assignee: null
 })
 const rules = {
     title: [{ required: true, message: 'Task title is required', trigger: 'blur' },
-            { max: 100, message: 'Task title cannot exceed 100 characters', trigger: ['blur', 'change'] }
+    { max: 100, message: 'Task title cannot exceed 100 characters', trigger: ['blur', 'change'] }
     ],
 }
 
 function resetForAdd() {
     formState.id = null
     formState.title = ''
-    formState.dueDate = dayjs().format('YYYY-MM-DD HH:mm')
+    formState.dueDate = null
     formRef.value?.clearValidate?.()
     formState.assignee = null
 }
@@ -127,7 +127,7 @@ function submitForm() {
 }
 
 function normalizeDueDate(value) {
-    if (!value) return dayjs().format('YYYY-MM-DD HH:mm')
+    if (!value) return null
 
     const dateTime = dayjs(value, 'YYYY-MM-DD HH:mm', true)
     if (dateTime.isValid()) {
@@ -139,7 +139,7 @@ function normalizeDueDate(value) {
         return `${dateOnly.format('YYYY-MM-DD')} 00:00`
     }
 
-    return dayjs().format('YYYY-MM-DD HH:mm')
+    return null
 }
 
 function toBackendDueDate(value) {
