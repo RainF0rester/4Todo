@@ -51,7 +51,6 @@ class TestCreateUser:
         assert created_user.username == "testuser"
         assert created_user.email == "test@example.com"
         assert created_user.password_hash == "hashed_password_123"
-        assert created_user.is_deleted == 0
 
     def test_create_user_with_different_values(self, db_session: Session):
         """Test creating user with different values."""

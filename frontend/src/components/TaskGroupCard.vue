@@ -57,13 +57,13 @@
 </template>
 
 <script setup>
-import { computed, ref, watchEffect,onBeforeUnmount } from 'vue'
+import { computed, ref, watchEffect, onBeforeUnmount } from 'vue'
 import { Modal, message } from 'ant-design-vue'
-import { DeleteOutlined, ExclamationCircleOutlined, EditOutlined, WarningOutlined, RedoOutlined } from '@ant-design/icons-vue'
+import { DeleteOutlined, ExclamationCircleOutlined, WarningOutlined, RedoOutlined } from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
 import '../styles/task-group-card.css'
 import TaskModal from '../components/TaskModal.vue'
-import { addTask, deleteTask, restoreTask,updateTask, normalizeTask } from '../api/tasks'
+import { addTask, deleteTask, restoreTask, updateTask, normalizeTask } from '../api/tasks'
 
 const deleteTimers = new Map()
 const props = defineProps({
@@ -186,24 +186,25 @@ async function remove(id) {
     content: DELETE_MODAL_CONTENT,
     okText: DELETE_OK_TEXT,
     cancelText: DELETE_CANCEL_TEXT,
-    onOk: async() => {
+    onOk: async () => {
       const task = task_info.value.find(x => x.id === id)
       if (!task) return
-      try{
+      try {
         await deleteTask(id)
         task.pendingDelete = true
         task.deleting = false
         message.info(DELETE_UNDO_MESSAGE)
-        const timer = setTimeout(()=>{
+        const timer = setTimeout(() => {
           task_info.value = task_info.value.filter(x => x.id !== id)
           deleteTimers.delete(id)
           emit('reload')
-        },DELETE_DELAY_MS)
-        deleteTimers.set(id,timer)}catch(e){
-          console.error(e)
-          message.error(e?.message || 'Failed to delete task.')
-        }
+        }, DELETE_DELAY_MS)
+        deleteTimers.set(id, timer)
+      } catch (e) {
+        console.error(e)
+        message.error(e?.message || 'Failed to delete task.')
       }
+    }
   })
 }
 
@@ -216,12 +217,12 @@ async function undoRemove(id) {
     clearTimeout(timer)
     deleteTimers.delete(id)
   }
-  try{
+  try {
     await restoreTask(id)
     task.pendingDelete = false
     task.deleting = false
     message.success('Task deletion undone.')
-  }catch (e) {
+  } catch (e) {
     console.error(e)
     message.error(e?.message || 'Failed to restore task.')
   }
@@ -246,7 +247,7 @@ function showEditDialog(item) {
 const TASK_DUE_SUBMIT_DEFAULT = 6
 function setDefaultDueDate(dueDate) {
   return dueDate
-    ? dayjs(dueDate).add(TASK_DUE_SUBMIT_DEFAULT,'minute').format('YYYY-MM-DD HH:mm')
+    ? dayjs(dueDate).add(TASK_DUE_SUBMIT_DEFAULT, 'minute').format('YYYY-MM-DD HH:mm')
     : null
 }
 
@@ -261,8 +262,8 @@ async function handleSubmit(payload) {
       })
       const normalized = normalizeTask(t)
       if (normalized.task_level === null) {
-      console.log('Invalid task! Please check database.')
-      return
+        console.log('Invalid task! Please check database.')
+        return
       }
       const newTask = {
         ...normalized,
@@ -274,12 +275,12 @@ async function handleSubmit(payload) {
     } catch (e) {
       console.error(e)
       message.error(e?.message || 'Failed to create task. Please try again later.')
-      }
+    }
     return
   }
 
-  if (payload.mode === 'edit'){
-    try{
+  if (payload.mode === 'edit') {
+    try {
       const t = await updateTask(payload.id, {
         task_title: payload.title,
         task_due: setDefaultDueDate(payload.dueDate),
@@ -292,13 +293,14 @@ async function handleSubmit(payload) {
           ...normalized,
         }
         message.success('Task updated successfully.')
-      } }catch (e) {
+      }
+    } catch (e) {
       console.error(e)
       message.error(e?.message || 'Failed to update task.')
-      }
-    return
     }
+    return
   }
+}
 
 
 function getDueStatus(dueDateStr) {
