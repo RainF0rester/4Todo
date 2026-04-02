@@ -11,7 +11,7 @@ class TaskSchema(Schema):
 
 class TaskCreateSchema(Schema):
     task_title = String(required=True)
-    task_due = String(allow_none=True)
+    task_due = String()
     task_description = String(allow_none=True)
     task_level = Integer(required=True)
 
