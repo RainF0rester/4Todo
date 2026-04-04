@@ -27,7 +27,6 @@ class User(Base):
             'username': self.username,
             'email': self.email,
             'password_hash': self.password_hash,
-            'is_deleted': self.is_deleted,
             'created_at': self.created_at,
             'update_at': self.update_at,
         }

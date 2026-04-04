@@ -34,10 +34,11 @@ def _parse_due_time(due: str | None) -> str | None:
     except ValueError:
         raise ValueError("Task due time must be in format YYYY-MM-DD HH:MM")
 
-    if parsed_due < datetime.now():
-        raise ValueError("Task due time cannot be in the past")
+    # do not check due time is past now or not
+    # if parsed_due < datetime.now():
+    #     raise ValueError("Task due time cannot be in the past")
 
-    return due
+    return str(parsed_due)
 
 
 def _normalize(payload: dict) -> dict:
