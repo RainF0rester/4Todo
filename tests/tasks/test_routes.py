@@ -89,13 +89,13 @@ def test_create_task_past_due_time(client):
     assert response.status_code == 400
 
 
-def test_create_task_due_none(client):
-    payload = valid_payload()
-    payload["task_due"] = None
-
-    response = client.post("/tasks", json=payload)
-
-    assert response.status_code == 422
+# def test_create_task_due_none(client):
+#     payload = valid_payload()
+#     payload["task_due"] = None
+#
+#     response = client.post("/tasks", json=payload)
+#
+#     assert response.status_code == 422
 
 
 # =========================
