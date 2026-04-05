@@ -15,8 +15,7 @@
         <div v-if="!isGuest">
           <a-dropdown>
             <a class="user" @click.prevent>
-              <a-avatar size="small">B</a-avatar>
-              <span class="name">COMP9820</span>
+              <a-avatar size="small">{{ userInitial }}</a-avatar>
             </a>
             <template #overlay>
               <a-menu @click="onMenuClick">
@@ -54,6 +53,11 @@ const isGuest = computed(() => {
   void route.path
   return !!localStorage.getItem('authGuest')
 })
+const userInitial = computed(() => {
+  void route.path
+  const email = localStorage.getItem('authEmail') || ''
+  return email.trim().charAt(0).toUpperCase() || 'B'
+})
 
 function goToRegister() {
   localStorage.removeItem('authGuest')
@@ -67,6 +71,7 @@ function onMenuClick({ key }) {
   if (key === 'logout') {
     localStorage.removeItem('authToken')
     localStorage.removeItem('authGuest')
+    localStorage.removeItem('authEmail')
     router.push('/auth')
     return
   }
@@ -116,6 +121,13 @@ function onMenuClick({ key }) {
   align-items: center;
   gap: 8px;
   color: #1f2937;
+}
+
+.user :deep(.ant-avatar-sm) {
+  width: 30px;
+  height: 30px;
+  line-height: 28px;
+  border: 1px solid #eef0f3;
 }
 
 .name {

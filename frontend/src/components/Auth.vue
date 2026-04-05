@@ -174,29 +174,9 @@ async function handleSubmit() {
             const token = data?.token || data?.access_token || data?.auth_token
             if (token) {
                 localStorage.setItem('authToken', token)
-            } else {
-                const loginRes = await fetch('/api/users/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ identify: email.value.trim(), password: password.value }),
-                })
-                const loginText = await loginRes.text().catch(() => '')
-                let loginData = null
-                try { loginData = loginText ? JSON.parse(loginText) : null } catch (err) { loginData = null }
-                if (!loginRes.ok) {
-                    const loginErr = loginData?.message || loginText || `Server returned ${loginRes.status}`
-                    console.error('Auto-login failed after registration:', loginRes.status, loginText)
-                    message.error('Registration succeeded, but auto-login failed. Please login manually.')
-                    router.push('/auth')
-                    return
-                }
-                const loginToken = loginData?.token || loginData?.access_token || loginData?.auth_token
-                if (loginToken) {
-                    localStorage.setItem('authToken', loginToken)
-                }
+                localStorage.setItem('authEmail', email.value.trim())
             }
-            await handlePostAuth()
-            message.success('Registration successful. Logged in for you.')
+            message.success('Registration successful. Redirecting...')
             router.push('/')
         } else {
             // login: send identify (email only)
@@ -224,6 +204,7 @@ async function handleSubmit() {
             const token = data?.token || data?.access_token || data?.auth_token
             if (token) {
                 localStorage.setItem('authToken', token)
+                localStorage.setItem('authEmail', email.value.trim())
             }
             await handlePostAuth()
             message.success('Login successful. Redirecting...')
@@ -336,6 +317,7 @@ watch(() => route.query.mode, (m) => {
 
 function continueAsGuest() {
     // set a lightweight guest flag so router guard allows access
+    localStorage.removeItem('authEmail')
     localStorage.setItem('authGuest', '1')
     message.info('Continuing as guest')
     router.push('/list')
