@@ -17,7 +17,7 @@
           }">
             <div class="left">
               <a-checkbox :class="{ invisible: item.pendingDelete }" :disabled="!canComplete(item.dueDate)"
-                v-model:checked="item.done" />
+                :checked="item.done" @change="(e) => toggleDone(item, e.target.checked)" />
               <div class="text" @click="showEditDialog(item)">
                 <a-tooltip :title="item.title.length > 15 ? item.title : null">
                   <div class="name" :class="{ done: item.done }" @click="!item.pendingDelete && showEditDialog(item)">
@@ -342,6 +342,19 @@ function dueTooltip(dueDateStr) {
   }
 
   return ''
+}
+
+async function toggleDone(item, checked) {
+  const prevDone = item.done
+  item.done = checked
+  try {
+    await updateTask(item.id, { is_finished: checked ? 1 : 0 })
+    message.success('Task status updated.')
+  } catch (e) {
+    item.done = prevDone
+    console.error(e)
+    message.error(e?.message || 'Failed to update task status.')
+  }
 }
 
 onBeforeUnmount(() => {
