@@ -47,7 +47,8 @@
 <script setup>
 import { ref, watch, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { message } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
+import { addTask, saveGuestTasks } from '../api/tasks'
 
 const router = useRouter()
 const route = useRoute()
@@ -173,6 +174,7 @@ async function handleSubmit() {
             const token = data?.token || data?.access_token || data?.auth_token
             if (token) {
                 localStorage.setItem('authToken', token)
+                localStorage.setItem('authEmail', email.value.trim())
             }
             message.success('Registration successful. Redirecting...')
             router.push('/')
@@ -202,7 +204,9 @@ async function handleSubmit() {
             const token = data?.token || data?.access_token || data?.auth_token
             if (token) {
                 localStorage.setItem('authToken', token)
+                localStorage.setItem('authEmail', email.value.trim())
             }
+            await handlePostAuth()
             message.success('Login successful. Redirecting...')
             router.push('/')
         }
@@ -212,6 +216,64 @@ async function handleSubmit() {
     } finally {
         loading.value = false
     }
+}
+
+async function handlePostAuth() {
+    const raw = localStorage.getItem('guest_tasks')
+    let guestTasks = []
+    try {
+        guestTasks = raw ? JSON.parse(raw) : []
+    } catch (err) {
+        guestTasks = []
+    }
+    if (!guestTasks || guestTasks.length === 0) return
+
+    Modal.confirm({
+        title: 'Import guest tasks?',
+        content: `Detected ${guestTasks.length} guest task(s). Do you want to import them into your account?`,
+        okText: 'Import',
+        cancelText: 'Discard',
+        async onOk() {
+            localStorage.removeItem('authGuest')
+            try {
+                const importedIds = []
+                const skippedIds = []
+                const failed = []
+                for (const t of guestTasks) {
+                    const payload = { task_title: t.task_title, task_level: t.task_level ?? 0 }
+                    if (t.task_due) payload.task_due = t.task_due
+                    try {
+                        const taskRes = await addTask(payload)
+                        importedIds.push(t.id)
+                    } catch (err) {
+                        console.error('Failed to import task', t, err)
+                        failed.push(t)
+                    }
+                }
+                const remaining = guestTasks.filter(t => !importedIds.includes(t.id))
+                if (remaining.length > 0) {
+                    saveGuestTasks(remaining)
+                } else {
+                    localStorage.removeItem('guest_tasks')
+                }
+
+                const importedCount = importedIds.length
+                const skippedCount = skippedIds.length
+                const failedCount = failed.length
+                message.success(`Import finished. Imported: ${importedCount}, Skipped (past due): ${skippedCount}, Failed: ${failedCount}`)
+                router.push('/').catch(() => { })
+                setTimeout(() => window.location.reload(), 300)
+            } catch (err) {
+                console.error('Failed to import guest tasks', err)
+                message.error('Failed to import guest tasks. Your local guest data is kept.')
+            }
+        },
+        onCancel() {
+            localStorage.removeItem('guest_tasks')
+            localStorage.removeItem('authGuest')
+            message.info('Guest data discarded.')
+        }
+    })
 }
 
 function toggleMode() {
@@ -255,6 +317,7 @@ watch(() => route.query.mode, (m) => {
 
 function continueAsGuest() {
     // set a lightweight guest flag so router guard allows access
+    localStorage.removeItem('authEmail')
     localStorage.setItem('authGuest', '1')
     message.info('Continuing as guest')
     router.push('/list')
