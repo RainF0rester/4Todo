@@ -47,7 +47,8 @@
 <script setup>
 import { ref, watch, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { message } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
+import { addTask, saveGuestTasks } from '../api/tasks'
 
 const router = useRouter()
 const route = useRoute()
@@ -173,8 +174,29 @@ async function handleSubmit() {
             const token = data?.token || data?.access_token || data?.auth_token
             if (token) {
                 localStorage.setItem('authToken', token)
+            } else {
+                const loginRes = await fetch('/api/users/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identify: email.value.trim(), password: password.value }),
+                })
+                const loginText = await loginRes.text().catch(() => '')
+                let loginData = null
+                try { loginData = loginText ? JSON.parse(loginText) : null } catch (err) { loginData = null }
+                if (!loginRes.ok) {
+                    const loginErr = loginData?.message || loginText || `Server returned ${loginRes.status}`
+                    console.error('Auto-login failed after registration:', loginRes.status, loginText)
+                    message.error('Registration succeeded, but auto-login failed. Please login manually.')
+                    router.push('/auth')
+                    return
+                }
+                const loginToken = loginData?.token || loginData?.access_token || loginData?.auth_token
+                if (loginToken) {
+                    localStorage.setItem('authToken', loginToken)
+                }
             }
-            message.success('Registration successful. Redirecting...')
+            await handlePostAuth()
+            message.success('Registration successful. Logged in for you.')
             router.push('/')
         } else {
             // login: send identify (email only)
@@ -203,6 +225,7 @@ async function handleSubmit() {
             if (token) {
                 localStorage.setItem('authToken', token)
             }
+            await handlePostAuth()
             message.success('Login successful. Redirecting...')
             router.push('/')
         }
@@ -212,6 +235,64 @@ async function handleSubmit() {
     } finally {
         loading.value = false
     }
+}
+
+async function handlePostAuth() {
+    const raw = localStorage.getItem('guest_tasks')
+    let guestTasks = []
+    try {
+        guestTasks = raw ? JSON.parse(raw) : []
+    } catch (err) {
+        guestTasks = []
+    }
+    if (!guestTasks || guestTasks.length === 0) return
+
+    Modal.confirm({
+        title: 'Import guest tasks?',
+        content: `Detected ${guestTasks.length} guest task(s). Do you want to import them into your account?`,
+        okText: 'Import',
+        cancelText: 'Discard',
+        async onOk() {
+            localStorage.removeItem('authGuest')
+            try {
+                const importedIds = []
+                const skippedIds = []
+                const failed = []
+                for (const t of guestTasks) {
+                    const payload = { task_title: t.task_title, task_level: t.task_level ?? 0 }
+                    if (t.task_due) payload.task_due = t.task_due
+                    try {
+                        const taskRes = await addTask(payload)
+                        importedIds.push(t.id)
+                    } catch (err) {
+                        console.error('Failed to import task', t, err)
+                        failed.push(t)
+                    }
+                }
+                const remaining = guestTasks.filter(t => !importedIds.includes(t.id))
+                if (remaining.length > 0) {
+                    saveGuestTasks(remaining)
+                } else {
+                    localStorage.removeItem('guest_tasks')
+                }
+
+                const importedCount = importedIds.length
+                const skippedCount = skippedIds.length
+                const failedCount = failed.length
+                message.success(`Import finished. Imported: ${importedCount}, Skipped (past due): ${skippedCount}, Failed: ${failedCount}`)
+                router.push('/').catch(() => { })
+                setTimeout(() => window.location.reload(), 300)
+            } catch (err) {
+                console.error('Failed to import guest tasks', err)
+                message.error('Failed to import guest tasks. Your local guest data is kept.')
+            }
+        },
+        onCancel() {
+            localStorage.removeItem('guest_tasks')
+            localStorage.removeItem('authGuest')
+            message.info('Guest data discarded.')
+        }
+    })
 }
 
 function toggleMode() {

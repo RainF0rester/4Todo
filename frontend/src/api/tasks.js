@@ -18,7 +18,7 @@ function loadGuestTasks() {
   }
 }
 
-function saveGuestTasks(tasks) {
+export function saveGuestTasks(tasks) {
   localStorage.setItem(GUEST_KEY, JSON.stringify(tasks));
 }
 
@@ -35,17 +35,17 @@ function limitTaskLevel(v) {
 
 export function normalizeTask(t) {
   return {
-    id: t.id,
+    id: Number(t.id),
     title: t.task_title,
     dueDate: t.task_due ? t.task_due : "",
     done: t.is_finished ? true : false,
-    task_level: limitTaskLevel(t.task_level),
+    task_level: limitTaskLevel(Number(t.task_level)),
   };
 }
 
 export async function getTaskList() {
   if (isGuest()) {
-    const tasks = loadGuestTasks().filter((t) => !(t.is_deleted === 1));
+    const tasks = loadGuestTasks().filter((t) => Number(t.is_deleted) !== 1);
     return tasks.map(normalizeTask);
   }
 
@@ -97,7 +97,7 @@ export async function addTask(task) {
 export async function updateTask(id, task) {
   if (isGuest()) {
     const tasks = loadGuestTasks();
-    const idx = tasks.findIndex((t) => t.id === id);
+    const idx = tasks.findIndex((t) => Number(t.id) === Number(id));
     if (idx === -1) throw new Error("Unable to update task");
     const updated = {
       ...tasks[idx],
@@ -125,7 +125,8 @@ export async function updateTask(id, task) {
 export async function deleteTask(id) {
   if (isGuest()) {
     const tasks = loadGuestTasks();
-    const idx = tasks.findIndex((t) => t.id === id);
+    console.log("Deleting task with id", id, "from guest tasks", tasks);
+    const idx = tasks.findIndex((t) => Number(t.id) === Number(id));
     if (idx === -1) throw new Error("Unable to delete task");
     // soft delete
     tasks[idx].is_deleted = 1;
@@ -143,7 +144,7 @@ export async function deleteTask(id) {
 export async function restoreTask(id) {
   if (isGuest()) {
     const tasks = loadGuestTasks();
-    const idx = tasks.findIndex((t) => t.id === id);
+    const idx = tasks.findIndex((t) => Number(t.id) === Number(id));
     if (idx === -1) throw new Error("Unable to restore task");
     tasks[idx].is_deleted = 0;
     saveGuestTasks(tasks);

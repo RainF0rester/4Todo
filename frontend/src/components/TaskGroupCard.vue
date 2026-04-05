@@ -136,11 +136,21 @@ const open = ref(false)
 function parseDueDate(value) {
   if (!value) return null
 
-  const dateTime = dayjs(value, 'YYYY-MM-DD HH:mm', true)
-  if (dateTime.isValid()) return dateTime
+  const formats = [
+    ['YYYY-MM-DD HH:mm', false],
+    ['YYYY-MM-DD HH:mm:ss', false],
+    ['YYYY-MM-DD', true],
+  ]
+  const parsed = formats
+    .map(([f, isDateOnly]) => {
+      const d = dayjs(value, f, true)
+      return d.isValid() ? (isDateOnly ? d.startOf('day') : d) : null
+    })
+    .find(Boolean)
 
-  const dateOnly = dayjs(value, 'YYYY-MM-DD', true)
-  if (dateOnly.isValid()) return dateOnly.startOf('day')
+  if (parsed) return parsed
+  const flexible = dayjs(value)
+  if (flexible.isValid()) return flexible
 
   return null
 }
@@ -197,6 +207,18 @@ async function remove(id) {
         task.deleting = false
         message.info(DELETE_UNDO_MESSAGE)
         const timer = setTimeout(() => {
+          try {
+            if (localStorage.getItem('authGuest')) {
+              const raw = localStorage.getItem('guest_tasks')
+              const g = raw ? JSON.parse(raw) : []
+              const remaining = g.filter(t => Number(t.id) !== Number(id))
+              if (remaining.length > 0) localStorage.setItem('guest_tasks', JSON.stringify(remaining))
+              else localStorage.removeItem('guest_tasks')
+            }
+          } catch (err) {
+            console.error('Failed to update guest_tasks in localStorage', err)
+          }
+
           task_info.value = task_info.value.filter(x => x.id !== id)
           deleteTimers.delete(id)
           emit('reload')
