@@ -3,7 +3,7 @@
     <div class="dashboard-filter">
       <a-segmented v-model:value="statusFilter" :options="segmentedOptions" />
     </div>
-    <div class="dashboard-filter-row">
+    <div v-if="statusFilter !== 'deleted'" class="dashboard-filter-row">
       <a-radio-group v-model:value="periodFilter">
         <a-radio v-for="option in periodOptions" :key="option.value" :value="option.value">
           {{ option.label }}
@@ -28,8 +28,16 @@
         <template #renderItem="{ item }">
           <a-list-item>
             <div class="item-content">
-              <span class="item-title">{{ item.title }}</span>
+              <span class="item-title" :class="{ 'item-completed': isTaskDone(item) }">
+                <span v-if="statusFilter === 'deleted'" class="restore-icon" @click="restoreDeleted(item)">
+                  <RollbackOutlined />
+                </span>{{ item.title }}
+                <span v-if="isTaskDone(item)" class="completed-badge">
+                  (Completed)
+                </span>
+              </span>
               <span class="item-meta">{{ item.dueDate || 'No due date' }}</span>
+
             </div>
           </a-list-item>
         </template>
@@ -41,9 +49,9 @@
 <script setup>
 import { ref, computed, onMounted, h } from 'vue'
 import dayjs from 'dayjs'
-import { CalendarOutlined, CheckCircleOutlined, FlagOutlined } from '@ant-design/icons-vue'
+import { CalendarOutlined, CheckCircleOutlined, FlagOutlined, RollbackOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import { Radio as ARadio, RadioGroup as ARadioGroup } from 'ant-design-vue'
-import { getTaskList } from '../api/tasks'
+import { getTaskList, getDeletedTaskList, restoreTask } from '../api/tasks'
 
 const tasks = ref([])
 const statusFilter = ref('all')
@@ -53,11 +61,16 @@ const counts = computed(() => ({
   all: tasks.value.length,
   completed: tasks.value.filter((task) => task.done).length,
   flagged: tasks.value.filter((task) => Number(task.task_level) >= 3).length,
+  deleted: deletedTasks.value.length,
 }))
+
+const deletedTasks = ref([])
+
+const isTaskDone = (task) => Boolean(task.done || task.is_finished)
 
 const filteredTasks = computed(() => {
   const now = dayjs()
-  let result = tasks.value
+  let result = statusFilter.value === 'deleted' ? deletedTasks.value : tasks.value
 
   switch (statusFilter.value) {
     case 'completed':
@@ -66,8 +79,14 @@ const filteredTasks = computed(() => {
     case 'flagged':
       result = result.filter((task) => Number(task.task_level) >= 3)
       break
+    case 'deleted':
+      break
     default:
       break
+  }
+
+  if (statusFilter.value === 'deleted') {
+    return result
   }
 
   if (periodFilter.value !== 'daily') {
@@ -105,6 +124,7 @@ const selectedLabel = computed(() => {
     all: 'All',
     completed: 'Completed',
     flagged: 'Flagged',
+    deleted: 'Deleted',
   }
   const periodLabels = {
     daily: 'Daily',
@@ -113,6 +133,11 @@ const selectedLabel = computed(() => {
     quarterly: 'Quarterly',
     yearly: 'Yearly',
   }
+
+  if (statusFilter.value === 'deleted') {
+    return statusLabels.deleted
+  }
+
   return `${statusLabels[statusFilter.value] || 'All'} / ${periodLabels[periodFilter.value]}`
 })
 
@@ -141,6 +166,14 @@ const segmentedOptions = computed(() => [
     ]),
     value: 'flagged',
   },
+  {
+    label: h('span', { class: 'segment-label' }, [
+      h(DeleteOutlined),
+      h('span', { class: 'segment-text' }, ' Deleted '),
+      h('span', { class: 'segment-count' }, counts.value.deleted),
+    ]),
+    value: 'deleted',
+  },
 ])
 const periodOptions = computed(() => [
   { label: 'Daily', value: 'daily' },
@@ -153,11 +186,20 @@ const periodOptions = computed(() => [
 const paginationConfig = computed(() => filteredTasks.value.length > 20 ? { pageSize: 20 } : false)
 
 async function loadTasks() {
-  // TODO: get tasks from localstorage when guest login
   try {
     tasks.value = await getTaskList()
+    deletedTasks.value = await getDeletedTaskList()
   } catch (err) {
     console.error('Unable to load tasks', err)
+  }
+}
+
+async function restoreDeleted(task) {
+  try {
+    await restoreTask(task.id)
+    await loadTasks()
+  } catch (err) {
+    console.error('Unable to restore task', err)
   }
 }
 
@@ -243,5 +285,27 @@ onMounted(loadTasks)
 
 .item-meta {
   color: #6b7280;
+}
+
+.restore-icon {
+  cursor: pointer;
+  color: #1890ff;
+  display: inline-flex;
+  align-items: center;
+  margin-right: 18px;
+}
+
+.item-completed {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.completed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #52c41a;
+  font-size: 12px;
+  margin-left: 12px;
 }
 </style>
