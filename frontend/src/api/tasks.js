@@ -55,6 +55,18 @@ export async function getTaskList() {
   return data.map(normalizeTask);
 }
 
+export async function getDeletedTaskList() {
+  if (isGuest()) {
+    const tasks = loadGuestTasks().filter((t) => Number(t.is_deleted) === 1);
+    return tasks.map(normalizeTask);
+  }
+
+  const res = await fetch(`${TASKS_API}/deleted`);
+  if (!res.ok) throw new Error("Unable to get deleted tasks");
+  const data = await res.json();
+  return data.map(normalizeTask);
+}
+
 // add task
 export async function addTask(task) {
   if (isGuest()) {
