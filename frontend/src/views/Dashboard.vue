@@ -1,7 +1,14 @@
 <template>
   <a-card title="Dashboard" class="dashboard-card">
     <div class="dashboard-filter">
-      <a-segmented v-model:value="selectedFilter" :options="segmentedOptions" />
+      <a-segmented v-model:value="statusFilter" :options="segmentedOptions" />
+    </div>
+    <div class="dashboard-filter-row">
+      <a-radio-group v-model:value="periodFilter">
+        <a-radio v-for="option in periodOptions" :key="option.value" :value="option.value">
+          {{ option.label }}
+        </a-radio>
+      </a-radio-group>
     </div>
 
     <div class="dashboard-summary">
@@ -34,18 +41,15 @@
 <script setup>
 import { ref, computed, onMounted, h } from 'vue'
 import dayjs from 'dayjs'
-import { ClockCircleOutlined, CalendarOutlined, CheckCircleOutlined, FlagOutlined } from '@ant-design/icons-vue'
+import { CalendarOutlined, CheckCircleOutlined, FlagOutlined } from '@ant-design/icons-vue'
+import { Radio as ARadio, RadioGroup as ARadioGroup } from 'ant-design-vue'
 import { getTaskList } from '../api/tasks'
 
 const tasks = ref([])
-const selectedFilter = ref('today')
+const statusFilter = ref('all')
+const periodFilter = ref('daily')
 
 const counts = computed(() => ({
-  today: tasks.value.filter((task) => {
-    if (!task.dueDate) return false
-    const due = dayjs(task.dueDate)
-    return due.isValid() && due.isSame(dayjs(), 'day')
-  }).length,
   all: tasks.value.length,
   completed: tasks.value.filter((task) => task.done).length,
   flagged: tasks.value.filter((task) => Number(task.task_level) >= 3).length,
@@ -53,41 +57,66 @@ const counts = computed(() => ({
 
 const filteredTasks = computed(() => {
   const now = dayjs()
-  switch (selectedFilter.value) {
-    case 'today':
-      return tasks.value.filter((task) => {
-        if (!task.dueDate) return false
-        const due = dayjs(task.dueDate)
-        return due.isValid() && due.isSame(now, 'day')
-      })
+  let result = tasks.value
+
+  switch (statusFilter.value) {
     case 'completed':
-      return tasks.value.filter((task) => task.done)
+      result = result.filter((task) => task.done)
+      break
     case 'flagged':
-      // TODO
-      return tasks.value.filter((task) => Number(task.task_level) >= 3)
+      result = result.filter((task) => Number(task.task_level) >= 3)
+      break
     default:
-      return tasks.value
+      break
   }
+
+  if (periodFilter.value !== 'daily') {
+    result = result.filter((task) => {
+      if (!task.dueDate) return false
+      const due = dayjs(task.dueDate)
+      if (!due.isValid()) return false
+      switch (periodFilter.value) {
+        case 'daily':
+          return due.isSame(now, 'day')
+        case 'weekly':
+          return due.isSame(now, 'week')
+        case 'monthly':
+          return due.isSame(now, 'month')
+        case 'quarterly':
+          return due.quarter() === now.quarter() && due.isSame(now, 'year')
+        case 'yearly':
+          return due.isSame(now, 'year')
+      }
+      return true
+    })
+  } else {
+    result = result.filter((task) => {
+      if (!task.dueDate) return false
+      const due = dayjs(task.dueDate)
+      return due.isValid() && due.isSame(now, 'day')
+    })
+  }
+
+  return result
 })
 
 const selectedLabel = computed(() => {
-  switch (selectedFilter.value) {
-    case 'today': return 'Today'
-    case 'completed': return 'Completed'
-    case 'flagged': return 'Flagged'
-    default: return 'All'
+  const statusLabels = {
+    all: 'All',
+    completed: 'Completed',
+    flagged: 'Flagged',
   }
+  const periodLabels = {
+    daily: 'Daily',
+    weekly: 'Weekly',
+    monthly: 'Monthly',
+    quarterly: 'Quarterly',
+    yearly: 'Yearly',
+  }
+  return `${statusLabels[statusFilter.value] || 'All'} / ${periodLabels[periodFilter.value]}`
 })
 
 const segmentedOptions = computed(() => [
-  {
-    label: h('span', { class: 'segment-label' }, [
-      h(ClockCircleOutlined),
-      h('span', { class: 'segment-text' }, ' Today '),
-      h('span', { class: 'segment-count' }, counts.value.today),
-    ]),
-    value: 'today',
-  },
   {
     label: h('span', { class: 'segment-label' }, [
       h(CalendarOutlined),
@@ -113,6 +142,13 @@ const segmentedOptions = computed(() => [
     value: 'flagged',
   },
 ])
+const periodOptions = computed(() => [
+  { label: 'Daily', value: 'daily' },
+  { label: 'Weekly', value: 'weekly' },
+  { label: 'Monthly', value: 'monthly' },
+  { label: 'Quarterly', value: 'quarterly' },
+  { label: 'Yearly', value: 'yearly' },
+])
 
 const paginationConfig = computed(() => filteredTasks.value.length > 20 ? { pageSize: 20 } : false)
 
@@ -135,6 +171,10 @@ onMounted(loadTasks)
 
 .dashboard-filter {
   margin-bottom: 24px;
+}
+
+.dashboard-filter-row {
+  margin-bottom: 16px;
 }
 
 .segment-label {
