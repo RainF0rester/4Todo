@@ -26,6 +26,10 @@ def list_tasks(session: Session, include_deleted: bool = False) -> list[Task]:
         statement = statement.where(Task.is_deleted == 0)
     return list(session.scalars(statement).all())
 
+def list_deleted_tasks(session: Session) -> list[Task]:
+    statement = select(Task)
+    statement = statement.where(Task.is_deleted == 1)
+    return list(session.scalars(statement).all())
 
 def soft_delete_task(session: Session, task_id: int) -> bool:
     task = session.get(Task, task_id)

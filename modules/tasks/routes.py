@@ -72,3 +72,13 @@ def list_tasks():
         return [t.to_dict() for t in tasks]
     except ValueError as e:
         return abort(400, message=str(e))
+
+@bp.get("/deleted")
+@bp.output(TaskSchema(many=True))
+def list_deleted_tasks():
+    session = get_session()
+    try:
+        tasks = service.list_deleted_tasks(session)
+        return [t.to_dict() for t in tasks]
+    except ValueError as e:
+        return abort(400, message=str(e))

@@ -139,3 +139,6 @@ def restore_task(session: Session, task_id: int) -> None:
 
 def list_tasks(session: Session, include_deleted: bool = False) -> list[Task]:
     return repo.list_tasks(session, include_deleted=include_deleted)
+
+def list_deleted_tasks(session: Session) -> list[Task]:
+    return repo.list_deleted_tasks(session)
