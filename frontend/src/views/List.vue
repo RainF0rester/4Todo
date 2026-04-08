@@ -1,6 +1,6 @@
 <template>
   <div class="body-container">
-    <div class="grid">
+    <div ref="gridRef" class="grid">
       <TaskGroupCard title="Important & Urgent" color="red" :task-level="1" :initialItems="urgentImportant" @reload="loadTasks" />
       <TaskGroupCard title="Important but Not Urgent" color="yellow" :task-level="2" :initialItems="importantNotUrgent" @reload="loadTasks" />
       <TaskGroupCard title="Not Important but Urgent" color="blue" :task-level="3" :initialItems="urgentNotImportant" @reload="loadTasks" />
@@ -27,6 +27,7 @@ import { getTaskList } from '../api/tasks'
 import { DownloadOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import * as XLSX from 'xlsx'
+import html2canvas from 'html2canvas'
 
 
 
@@ -70,6 +71,28 @@ const importantNotUrgent = computed(getImportantNotUrgentTasks)
 const urgentNotImportant = computed(getUrgentNotImportantTasks)
 const notUrgentNotImportant = computed(getNotUrgentNotImportantTasks)
 
+const gridRef = ref(null)
+async function exportToImage() {
+  if (!gridRef.value) return message.error('Image exported failed')
+  try {
+    const canvas = await html2canvas(gridRef.value, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#f5f7fb',
+      logging: false,
+    })
+    const downloadLink = document.createElement('a')
+    downloadLink.download = 'tasks.png'
+    downloadLink.href = canvas.toDataURL()
+    downloadLink.click()
+    message.success('Image exported')
+  } catch (error) {
+    console.error(error)
+    message.error('Image exported failed')
+  }
+}
+
+
 function exportToExcel() {
   const tasks = taskList.value.map(t => ({
     Title: t.title,
@@ -85,7 +108,7 @@ function exportToExcel() {
 
 function exportTasks({ key }) {
   if (key === 'image') {
-    return
+    exportToImage()
   } 
  if (key === 'excel') {
     exportToExcel()
@@ -98,6 +121,7 @@ function exportTasks({ key }) {
 .body-container {
   margin: 0 auto;
   padding: 20px 50px;
+  position: relative;
 }
 
 .grid {
@@ -108,10 +132,11 @@ function exportTasks({ key }) {
 
 .export-btn {
   position: fixed;
-  bottom: 30px;
-  right: 30px;
+  right: 28px;
+  bottom: 28px;
   z-index: 200;
 }
+
 
 @media (max-width: 960px) {
   .grid {
