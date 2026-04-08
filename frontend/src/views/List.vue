@@ -102,6 +102,16 @@ function exportToExcel() {
   }))
   const sheet = XLSX.utils.json_to_sheet(tasks)
   const excel = XLSX.utils.book_new()
+
+  const headers = ['Title', 'Due', 'Done', 'Level']
+  sheet['!cols'] = headers.map((key) => {
+    const maxLen = Math.max(
+      key.length,
+      ...tasks.map((r) => String(r[key] ?? '').length)
+    )
+    return { wch: Math.min(maxLen + 2, 50) }
+  })
+
   XLSX.utils.book_append_sheet(excel, sheet, 'Tasks')
   XLSX.writeFile(excel, 'tasks.xlsx')
 }
