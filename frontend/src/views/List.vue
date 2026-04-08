@@ -6,6 +6,17 @@
       <TaskGroupCard title="Not Important but Urgent" color="blue" :task-level="3" :initialItems="urgentNotImportant" @reload="loadTasks" />
       <TaskGroupCard title="Not Important & Not Urgent" color="green" :task-level="4" :initialItems="notUrgentNotImportant" @reload="loadTasks" />
     </div>
+    <a-dropdown placement="topRight" :trigger="['hover']">
+      <a-button type="primary" shape="circle" size="large" class="export-btn">
+        <template #icon><DownloadOutlined /></template>
+      </a-button>
+      <template #overlay>
+        <a-menu @click="exportTasks">
+          <a-menu-item key="image">Export as Image</a-menu-item>
+          <a-menu-item key="excel">Export as Excel</a-menu-item>
+        </a-menu>
+      </template>
+    </a-dropdown>
   </div>
 </template>
 
@@ -13,6 +24,18 @@
 import { ref, computed, onMounted } from 'vue'
 import TaskGroupCard from '../components/TaskGroupCard.vue'
 import { getTaskList } from '../api/tasks'
+import { DownloadOutlined } from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
+import * as XLSX from 'xlsx'
+
+
+
+const LEVEL_LABEL = {
+  1: 'Important & Urgent',
+  2: 'Important but Not Urgent',
+  3: 'Not Important but Urgent',
+  4: 'Not Important & Not Urgent',
+}
 
 const taskList = ref([])
 async function loadTasks() {
@@ -47,6 +70,27 @@ const importantNotUrgent = computed(getImportantNotUrgentTasks)
 const urgentNotImportant = computed(getUrgentNotImportantTasks)
 const notUrgentNotImportant = computed(getNotUrgentNotImportantTasks)
 
+function exportToExcel() {
+  const tasks = taskList.value.map(t => ({
+    Title: t.title,
+    Due: t.dueDate || '',
+    Done: t.done ? 'Yes' : 'No',
+    Level: LEVEL_LABEL[t.task_level] || 'Unknown',
+  }))
+  const sheet = XLSX.utils.json_to_sheet(tasks)
+  const excel = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(excel, sheet, 'Tasks')
+  XLSX.writeFile(excel, 'tasks.xlsx')
+}
+
+function exportTasks({ key }) {
+  if (key === 'image') {
+    return
+  } 
+ if (key === 'excel') {
+    exportToExcel()
+  }
+}
 
 </script>
 
@@ -60,6 +104,13 @@ const notUrgentNotImportant = computed(getNotUrgentNotImportantTasks)
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 30px;
+}
+
+.export-btn {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 200;
 }
 
 @media (max-width: 960px) {
