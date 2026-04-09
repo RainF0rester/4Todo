@@ -7,7 +7,7 @@
       <a-menu mode="horizontal" :selectedKeys="[activeKey]" class="topmenu" @click="onMenuClick">
         <a-menu-item key="/list">List</a-menu-item>
         <a-menu-item key="/dashboard">Dashboard</a-menu-item>
-        <a-menu-item key="/calendar" disabled>Calendar</a-menu-item>
+        <a-menu-item key="/calendar">Calendar</a-menu-item>
         <a-menu-item key="/pomodoro" disabled>Pomodoro</a-menu-item>
       </a-menu>
 
