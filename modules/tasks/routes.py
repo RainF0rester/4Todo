@@ -2,6 +2,7 @@ from apiflask import APIBlueprint, abort
 from db import get_session
 from . import service
 from .schemas import TaskSchema, TaskCreateSchema, TaskUpdateSchema, StatusSchema
+from utils.auth_decorator import require_auth
 
 bp = APIBlueprint("tasks", __name__, url_prefix="/tasks", tag="Tasks")
 
@@ -9,6 +10,8 @@ bp = APIBlueprint("tasks", __name__, url_prefix="/tasks", tag="Tasks")
 @bp.post("")
 @bp.input(TaskCreateSchema)
 @bp.output(TaskSchema, status_code=201)
+@bp.doc(security=[{"BearerAuth": []}])
+@require_auth
 def create_task(json_data):
     session = get_session()
     try:
@@ -20,6 +23,8 @@ def create_task(json_data):
 
 @bp.get("/<int:task_id>")
 @bp.output(TaskSchema)
+@bp.doc(security=[{"BearerAuth": []}])
+@require_auth
 def get_task(task_id: int):
     session = get_session()
     try:
@@ -32,6 +37,8 @@ def get_task(task_id: int):
 @bp.patch("/<int:task_id>")
 @bp.input(TaskUpdateSchema)
 @bp.output(TaskSchema)
+@bp.doc(security=[{"BearerAuth": []}])
+@require_auth
 def update_task(task_id: int, json_data):
     session = get_session()
     try:
@@ -43,6 +50,8 @@ def update_task(task_id: int, json_data):
 
 @bp.patch("/<int:task_id>/delete")
 @bp.output(StatusSchema)
+@bp.doc(security=[{"BearerAuth": []}])
+@require_auth
 def delete_task(task_id: int):
     session = get_session()
     try:
@@ -54,6 +63,8 @@ def delete_task(task_id: int):
 
 @bp.patch("/<int:task_id>/restore")
 @bp.output(StatusSchema)
+@bp.doc(security=[{"BearerAuth": []}])
+@require_auth
 def restore_task(task_id: int):
     session = get_session()
     try:
@@ -65,6 +76,8 @@ def restore_task(task_id: int):
 
 @bp.get("")
 @bp.output(TaskSchema(many=True))
+@bp.doc(security=[{"BearerAuth": []}])
+@require_auth
 def list_tasks():
     session = get_session()
     try:
@@ -75,6 +88,8 @@ def list_tasks():
 
 @bp.get("/deleted")
 @bp.output(TaskSchema(many=True))
+@bp.doc(security=[{"BearerAuth": []}])
+@require_auth
 def list_deleted_tasks():
     session = get_session()
     try:

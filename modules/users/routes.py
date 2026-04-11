@@ -1,8 +1,9 @@
 from apiflask import APIBlueprint, abort
+from flask import request
 
 from db import get_session
-from .service import AuthError, ConflictError, login_user, register_user
-from .schemas import LoginReqSchema, LoginRespSchema, RegisterReqSchema, RegisterRespSchema
+from .service import AuthError, ConflictError, login_user, register_user, token_refresh
+from .schemas import LoginReqSchema, LoginRespSchema, RegisterReqSchema, RegisterRespSchema, RefreshRespSchema
 
 bp = APIBlueprint('users', __name__, url_prefix='/users', tag="User")
 
@@ -31,3 +32,10 @@ def login(json_data):
         abort(401, message=str(e))
     except ValueError as e:
         abort(400, message=str(e))
+
+@bp.get("/auth/refresh")
+@bp.output(RefreshRespSchema)
+@bp.doc(security=[{"BearerAuth": []}])
+def auth_refresh():
+    token_from_header = request.headers.get('Authorization', '')
+    return token_refresh(token_from_header)

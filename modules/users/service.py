@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from utils.jwt_utils import create_token
+from utils.jwt_utils import create_token, refresh_token
 from .models import User
 from .repo import create_user, get_user_by_username_or_email, get_user_by_email, get_user_by_username
 
@@ -19,12 +19,15 @@ def register_user(session: Session, username: str, email: str, password: str) ->
 
     if not username:
         raise ValueError("username is required")
+    # TODO: username valid check
 
     if not email:
         raise ValueError("email is required")
+    # TODO: email valid check
 
     if not password:
         raise ValueError("password is required")
+    # TODO: password valid check
 
     if get_user_by_email(session, email):
         raise ConflictError("email has already been registered")
@@ -59,4 +62,11 @@ def login_user(session: Session, identify: str, password: str) -> dict:
     return {
         "user": user.to_json(),
         "token": token,
+    }
+
+def token_refresh(token: str) -> dict:
+    old_token = token.split("Bearer ")[1]
+    new_token = refresh_token(old_token)
+    return {
+        "token": new_token,
     }
