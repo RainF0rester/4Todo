@@ -8,6 +8,8 @@ def create_task():
         task_due="2099-01-01",
         task_description="desc",
         task_level=1,
+        is_pinned=1,
+        user_id=123,
         is_finished=0,
         is_deleted=0,
     )
@@ -23,6 +25,8 @@ def test_to_dict():
     assert data["task_due"] == "2099-01-01"
     assert data["task_description"] == "desc"
     assert data["task_level"] == 1
+    assert data["is_pinned"] == 1
+    assert data["user_id"] == 123
     assert data["is_finished"] == 0
     assert data["is_deleted"] == 0
 
@@ -42,4 +46,5 @@ def test_to_json():
         "task_description": "desc",
         "task_level": 1,
         "is_finished": 0,
+        "is_pinned": 1,
     }

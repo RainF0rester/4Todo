@@ -54,6 +54,7 @@ def test_normalize_accepts_valid_payload():
     assert data["task_description"] == "test desc"
     assert data["task_level"] == 1
     assert data["is_finished"] == 0
+    assert data["is_pinned"] == 0
 
 
 def test_normalize_rejects_empty_title():
@@ -123,6 +124,23 @@ def test_normalize_is_finished_bool():
     assert data["is_finished"] == 1
 
 
+def test_normalize_is_pinned_bool():
+    payload = valid_payload()
+    payload["is_pinned"] = True
+
+    data = service._normalize(payload)
+
+    assert data["is_pinned"] == 1
+
+
+def test_normalize_invalid_is_pinned():
+    payload = valid_payload()
+    payload["is_pinned"] = "yes"
+
+    with pytest.raises(ValueError):
+        service._normalize(payload)
+
+
 # =========================
 # VALIDATE TITLE
 # =========================
@@ -166,6 +184,16 @@ def test_normalize_update_is_finished_bool():
     assert data["is_finished"] == 1
 
 
+def test_normalize_update_is_pinned_bool():
+    data = service._normalize_update({"is_pinned": True})
+    assert data["is_pinned"] == 1
+
+
+def test_normalize_update_invalid_is_pinned():
+    with pytest.raises(ValueError):
+        service._normalize_update({"is_pinned": "yes"})
+
+
 # =========================
 # CREATE
 # =========================
@@ -175,15 +203,18 @@ def test_create_task_success():
         mock_task = MagicMock()
         mock_create.return_value = mock_task
 
-        result = service.create_task(None, valid_payload())
+        result = service.create_task(None, valid_payload(), user_id=123)
 
         assert result == mock_task
         mock_create.assert_called_once()
+        created_task = mock_create.call_args.args[1]
+        assert created_task.user_id == 123
+        assert created_task.is_pinned == 0
 
 
 def test_create_task_invalid_payload():
     with pytest.raises(ValueError):
-        service.create_task(None, {"task_title": "   "})
+        service.create_task(None, {"task_title": "   "}, user_id=123)
 
 
 # =========================
@@ -193,11 +224,12 @@ def test_create_task_invalid_payload():
 def test_update_task_success():
     fake_task = MagicMock()
     fake_task.is_deleted = 0
+    fake_task.user_id = 123
 
     with patch("modules.tasks.repo.get_task", return_value=fake_task), \
          patch("modules.tasks.repo.update_task", return_value=fake_task):
 
-        result = service.update_task(None, 1, {"task_title": "new"})
+        result = service.update_task(None, 1, {"task_title": "new"}, user_id=123)
 
         assert result == fake_task
         assert fake_task.task_title == "new"
@@ -206,25 +238,37 @@ def test_update_task_success():
 def test_update_task_not_found():
     with patch("modules.tasks.repo.get_task", return_value=None):
         with pytest.raises(ValueError):
-            service.update_task(None, 1, {"task_title": "new"})
+            service.update_task(None, 1, {"task_title": "new"}, user_id=123)
 
 
 def test_update_task_deleted():
     fake_task = MagicMock()
     fake_task.is_deleted = 1
+    fake_task.user_id = 123
 
     with patch("modules.tasks.repo.get_task", return_value=fake_task):
         with pytest.raises(ValueError):
-            service.update_task(None, 1, {"task_title": "new"})
+            service.update_task(None, 1, {"task_title": "new"}, user_id=123)
+
+
+def test_update_task_forbidden_user():
+    fake_task = MagicMock()
+    fake_task.is_deleted = 0
+    fake_task.user_id = 999
+
+    with patch("modules.tasks.repo.get_task", return_value=fake_task):
+        with pytest.raises(ValueError):
+            service.update_task(None, 1, {"task_title": "new"}, user_id=123)
 
 
 def test_update_task_empty_payload():
     fake_task = MagicMock()
     fake_task.is_deleted = 0
+    fake_task.user_id = 123
 
     with patch("modules.tasks.repo.get_task", return_value=fake_task):
         with pytest.raises(ValueError):
-            service.update_task(None, 1, {})
+            service.update_task(None, 1, {}, user_id=123)
 
 
 # =========================
@@ -234,25 +278,37 @@ def test_update_task_empty_payload():
 def test_get_task_success():
     fake_task = MagicMock()
     fake_task.is_deleted = 0
+    fake_task.user_id = 123
 
     with patch("modules.tasks.repo.get_task", return_value=fake_task):
-        result = service.get_task(None, 1)
+        result = service.get_task(None, 1, user_id=123)
         assert result == fake_task
 
 
 def test_get_task_not_found():
     with patch("modules.tasks.repo.get_task", return_value=None):
         with pytest.raises(ValueError):
-            service.get_task(None, 1)
+            service.get_task(None, 1, user_id=123)
 
 
 def test_get_task_deleted():
     fake_task = MagicMock()
     fake_task.is_deleted = 1
+    fake_task.user_id = 123
 
     with patch("modules.tasks.repo.get_task", return_value=fake_task):
         with pytest.raises(ValueError):
-            service.get_task(None, 1)
+            service.get_task(None, 1, user_id=123)
+
+
+def test_get_task_forbidden_user():
+    fake_task = MagicMock()
+    fake_task.is_deleted = 0
+    fake_task.user_id = 999
+
+    with patch("modules.tasks.repo.get_task", return_value=fake_task):
+        with pytest.raises(ValueError):
+            service.get_task(None, 1, user_id=123)
 
 
 # =========================
@@ -260,25 +316,59 @@ def test_get_task_deleted():
 # =========================
 
 def test_soft_delete_task_success():
-    with patch("modules.tasks.repo.soft_delete_task", return_value=True):
-        service.soft_delete_task(None, 1)
+    fake_task = MagicMock()
+    fake_task.user_id = 123
+
+    with patch("modules.tasks.repo.get_task", return_value=fake_task), \
+         patch("modules.tasks.repo.soft_delete_task", return_value=True):
+        service.soft_delete_task(None, 1, user_id=123)
 
 
 def test_soft_delete_task_not_found():
-    with patch("modules.tasks.repo.soft_delete_task", return_value=False):
+    fake_task = MagicMock()
+    fake_task.user_id = 123
+
+    with patch("modules.tasks.repo.get_task", return_value=fake_task), \
+         patch("modules.tasks.repo.soft_delete_task", return_value=False):
         with pytest.raises(ValueError):
-            service.soft_delete_task(None, 1)
+            service.soft_delete_task(None, 1, user_id=123)
+
+
+def test_soft_delete_task_forbidden_user():
+    fake_task = MagicMock()
+    fake_task.user_id = 999
+
+    with patch("modules.tasks.repo.get_task", return_value=fake_task):
+        with pytest.raises(ValueError):
+            service.soft_delete_task(None, 1, user_id=123)
 
 
 def test_restore_task_success():
-    with patch("modules.tasks.repo.restore_task", return_value=True):
-        service.restore_task(None, 1)
+    fake_task = MagicMock()
+    fake_task.user_id = 123
+
+    with patch("modules.tasks.repo.get_task", return_value=fake_task), \
+         patch("modules.tasks.repo.restore_task", return_value=True):
+        service.restore_task(None, 1, user_id=123)
 
 
 def test_restore_task_not_found():
-    with patch("modules.tasks.repo.restore_task", return_value=False):
+    fake_task = MagicMock()
+    fake_task.user_id = 123
+
+    with patch("modules.tasks.repo.get_task", return_value=fake_task), \
+         patch("modules.tasks.repo.restore_task", return_value=False):
         with pytest.raises(ValueError):
-            service.restore_task(None, 1)
+            service.restore_task(None, 1, user_id=123)
+
+
+def test_restore_task_forbidden_user():
+    fake_task = MagicMock()
+    fake_task.user_id = 999
+
+    with patch("modules.tasks.repo.get_task", return_value=fake_task):
+        with pytest.raises(ValueError):
+            service.restore_task(None, 1, user_id=123)
 
 
 # =========================
@@ -288,17 +378,92 @@ def test_restore_task_not_found():
 def test_list_tasks():
     fake_list = [MagicMock(), MagicMock()]
 
-    with patch("modules.tasks.repo.list_tasks", return_value=fake_list):
-        result = service.list_tasks(None)
+    with patch("modules.tasks.repo.list_tasks", return_value=fake_list) as mock_list:
+        result = service.list_tasks(None, user_id=123)
 
         assert result == fake_list
+        mock_list.assert_called_once_with(None, user_id=123, include_deleted=False)
 
 
 def test_list_tasks_include_deleted():
     fake_list = [MagicMock()]
 
     with patch("modules.tasks.repo.list_tasks", return_value=fake_list) as mock_list:
-        result = service.list_tasks(None, include_deleted=True)
+        result = service.list_tasks(None, user_id=123, include_deleted=True)
 
         assert result == fake_list
-        mock_list.assert_called_once_with(None, include_deleted=True)
+        mock_list.assert_called_once_with(None, user_id=123, include_deleted=True)
+
+
+def test_list_deleted_tasks():
+    fake_list = [MagicMock()]
+
+    with patch("modules.tasks.repo.list_deleted_tasks", return_value=fake_list) as mock_list:
+        result = service.list_deleted_tasks(None, user_id=123)
+
+        assert result == fake_list
+        mock_list.assert_called_once_with(None, user_id=123)
+
+
+# =========================
+# PIN / UNPIN
+# =========================
+
+def test_pin_task_success():
+    fake_task = MagicMock()
+    fake_task.user_id = 123
+
+    with patch("modules.tasks.repo.get_task", return_value=fake_task), \
+         patch("modules.tasks.repo.pin_task", return_value=True):
+        service.pin_task(None, 1, user_id=123)
+
+
+def test_pin_task_forbidden_user():
+    fake_task = MagicMock()
+    fake_task.user_id = 999
+
+    with patch("modules.tasks.repo.get_task", return_value=fake_task):
+        with pytest.raises(ValueError):
+            service.pin_task(None, 1, user_id=123)
+
+
+def test_pin_task_repo_failed():
+    fake_task = MagicMock()
+    fake_task.user_id = 123
+
+    with patch("modules.tasks.repo.get_task", return_value=fake_task), \
+         patch("modules.tasks.repo.pin_task", return_value=False):
+        with pytest.raises(ValueError):
+            service.pin_task(None, 1, user_id=123)
+
+
+def test_unpin_task_success():
+    fake_task = MagicMock()
+    fake_task.user_id = 123
+
+    with patch("modules.tasks.repo.get_task", return_value=fake_task), \
+         patch("modules.tasks.repo.update_task", return_value=fake_task):
+        service.unpin_task(None, 1, user_id=123)
+        assert fake_task.is_pinned == 0
+
+
+def test_unpin_task_forbidden_user():
+    fake_task = MagicMock()
+    fake_task.user_id = 999
+
+    with patch("modules.tasks.repo.get_task", return_value=fake_task):
+        with pytest.raises(ValueError):
+            service.unpin_task(None, 1, user_id=123)
+
+
+def test_unpin_task_repo_failed():
+    fake_task = MagicMock()
+    fake_task.user_id = 123
+    failed_task = MagicMock()
+    failed_task.is_pinned = 1
+
+    with patch("modules.tasks.repo.get_task", return_value=fake_task), \
+         patch("modules.tasks.repo.update_task", return_value=failed_task):
+        with pytest.raises(ValueError):
+            service.unpin_task(None, 1, user_id=123)
+
