@@ -134,3 +134,18 @@ def pin_task(task_id: int):
         return {"status": "ok"}
     except ValueError as e:
         return abort(400, message=str(e))
+
+@bp.patch("<int:task_id>/unpin")
+@bp.output(StatusSchema)
+@bp.doc(security=[{"BearerAuth": []}])
+@require_auth
+def unpin_task(task_id: int):
+    session = get_session()
+    try:
+        user_id = int(g.user_id)
+        if user_id is None:
+            abort(401, message="Missing user_id from request")
+        service.unpin_task(session, task_id, user_id=user_id)
+        return {"status": "ok"}
+    except ValueError as e:
+        return abort(400, message=str(e))

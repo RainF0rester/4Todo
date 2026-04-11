@@ -28,6 +28,7 @@ def list_tasks(session: Session, user_id: int, include_deleted: bool = False, ) 
     statement = statement.order_by(
         desc(Task.is_pinned),
         asc(Task.task_due),
+        asc(Task.id)
     )
     return list(session.scalars(statement).all())
 

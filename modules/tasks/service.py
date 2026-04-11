@@ -148,7 +148,7 @@ def soft_delete_task(session: Session, task_id: int, user_id: int) -> None:
         raise ValueError("Task not found")
     ok = repo.soft_delete_task(session, task_id)
     if not ok:
-        raise ValueError("Task not found")
+        raise ValueError("Task failed to delete")
 
 
 def restore_task(session: Session, task_id: int, user_id: int) -> None:
@@ -157,7 +157,7 @@ def restore_task(session: Session, task_id: int, user_id: int) -> None:
         raise ValueError("Task not found")
     ok = repo.restore_task(session, task_id)
     if not ok:
-        raise ValueError("Task not found")
+        raise ValueError("Task failed to restore")
 
 
 def list_tasks(session: Session, user_id: int, include_deleted: bool = False) -> list[Task]:
@@ -172,4 +172,13 @@ def pin_task(session: Session, task_id: int, user_id: int) -> None:
         raise ValueError("Task not found")
     ok = repo.pin_task(session, task_id)
     if not ok:
+        raise ValueError("Task failed to pin")
+
+def unpin_task(session: Session, task_id: int, user_id: int) -> None:
+    task = repo.get_task(session, task_id)
+    if task.user_id != user_id:
         raise ValueError("Task not found")
+    task.is_pinned = 0
+    task = repo.update_task(session, task)
+    if task.is_pinned != 0:
+        raise ValueError("Task failed to unpin")
