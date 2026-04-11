@@ -13,6 +13,13 @@ from modules.users.routes import bp as users_bp
 def create_app():
 
     flaskapp = APIFlask(__name__)
+    flaskapp.config["SECURITY_SCHEMES"] = {
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+        }
+    }
 
     # create tables
     init_db()

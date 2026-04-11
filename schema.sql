@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS tasks (
     task_level INTEGER NOT NULL DEFAULT 0,
     is_finished INTEGER NOT NULL DEFAULT 0,  -- 0=false, 1=true
     is_deleted INTEGER NOT NULL DEFAULT 0,  -- 0=false, 1=true (soft delete)
+    user_id INTEGER NOT NULL,
+    is_pinned INTEGER NOT NULL DEFAULT 0,  -- 0=false, 1=true
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
