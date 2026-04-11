@@ -1,4 +1,5 @@
 from apiflask import APIBlueprint, abort
+from flask import g
 from db import get_session
 from . import service
 from .schemas import TaskSchema, TaskCreateSchema, TaskUpdateSchema, StatusSchema
@@ -15,7 +16,10 @@ bp = APIBlueprint("tasks", __name__, url_prefix="/tasks", tag="Tasks")
 def create_task(json_data):
     session = get_session()
     try:
-        task = service.create_task(session, json_data)
+        user_id = int(g.user_id)
+        if user_id is None:
+            abort(401, message="Missing user_id from request")
+        task = service.create_task(session, json_data, user_id=user_id)
         return task.to_dict()
     except ValueError as e:
         abort(400, message=str(e))
@@ -28,7 +32,10 @@ def create_task(json_data):
 def get_task(task_id: int):
     session = get_session()
     try:
-        task = service.get_task(session, task_id)
+        user_id = int(g.user_id)
+        if user_id is None:
+            abort(401, message="Missing user_id from request")
+        task = service.get_task(session, task_id, user_id=user_id)
         return task.to_dict()
     except ValueError as e:
         return abort(400, message=str(e))
@@ -42,7 +49,10 @@ def get_task(task_id: int):
 def update_task(task_id: int, json_data):
     session = get_session()
     try:
-        task = service.update_task(session, task_id, json_data)
+        user_id = int(g.user_id)
+        if user_id is None:
+            abort(401, message="Missing user_id from request")
+        task = service.update_task(session, task_id, json_data, user_id=user_id)
         return task.to_dict()
     except ValueError as e:
         abort(400, message=str(e))
@@ -55,7 +65,10 @@ def update_task(task_id: int, json_data):
 def delete_task(task_id: int):
     session = get_session()
     try:
-        service.soft_delete_task(session, task_id)
+        user_id = int(g.user_id)
+        if user_id is None:
+            abort(401, message="Missing user_id from request")
+        service.soft_delete_task(session, task_id, user_id=user_id)
         return {"status": "ok"}
     except ValueError as e:
         return abort(400, message=str(e))
@@ -68,7 +81,10 @@ def delete_task(task_id: int):
 def restore_task(task_id: int):
     session = get_session()
     try:
-        service.restore_task(session, task_id)
+        user_id = int(g.user_id)
+        if user_id is None:
+            abort(401, message="Missing user_id from request")
+        service.restore_task(session, task_id, user_id=user_id)
         return {"status": "ok"}
     except ValueError as e:
         return abort(400, message=str(e))
@@ -81,7 +97,10 @@ def restore_task(task_id: int):
 def list_tasks():
     session = get_session()
     try:
-        tasks = service.list_tasks(session, include_deleted=False)
+        user_id = int(g.user_id)
+        if user_id is None:
+            abort(401, message="Missing user_id from request")
+        tasks = service.list_tasks(session, include_deleted=False, user_id=user_id)
         return [t.to_dict() for t in tasks]
     except ValueError as e:
         return abort(400, message=str(e))
@@ -93,7 +112,25 @@ def list_tasks():
 def list_deleted_tasks():
     session = get_session()
     try:
-        tasks = service.list_deleted_tasks(session)
+        user_id = int(g.user_id)
+        if user_id is None:
+            abort(401, message="Missing user_id from request")
+        tasks = service.list_deleted_tasks(session, user_id=user_id)
         return [t.to_dict() for t in tasks]
+    except ValueError as e:
+        return abort(400, message=str(e))
+
+@bp.patch("<int:task_id>/pin")
+@bp.output(StatusSchema)
+@bp.doc(security=[{"BearerAuth": []}])
+@require_auth
+def pin_task(task_id: int):
+    session = get_session()
+    try:
+        user_id = int(g.user_id)
+        if user_id is None:
+            abort(401, message="Missing user_id from request")
+        service.pin_task(session, task_id, user_id=user_id)
+        return {"status": "ok"}
     except ValueError as e:
         return abort(400, message=str(e))

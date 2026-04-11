@@ -1,3 +1,4 @@
+from flask import g
 from datetime import datetime
 from sqlalchemy.orm import Session
 from .models import Task
@@ -58,12 +59,18 @@ def _normalize(payload: dict) -> dict:
         raise ValueError("Task is_finished must be 0/1")
     is_finished = int(bool(is_finished))
 
+    is_pinned = payload.get("is_pinned", 0)
+    if is_pinned not in (0, 1, True, False):
+        raise ValueError("Task is_pinned must be 0/1")
+    is_pinned = int(bool(is_pinned))
+
     return {
         "task_title": title,
         "task_due": due,
         "task_description": desc,
         "task_level": level,
         "is_finished": is_finished,
+        "is_pinned": is_pinned,
     }
 
 
@@ -94,18 +101,26 @@ def _normalize_update(payload: dict) -> dict:
             raise ValueError("Task is_finished must be 0/1")
         data["is_finished"] = int(bool(is_finished))
 
+    if "is_pinned" in payload:
+        is_pinned = payload.get("is_pinned")
+        if is_pinned not in (0, 1, True, False):
+            raise ValueError("Task is_pinned must be 0/1")
+        data["is_pinned"] = int(bool(is_pinned))
+
     return data
 
 
-def create_task(session: Session, payload: dict) -> Task:
+def create_task(session: Session, payload: dict, user_id: int) -> Task:
     data = _normalize(payload)
+    data["user_id"] = user_id
     task = Task(**data)
     return repo.create_task(session, task)
 
-
-def update_task(session: Session, task_id: int, payload: dict) -> Task:
+def update_task(session: Session, task_id: int, payload: dict, user_id: int) -> Task:
     task = repo.get_task(session, task_id)
     if task is None or task.is_deleted == 1:
+        raise ValueError("Task not found")
+    if task.user_id != user_id:
         raise ValueError("Task not found")
 
     data = _normalize_update(payload)
@@ -118,27 +133,43 @@ def update_task(session: Session, task_id: int, payload: dict) -> Task:
     return repo.update_task(session, task)
 
 
-def get_task(session: Session, task_id: int) -> Task:
+def get_task(session: Session, task_id: int, user_id: int) -> Task:
     task = repo.get_task(session, task_id)
     if task is None or task.is_deleted == 1:
+        raise ValueError("Task not found")
+    if task.user_id != user_id:
         raise ValueError("Task not found")
     return task
 
 
-def soft_delete_task(session: Session, task_id: int) -> None:
+def soft_delete_task(session: Session, task_id: int, user_id: int) -> None:
+    task = repo.get_task(session, task_id)
+    if task.user_id != user_id:
+        raise ValueError("Task not found")
     ok = repo.soft_delete_task(session, task_id)
     if not ok:
         raise ValueError("Task not found")
 
 
-def restore_task(session: Session, task_id: int) -> None:
+def restore_task(session: Session, task_id: int, user_id: int) -> None:
+    task = repo.get_task(session, task_id)
+    if task.user_id != user_id:
+        raise ValueError("Task not found")
     ok = repo.restore_task(session, task_id)
     if not ok:
         raise ValueError("Task not found")
 
 
-def list_tasks(session: Session, include_deleted: bool = False) -> list[Task]:
-    return repo.list_tasks(session, include_deleted=include_deleted)
+def list_tasks(session: Session, user_id: int, include_deleted: bool = False) -> list[Task]:
+    return repo.list_tasks(session, user_id=user_id, include_deleted=include_deleted)
 
-def list_deleted_tasks(session: Session) -> list[Task]:
-    return repo.list_deleted_tasks(session)
+def list_deleted_tasks(session: Session, user_id: int) -> list[Task]:
+    return repo.list_deleted_tasks(session, user_id=user_id)
+
+def pin_task(session: Session, task_id: int, user_id: int) -> None:
+    task = repo.get_task(session, task_id)
+    if task.user_id != user_id:
+        raise ValueError("Task not found")
+    ok = repo.pin_task(session, task_id)
+    if not ok:
+        raise ValueError("Task not found")
