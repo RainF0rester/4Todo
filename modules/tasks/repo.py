@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, desc, asc
 from sqlalchemy.orm import Session
 from .models import Task
 
@@ -25,6 +25,10 @@ def list_tasks(session: Session, user_id: int, include_deleted: bool = False, ) 
     statement = statement.where(Task.user_id == user_id)
     if not include_deleted:
         statement = statement.where(Task.is_deleted == 0)
+    statement = statement.order_by(
+        desc(Task.is_pinned),
+        asc(Task.task_due),
+    )
     return list(session.scalars(statement).all())
 
 def list_deleted_tasks(session: Session, user_id: int) -> list[Task]:
