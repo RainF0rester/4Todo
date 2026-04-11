@@ -1,50 +1,60 @@
 import pytest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from modules.tasks import service
 
 
-# ============================================================
-# soft_delete_task
-# These tests verify soft deletion behavior in the service layer.
-# ============================================================
+def make_task(task_id=1, user_id=1):
+    task = MagicMock()
+    task.id = task_id
+    task.user_id = user_id
+    return task
+
 
 def test_soft_delete_task_success():
-    """
-    If the repo layer reports success, the service should complete
-    without raising an exception.
-    """
-    with patch("modules.tasks.repo.soft_delete_task", return_value=True):
-        service.soft_delete_task(None, 1)
+    task = make_task(task_id=1, user_id=1)
+
+    with patch("modules.tasks.repo.get_task", return_value=task), \
+         patch("modules.tasks.repo.soft_delete_task", return_value=True):
+        service.soft_delete_task(None, 1, user_id=1)
 
 
 def test_soft_delete_task_not_found():
-    """
-    If the repo layer reports failure, the service should treat it as
-    a missing task and raise ValueError.
-    """
-    with patch("modules.tasks.repo.soft_delete_task", return_value=False):
-        with pytest.raises(ValueError):
-            service.soft_delete_task(None, 1)
+    task = make_task(task_id=1, user_id=1)
+
+    with patch("modules.tasks.repo.get_task", return_value=task), \
+         patch("modules.tasks.repo.soft_delete_task", return_value=False):
+        with pytest.raises(ValueError, match="Task failed to delete"):
+            service.soft_delete_task(None, 1, user_id=1)
 
 
-# ============================================================
-# restore_task
-# These tests verify restore behavior for previously deleted tasks.
-# ============================================================
+def test_soft_delete_task_wrong_user():
+    task = make_task(task_id=1, user_id=2)
+
+    with patch("modules.tasks.repo.get_task", return_value=task):
+        with pytest.raises(ValueError, match="Task not found"):
+            service.soft_delete_task(None, 1, user_id=1)
+
 
 def test_restore_task_success():
-    """
-    A successful restore operation should complete without errors.
-    """
-    with patch("modules.tasks.repo.restore_task", return_value=True):
-        service.restore_task(None, 1)
+    task = make_task(task_id=1, user_id=1)
+
+    with patch("modules.tasks.repo.get_task", return_value=task), \
+         patch("modules.tasks.repo.restore_task", return_value=True):
+        service.restore_task(None, 1, user_id=1)
 
 
 def test_restore_task_not_found():
-    """
-    If restore fails because the task does not exist (or cannot be restored),
-    the service should raise ValueError.
-    """
-    with patch("modules.tasks.repo.restore_task", return_value=False):
-        with pytest.raises(ValueError):
-            service.restore_task(None, 1)
+    task = make_task(task_id=1, user_id=1)
+
+    with patch("modules.tasks.repo.get_task", return_value=task), \
+         patch("modules.tasks.repo.restore_task", return_value=False):
+        with pytest.raises(ValueError, match="Task failed to restore"):
+            service.restore_task(None, 1, user_id=1)
+
+
+def test_restore_task_wrong_user():
+    task = make_task(task_id=1, user_id=2)
+
+    with patch("modules.tasks.repo.get_task", return_value=task):
+        with pytest.raises(ValueError, match="Task not found"):
+            service.restore_task(None, 1, user_id=1)

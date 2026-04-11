@@ -2,12 +2,12 @@ import pytest
 from modules.tasks import service
 
 pytestmark = pytest.mark.xfail(
-    reason="US6 scheduled deletion not implemented: missing scheduling metadata and cleanup process",
+    reason="Scheduled cleanup flow is not available in the current integrated task service",
     strict=False,
 )
 
 
-def _create_task(session, title="Task A"):
+def _create_task(session, test_user, title="Task A"):
     return service.create_task(
         session,
         {
@@ -16,66 +16,67 @@ def _create_task(session, title="Task A"):
             "task_description": "desc",
             "task_level": 3,
         },
+        user_id=test_user.id,
     )
 
 
-def test_deleted_task_should_have_scheduled_deletion_time(session):
-    task = _create_task(session)
+def test_deleted_task_should_have_scheduled_deletion_time(session, test_user):
+    task = _create_task(session, test_user)
 
-    service.soft_delete_task(session, task.id)
+    service.soft_delete_task(session, task.id, user_id=test_user.id)
 
-    deleted_tasks = service.list_deleted_tasks(session)
+    deleted_tasks = service.list_deleted_tasks(session, user_id=test_user.id)
     deleted = deleted_tasks[0]
 
     assert hasattr(deleted, "scheduled_deletion_time")
     assert deleted.scheduled_deletion_time is not None
 
 
-def test_cleanup_should_remove_tasks_past_scheduled_time(session):
-    task = _create_task(session)
+def test_cleanup_should_remove_tasks_past_scheduled_time(session, test_user):
+    task = _create_task(session, test_user)
 
-    service.soft_delete_task(session, task.id)
+    service.soft_delete_task(session, task.id, user_id=test_user.id)
 
     service.cleanup_deleted_tasks(session)
 
     with pytest.raises(ValueError, match="Task not found"):
-        service.get_task(session, task.id)
+        service.get_task(session, task.id, user_id=test_user.id)
 
 
-def test_cleanup_should_not_remove_tasks_before_scheduled_time(session):
-    task = _create_task(session)
+def test_cleanup_should_not_remove_tasks_before_scheduled_time(session, test_user):
+    task = _create_task(session, test_user)
 
-    service.soft_delete_task(session, task.id)
+    service.soft_delete_task(session, task.id, user_id=test_user.id)
 
     service.cleanup_deleted_tasks(session)
 
-    deleted_tasks = service.list_deleted_tasks(session)
+    deleted_tasks = service.list_deleted_tasks(session, user_id=test_user.id)
     deleted_ids = [t.id for t in deleted_tasks]
 
     assert task.id in deleted_ids
 
 
-def test_cleanup_should_only_remove_expired_tasks(session):
-    task1 = _create_task(session, "Expired Task")
-    task2 = _create_task(session, "Not Expired Task")
+def test_cleanup_should_only_remove_expired_tasks(session, test_user):
+    task1 = _create_task(session, test_user, "Expired Task")
+    task2 = _create_task(session, test_user, "Not Expired Task")
 
-    service.soft_delete_task(session, task1.id)
-    service.soft_delete_task(session, task2.id)
+    service.soft_delete_task(session, task1.id, user_id=test_user.id)
+    service.soft_delete_task(session, task2.id, user_id=test_user.id)
 
     service.cleanup_deleted_tasks(session)
 
-    deleted_tasks = service.list_deleted_tasks(session)
+    deleted_tasks = service.list_deleted_tasks(session, user_id=test_user.id)
     deleted_ids = [t.id for t in deleted_tasks]
 
     assert task1.id not in deleted_ids
     assert task2.id in deleted_ids
 
 
-def test_cleanup_should_not_affect_active_tasks(session):
-    active_task = _create_task(session, "Active Task")
+def test_cleanup_should_not_affect_active_tasks(session, test_user):
+    active_task = _create_task(session, test_user, "Active Task")
 
     service.cleanup_deleted_tasks(session)
 
-    fetched = service.get_task(session, active_task.id)
+    fetched = service.get_task(session, active_task.id, user_id=test_user.id)
     assert fetched.id == active_task.id
     assert fetched.is_deleted == 0
