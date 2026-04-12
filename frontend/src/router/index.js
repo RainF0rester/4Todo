@@ -4,6 +4,7 @@ import Calendar from "../views/Calendar.vue";
 import Dashboard from "../views/Dashboard.vue";
 import Pomodoro from "../views/Pomodoro.vue";
 import Auth from "../components/Auth.vue";
+import PageSettings from "../views/PageSettings.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -14,6 +15,7 @@ const router = createRouter({
     { path: "/calendar", component: Calendar },
     { path: "/dashboard", component: Dashboard },
     { path: "/pomodoro", component: Pomodoro },
+    { path: "/settings", component: PageSettings },
   ],
 });
 
