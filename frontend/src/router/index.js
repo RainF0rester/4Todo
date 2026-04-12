@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { Modal } from "ant-design-vue";
 import List from "../views/List.vue";
 import Calendar from "../views/Calendar.vue";
 import Dashboard from "../views/Dashboard.vue";
@@ -29,18 +30,42 @@ router.beforeEach((to) => {
   // allow guests to access the registration page explicitly
   const wantsRegister =
     to.path === "/auth" && to.query && to.query.mode === "register";
+
+  let guestModalOpen = false;
   if (to.path !== "/auth" && !allowed) {
     // redirect anonymous users to auth
     return { path: "/auth" };
   }
 
+  // if the user is a guest and tries to access other pages, show a modal and redirect to auth
     if (isGuest && !isAuth) {
     const guestOk = to.path === "/list" || to.path === "/auth";
     if (!guestOk) {
-      return { path: "/list" };
+      if (!guestModalOpen) {
+        guestModalOpen = true;
+        Modal.confirm({
+          title: "Guest Access Restricted",
+          content:
+            "Unable to access this page for guests. Please log in or register to save your data.",
+          okText: "login",
+          cancelText: "cancel",
+          centered: true,
+          onOk() {
+            localStorage.removeItem("authGuest");
+            return router.push({ path: "/auth" });
+          },
+          onCancel() {
+            router.replace("/list");
+          },
+          afterClose() {
+            guestModalOpen = false;
+          },
+        });
+      }
+      return false;
     }
   }
-
+  
   if (to.path === "/auth" && allowed && !wantsRegister) {
     // authenticated/guest users should not visit auth page unless they explicitly want to register
     if (isAuth) {
