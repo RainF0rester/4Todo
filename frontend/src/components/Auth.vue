@@ -208,7 +208,7 @@ async function handleSubmit() {
             }
             await handlePostAuth()
             message.success('Login successful. Redirecting...')
-            router.push('/')
+            router.push('/welcome')
         }
     } catch (e) {
         console.error(e)
@@ -320,7 +320,7 @@ function continueAsGuest() {
     localStorage.removeItem('authEmail')
     localStorage.setItem('authGuest', '1')
     message.info('Continuing as guest')
-    router.push('/list')
+    router.push('/')
 }
 
 </script>
