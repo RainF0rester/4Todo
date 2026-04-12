@@ -12,11 +12,10 @@
           <h3>Today tasks</h3>
           <span class="task-count">{{ todayTasks.length }} task{{ todayTasks.length === 1 ? '' : 's' }}</span>
         </div>
-        <a-empty v-if="todayTasks.length === 0" description="No tasks for today" />
-          <div v-else class="task-list-header">
-            <span><CarryOutOutlined />Task</span>
-            <span>Due time</span>
-          </div>
+        <div v-if="todayTasks.length > 0" class="task-list-header">
+          <span><CarryOutOutlined />Task</span>
+          <span>Due time</span>
+        </div>
         <a-list
           :data-source="todayTasks"
           size="small"
