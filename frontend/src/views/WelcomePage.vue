@@ -2,18 +2,28 @@
     <div class="welcome-page">
         <a-card class="welcome-card">
           <div class="welcome-header">
-            <div class="welcome-subtitle">Welcome to Task Tracker!</div>
-            <h1>👋 Hi,{{ times }}</h1>
+            <div class="left">
+              <div class="welcome-subtitle">Welcome to Task Tracker!</div>
+              <h1>👋 Hi,{{ times }}</h1>
+            </div>
+            <div class="right">
+              <div class="task-summary">
+                <span class="label">TODAY TASKS</span>
+                <span class="count">{{ todayTasks.length }}</span>
+              </div>
+            </div>
           </div>
 
 
+
       <div class="task-today-block">
-        <div class="block-head">
+        <!-- <div class="block-head">
           <h3>Today tasks</h3>
           <span class="task-count">{{ todayTasks.length }} task{{ todayTasks.length === 1 ? '' : 's' }}</span>
-        </div>
+        </div> -->
         <div v-if="todayTasks.length > 0" class="task-list-header">
           <span><CarryOutOutlined />Task</span>
+          <span>Task type</span>
           <span>Due time</span>
         </div>
         <a-list
@@ -25,6 +35,7 @@
             <a-list-item>
               <div class="task-item">
                 <span class="task-title">{{ item.title }}</span>
+                <span class="task-type">{{ taskTypeLabel(item.task_level) }}</span>
                 <span class="task-due-date">{{ formatDate(item.dueDate) }}</span>
               </div>
             </a-list-item>
@@ -34,7 +45,7 @@
 
       <div class="actions">
         <a-button type="primary" size="large" @click="goToBoard">Go To Task Board</a-button>
-        <a-button size="large" @click="goToPast">View Past Tasks</a-button>
+        <a-button size="large" @click="goToPast">Task Statistics</a-button>
       </div>
         </a-card>
     </div>
@@ -57,7 +68,7 @@ const times = computed(() => {
     return 'Good evening'
 })
 
-const todayTasks = ref([])
+
 
 // Check if the date is today
 function isToday(dateStr) {
@@ -72,6 +83,7 @@ function isToday(dateStr) {
   )
 }
 // Load tasks and filter today's tasks
+const todayTasks = ref([])
 async function loadTodayTasks() {
   try {
     const tasks = await getTaskList()
@@ -81,6 +93,20 @@ async function loadTodayTasks() {
     todayTasks.value = []
   }
 }
+
+const TASK_LEVEL_LABELS = {
+  1: 'Important & Urgent',
+  2: 'Important but Not Urgent',
+  3: 'Not Important but Urgent',
+  4: 'Not Important & Not Urgent',
+}
+
+function taskTypeLabel(level) {
+  const n = Number(level)
+  if (n >= 1 && n <= 4) return TASK_LEVEL_LABELS[n]
+  return 'Uncategorised'
+}
+
 
 // Format date to HH:mm
 function formatDate(dateStr) {
@@ -135,13 +161,36 @@ onMounted(() => {
   font-weight: 500;
 }
 
-.welcome-header h1 {
-  margin: 0;
-  font-size: 32px;
-  line-height: 1.2;
-  color: #111827;
+.welcome-header {
+  display: flex;
+  justify-content: space-between; 
+  align-items: flex-start;
 }
 
+
+.right h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.task-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.task-summary .count {
+  font-size: 40px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1;
+}
+
+.task-summary .label {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
 
 
 .task-today-block {
@@ -156,54 +205,55 @@ background: #ffffff;
 .block-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
+  gap: 8px; 
 }
 
 
 
-.task-count {
-  font-size: 12px;
-  color: #2563eb;
-  background: #eaf2ff;
-  border-radius: 999px;
-  padding: 4px 10px;
-}
+
 
 .task-list {
   border-radius: 10px;
   overflow: hidden;
 }
 
+.task-list-header,
 .task-item {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr; 
+  align-items: center;
+}
+
+.task-list-header span,
+.task-item span {
+  text-align: center;
 }
 
 .task-list-header {
-  display: flex;
-  justify-content: space-between;
   padding: 8px 12px;
   font-size: 12px;
   font-weight: 600;
 }
 
+.task-item {
+  width: 100%;
+}
 
 .task-title {
-  font-weight: 500;
-  color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap; 
 }
 
-.task-due-date {
-  font-size: 12px;
-  color: #6b7280;
-}
+
 .actions {
   margin-top: 24px;
   display: flex;
-  gap: 12px;
+  gap: 20px;
+  justify-content: center;
 }
+
+
 </style>
 
 
