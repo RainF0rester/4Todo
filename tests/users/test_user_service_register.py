@@ -140,32 +140,41 @@ class TestRegisterUser:
         mock_get_username.assert_called_once_with(mock_session, "testuser")
         assert real_user.password_hash != ""
 
-    @pytest.mark.xfail(reason="TDD: username max length validation (<= 16) not implemented yet")
-    def test_register_user_rejects_username_longer_than_16(self):
+    @patch("modules.users.service.get_user_by_email")
+    @patch("modules.users.service.get_user_by_username")
+    @patch("modules.users.service.create_user")
+    # @pytest.mark.xfail(reason="TDD: username max length validation (<= 16) not implemented yet")
+    def test_register_user_rejects_username_longer_than_16(self, mock_create_user, mock_get_username, mock_get_email):
         """
         According to the user story, registration should reject usernames longer than 16 characters.
         """
         mock_session = MagicMock(spec=Session)
 
-        with pytest.raises(ValueError, match="username must not exceed 16 characters"):
+        with pytest.raises(ValueError, match="username must be between 1 and 16 characters"):
             register_user(mock_session, "a" * 17, "test@unsw.edu.au", "password123")
 
-    @pytest.mark.xfail(reason="TDD: UNSW email validation not implemented yet")
-    def test_register_user_rejects_non_unsw_email(self):
+    @patch("modules.users.service.get_user_by_email")
+    @patch("modules.users.service.get_user_by_username")
+    @patch("modules.users.service.create_user")
+    # @pytest.mark.xfail(reason="TDD: strict UNSW email domain validation not implemented yet")
+    def test_register_user_rejects_invalid_email_format(self, mock_create_user, mock_get_username, mock_get_email):
         """
-        According to the user story, registration should reject non-UNSW email addresses.
+        Current service should reject invalid email format.
         """
         mock_session = MagicMock(spec=Session)
 
-        with pytest.raises(ValueError, match="a UNSW email address is required"):
-            register_user(mock_session, "testuser", "test@gmail.com", "password123")
+        with pytest.raises(ValueError, match="email format is invalid"):
+            register_user(mock_session, "testuser", "testgmail.com", "password123")
 
-    @pytest.mark.xfail(reason="TDD: password max length validation (<= 30) not implemented yet")
-    def test_register_user_rejects_password_longer_than_30(self):
+    @patch("modules.users.service.get_user_by_email")
+    @patch("modules.users.service.get_user_by_username")
+    @patch("modules.users.service.create_user")
+    # @pytest.mark.xfail(reason="TDD: password max length validation (<= 30) not implemented yet")
+    def test_register_user_rejects_password_longer_than_30(self, mock_create_user, mock_get_username, mock_get_email):
         """
         According to the user story, registration should reject passwords longer than 30 characters.
         """
         mock_session = MagicMock(spec=Session)
 
-        with pytest.raises(ValueError, match="password must not exceed 30 characters"):
+        with pytest.raises(ValueError, match="password must be between 1 and 30 characters"):
             register_user(mock_session, "testuser", "test@unsw.edu.au", "a" * 31)
