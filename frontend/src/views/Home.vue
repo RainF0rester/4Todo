@@ -1,3 +1,4 @@
+<!-- the page's some settings were partially modified by AI -->
 <template>
     <div class="home-page">
         <a-card class="home-card">
@@ -13,8 +14,6 @@
               </div>
             </div>
           </div>
-
-
 
       <div class="task-today-block">
         <!-- <div class="block-head">
@@ -65,6 +64,7 @@ import { getTaskList } from '../api/tasks'
 
 
 const router = useRouter()
+
 const times = computed(() => {
     const hour = new Date().getHours()
     if (hour < 12) return 'Good morning'
@@ -145,10 +145,9 @@ onMounted(() => {
   padding: 32px 20px 48px;
   border-radius: 16px;
   background:
-  radial-gradient(ellipse 80% 50% at 50% -20%, rgba(37, 99, 235, 0.15), transparent),
-  linear-gradient(180deg, #f1f5f9 0%, #f8fafc 45%, #f1f5f9 100%);
+  radial-gradient(ellipse 80% 50% at 50% -20%, var(--home-bg-radial, rgba(37, 99, 235, 0.15)), transparent),
+  linear-gradient(180deg, var(--home-bg-top, #f1f5f9) 0%, var(--home-bg-mid, #f8fafc) 45%, var(--home-bg-bottom, #f1f5f9) 100%);
 }
-
 
 
 .home-card {
@@ -231,12 +230,13 @@ background: #ffffff;
 
 .task-list-header {
   padding: 8px 12px;
-  font-size: 12px;
+  font-size: calc(var(--app-font-size, 16px) * 0.95);
   font-weight: 600;
 }
 
 .task-item {
   width: 100%;
+  font-size: calc(var(--app-font-size, 16px) * 0.95);
 }
 
 .task-title {

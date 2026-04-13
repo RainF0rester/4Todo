@@ -17,7 +17,7 @@
 }
 
 .cards-group .title {
-    font-size: 18px;
+    font-size: calc(var(--app-font-size, 16px) * 1.125);
     font-weight: 700;
 }
 
@@ -65,7 +65,7 @@
 }
 
 .cards-group .name {
-    font-size: 14px;
+    font-size: calc(var(--app-font-size, 16px) * 0.875);
     font-weight: 600;
     color: #1f2937;
     width: 190px;
@@ -75,7 +75,7 @@
 }
 
 .cards-group .meta {
-    font-size: 12px;
+    font-size: calc(var(--app-font-size, 16px) * 0.75);
     color: #6b7280;
 }
 
