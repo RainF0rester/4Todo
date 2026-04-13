@@ -36,7 +36,6 @@ def test_parse_due_time_rejects_invalid_format():
         service._parse_due_time("2026/01/01")
 
 
-# ✅ 加分点（建议保留）
 def test_parse_due_time_rejects_invalid_time_string():
     with pytest.raises(ValueError):
         service._parse_due_time("invalid")
@@ -56,7 +55,6 @@ def test_normalize_accepts_valid_payload():
     assert data["is_finished"] == 0
 
 
-# ✅ 贴合 US4（重要）
 def test_normalize_allows_none_due_time():
     payload = valid_payload()
     payload["task_due"] = None
