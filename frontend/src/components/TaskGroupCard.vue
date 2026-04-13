@@ -13,7 +13,8 @@
         <template #renderItem="{ item }">
           <a-list-item class="row" :class="{
             'pending-delete-row': item.pendingDelete,
-            'deleting-row': item.deleting
+            'deleting-row': item.deleting,
+            'pinned-row': item.pinned
           }">
             <div class="left">
               <a-checkbox :class="{ invisible: item.pendingDelete }" :disabled="!canComplete(item.dueDate)"
@@ -41,6 +42,7 @@
                   <WarningOutlined />
                 </a-button>
               </a-tooltip>
+
               <a-tooltip :title="item.pinned ? 'Unpin task' : 'Pin task'">
                 <a-button type="text" class="pin-btn" danger :class="{ pinned: item.pinned }" @click="togglePin(item)">
                    <PushpinOutlined />
@@ -312,9 +314,12 @@ function setDefaultDueDate(dueDate) {
 async function handleSubmit(payload) {
   if (payload.mode === 'add') {
     try {
+      console.log('payload:', payload)
+
       const t = await addTask({
         task_title: payload.title,
         task_due: setDefaultDueDate(payload.dueDate),
+        is_pinned: payload.pinned ? 1 : 0,
         task_level: props.taskLevel
       })
       const normalized = normalizeTask(t)
@@ -340,10 +345,13 @@ async function handleSubmit(payload) {
 
   if (payload.mode === 'edit') {
     try {
+      console.log('payload:', payload)
       const t = await updateTask(payload.id, {
         task_title: payload.title,
         task_due: setDefaultDueDate(payload.dueDate),
+        is_pinned: payload.pinned ? 1 : 0
       })
+      console.log('返回的 task:', t)
       const normalized = normalizeTask(t)
       const index = task_info.value.findIndex(x => x.id === normalized.id)
       if (index !== -1) {
