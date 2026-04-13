@@ -37,9 +37,10 @@
                 <a-select
                   :value="uiSettings.fontType"
                   placeholder="Select Font Type"
-                  style="width: 100%">
+                  style="width: 100%"
+                  @change="onFontTypeChange">
                     <a-select-option value="default">Default</a-select-option>
-                    <a-select-option value="sans-serif">Sans Serif</a-select-option>
+                    <a-select-option value="serif">Serif</a-select-option>
                     <a-select-option value="TimesNewRoman">Times New Roman</a-select-option>
                 </a-select>
             </div>
@@ -59,6 +60,10 @@ function onThemeChange(value) {
 
 function onFontSizeChange(value) {
   updateUiSettings({ fontSize: value });
+}
+
+function onFontTypeChange(value) {
+  updateUiSettings({ fontType: value });
 }
 </script>
 

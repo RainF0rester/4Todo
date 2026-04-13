@@ -47,7 +47,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getFontSizeToken, getThemeColor, initUiSettings, resetUiThemeToDefault, uiSettings } from './stores/uiSettings'
+import { getFontFamilyToken, getFontSizeToken, getThemeColor, initUiSettings, resetUiThemeToDefault, uiSettings } from './stores/uiSettings'
 
 const route = useRoute()
 const router = useRouter()
@@ -71,6 +71,7 @@ const antdTheme = computed(() => ({
   token: {
     colorPrimary: getThemeColor(uiSettings.theme),
     fontSize: getFontSizeToken(uiSettings.fontSize),
+    fontFamily: getFontFamilyToken(uiSettings.fontType),
   },
 }))
 

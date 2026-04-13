@@ -49,6 +49,7 @@ import { ref, watch, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
 import { addTask, saveGuestTasks } from '../api/tasks'
+import { initUiSettings } from '../stores/uiSettings'
 
 const router = useRouter()
 const route = useRoute()
@@ -175,6 +176,7 @@ async function handleSubmit() {
             if (token) {
                 localStorage.setItem('authToken', token)
                 localStorage.setItem('authEmail', email.value.trim())
+                initUiSettings()
             }
             message.success('Registration successful. Redirecting...')
             router.push('/')
@@ -205,6 +207,7 @@ async function handleSubmit() {
             if (token) {
                 localStorage.setItem('authToken', token)
                 localStorage.setItem('authEmail', email.value.trim())
+                initUiSettings()
             }
             await handlePostAuth()
             message.success('Login successful. Redirecting...')

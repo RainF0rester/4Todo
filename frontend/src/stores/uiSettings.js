@@ -10,17 +10,27 @@ export const THEME_OPTIONS = [
   { label: "Red", value: "red", color: "#f5222d" },
 ];
 
-const THEME_MAP = {
-    blue: "#1677ff",
-    yellow: "#faad14",
-    green: "#52c41a",
-    red: "#f5222d",
-  };
+const THEME_MAP = Object.fromEntries(
+    THEME_OPTIONS.map((theme) => [theme.value, theme.color]),
+  );
+
+// const THEME_MAP = {
+//     blue: "#1677ff",
+//     yellow: "#faad14",
+//     green: "#52c41a",
+//     red: "#f5222d",
+//   };
   
 const FONT_SIZE_MAP = {
   small: "12px",
   medium: "14px",
   large: "16px",
+};
+
+const FONT_TYPE_MAP = {
+  default: "inherit",
+  serif: "serif",
+  TimesNewRoman: "'Times New Roman'",
 };
 const THEME_HOME_BACKGROUND_MAP = {
   blue: {
@@ -51,44 +61,69 @@ const THEME_HOME_BACKGROUND_MAP = {
 
 const defaults = {
   theme: "blue",
-  darkMode: false,
   fontSize: "medium",
   fontType: "default",
 };
 
 export const uiSettings = reactive({ ...defaults });
 
+function getStorageKeyByEmail() {
+  const email = (localStorage.getItem("authEmail") || "").trim().toLowerCase();
+  if (!email) return null;
+  return `${STORAGE_KEY}:${email}`;
+}
+
 //check if user is logged in
 function isLogin() {
     const token = localStorage.getItem("authToken");
     const isGuest = localStorage.getItem("authGuest");
     return token && !isGuest;}
+    
 //get theme color
 export function getThemeColor(themeName) {
-  return THEME_MAP[themeName] || THEME_MAP[defaults.theme];
-}
+    if (THEME_MAP[themeName]) {
+      return THEME_MAP[themeName];
+    }
+    return THEME_MAP[defaults.theme];
+  }
 //get home page background
 export function getHomePageBackground(themeName) {
-  return THEME_HOME_BACKGROUND_MAP[themeName] || THEME_HOME_BACKGROUND_MAP[defaults.theme];
-}
+    if (THEME_HOME_BACKGROUND_MAP[themeName]) {
+      return THEME_HOME_BACKGROUND_MAP[themeName];
+    }
+    return THEME_HOME_BACKGROUND_MAP[defaults.theme];
+  }
 //get font size 
 export function getFontSizeToken(fontSizeConfig) {
   const size = FONT_SIZE_MAP[fontSizeConfig] || FONT_SIZE_MAP[defaults.fontSize];
   return parseFloat(size);
 }
+//get font family
+export function getFontFamilyToken(fontTypeConfig) {
+    if (FONT_TYPE_MAP[fontTypeConfig]) {
+      return FONT_TYPE_MAP[fontTypeConfig];
+    }
+    return FONT_TYPE_MAP[defaults.fontType];
+  }
+  
 
 function getFontSize(fontSizeConfig) {
-  return FONT_SIZE_MAP[fontSizeConfig] || FONT_SIZE_MAP[defaults.fontSize];
-}
-
+    if (FONT_SIZE_MAP[fontSizeConfig]) {
+      return FONT_SIZE_MAP[fontSizeConfig];
+    }
+    return FONT_SIZE_MAP[defaults.fontSize];
+  }
 
 //save settings to local storage
 function saveSettings() {
+  const storageKey = getStorageKeyByEmail();
+  if (!storageKey) return;
   localStorage.setItem(
-    STORAGE_KEY,
+    storageKey,
     JSON.stringify({
       theme: uiSettings.theme,
       fontSize: uiSettings.fontSize,
+      fontType: uiSettings.fontType,
     }),
   );
 }
@@ -131,13 +166,25 @@ function applyFontSize(fontSize) {
       document.body.style.fontSize = size;
     }
 }
+
+function applyFontType(fontType) {
+  const root = document.documentElement;
+  const family = getFontFamilyToken(fontType);
+  root.style.setProperty("--app-font-family", family);
+  root.style.fontFamily = family;
+
+  if (document.body) {
+    document.body.style.fontFamily = family;
+  }
+}
 //apply settings
 function applySettings() {
-    const theme = isLogin()? uiSettings.theme: defaults.theme;
-    const fontSize = isLogin()? uiSettings.fontSize: defaults.fontSize;
+    const theme = isLogin()? uiSettings.theme : defaults.theme;
+    const fontSize = isLogin()? uiSettings.fontSize : defaults.fontSize;
+    const fontType = isLogin()? uiSettings.fontType : defaults.fontType;
     applyTheme(theme);
     applyFontSize(fontSize);
-    document.documentElement.setAttribute("data-theme", "light");
+    applyFontType(fontType);
   }
 
 
@@ -147,13 +194,15 @@ export function initUiSettings() {
     applySettings();
     return;
   }
-  const saved = localStorage.getItem(STORAGE_KEY);
+  const storageKey = getStorageKeyByEmail();
+  const saved = storageKey ? localStorage.getItem(storageKey) : null;
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
       Object.assign(uiSettings, defaults, {
-        theme: parsed?.theme,
-        fontSize: parsed?.fontSize,
+        theme: parsed.theme || defaults.theme,
+        fontSize: parsed.fontSize || defaults.fontSize,
+        fontType: parsed.fontType || defaults.fontType,
       });
     } catch {
       resetToDefaultTheme();
@@ -170,21 +219,26 @@ export function updateUiSettings(partial) {
       applySettings();
       return;
     }
-  
     if (partial.theme) {
-      uiSettings.theme = THEME_MAP[partial.theme]? partial.theme: defaults.theme;
-    }
-  
+        uiSettings.theme = THEME_MAP[partial.theme]? partial.theme: defaults.theme;}
     if (partial.fontSize) {
-      uiSettings.fontSize = FONT_SIZE_MAP[partial.fontSize] ? partial.fontSize : defaults.fontSize;
+      uiSettings.fontSize = FONT_SIZE_MAP[partial.fontSize]? partial.fontSize: defaults.fontSize;
     }
-  saveSettings();
+    if (partial.fontType) {
+      uiSettings.fontType = FONT_TYPE_MAP[partial.fontType]? partial.fontType: defaults.fontType;
+    }
+    saveSettings();
     applySettings();
-  }
+}
 
 //reset ui theme to default
-export function resetUiThemeToDefault() {
-  localStorage.removeItem(STORAGE_KEY);
+export function resetUiThemeToDefault(clearStored = false) {
+  if (clearStored) {
+    const storageKey = getStorageKeyByEmail();
+    if (storageKey) {
+      localStorage.removeItem(storageKey);
+    }
+  }
   resetToDefaultTheme();
   applySettings();
 }
