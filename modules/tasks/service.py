@@ -190,3 +190,7 @@ def unpin_task(session: Session, task_id: int, user_id: int) -> None:
     task = repo.update_task(session, task)
     if task.is_pinned != 0:
         raise ValueError("Task failed to unpin")
+    
+
+def cleanup_deleted_tasks(session: Session) -> int:
+    return repo.cleanup_deleted_tasks(session)
