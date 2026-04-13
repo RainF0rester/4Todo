@@ -37,7 +37,6 @@
                 </span>
               </span>
               <span class="item-meta">{{ item.dueDate || 'No due date' }}</span>
-
             </div>
           </a-list-item>
         </template>
