@@ -17,7 +17,10 @@ class Task(Base):
 
     is_finished: Mapped[int] = mapped_column(Integer, nullable=False ,default=0) # 0/1
     is_deleted: Mapped[int] = mapped_column(Integer, nullable=False ,default=0) # 0/1
-
+    scheduled_delete_time: Mapped[DateTime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
+    )
     created_at: Mapped[str] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[str] = mapped_column(
         DateTime(timezone=True),
