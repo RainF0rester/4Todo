@@ -144,6 +144,8 @@ def get_task(session: Session, task_id: int, user_id: int) -> Task:
 
 def soft_delete_task(session: Session, task_id: int, user_id: int) -> None:
     task = repo.get_task(session, task_id)
+    if task is None:
+        raise ValueError("Task not found")
     if task.user_id != user_id:
         raise ValueError("Task not found")
     ok = repo.soft_delete_task(session, task_id)
