@@ -8,7 +8,7 @@
         <a-menu-item key="/list">List</a-menu-item>
         <a-menu-item key="/dashboard">Dashboard</a-menu-item>
         <a-menu-item key="/calendar">Calendar</a-menu-item>
-        <a-menu-item key="/pomodoro" disabled>Pomodoro</a-menu-item>
+        <!--todo: <a-menu-item key="/pomodoro" disabled>Pomodoro</a-menu-item> -->
       </a-menu>
 
       <div class="right">
@@ -19,7 +19,7 @@
             </a>
             <template #overlay>
               <a-menu @click="onMenuClick">
-                <a-menu-item key="profile">Profile</a-menu-item>
+                <!--todo: <a-menu-item key="profile">Profile</a-menu-item> -->
                 <a-menu-item key="settings">Settings</a-menu-item>
                 <a-menu-divider />
                 <a-menu-item key="logout">Logout</a-menu-item>
