@@ -1,9 +1,9 @@
 <template>
-    <div class="welcome-page">
-        <a-card class="welcome-card">
-          <div class="welcome-header">
+    <div class="home-page">
+        <a-card class="home-card">
+          <div class="home-header">
             <div class="left">
-              <div class="welcome-subtitle">Welcome to Task Tracker!</div>
+              <div class="home-subtitle">Welcome to Task Tracker!</div>
               <h1>👋 Hi,{{ times }}</h1>
             </div>
             <div class="right">
@@ -137,7 +137,7 @@ onMounted(() => {
 
 
 <style scoped>
-.welcome-page {
+.home-page {
   min-height: calc(100vh - 64px);
   padding: 32px 20px 48px;
   border-radius: 16px;
@@ -148,20 +148,20 @@ onMounted(() => {
 
 
 
-.welcome-card {
+.home-card {
   border-radius: 16px;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.1);
   background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
 }
 
 
-.welcome-subtitle {
+.home-subtitle {
   margin: 0 0 8px 0;
   color: #6b7280;
   font-weight: 500;
 }
 
-.welcome-header {
+.home-header {
   display: flex;
   justify-content: space-between; 
   align-items: flex-start;

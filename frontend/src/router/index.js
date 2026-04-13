@@ -5,13 +5,13 @@ import Calendar from "../views/Calendar.vue";
 import Dashboard from "../views/Dashboard.vue";
 import Pomodoro from "../views/Pomodoro.vue";
 import Auth from "../components/Auth.vue";
-import WelcomePage from "../views/WelcomePage.vue";
+import Home from "../views/Home.vue";
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: "/", redirect: "/list" },
-    { path: "/welcome", component: WelcomePage },
+    { path: "/home", component: Home },
     { path: "/auth", component: Auth },
     { path: "/list", component: List },
     { path: "/calendar", component: Calendar },
@@ -69,7 +69,7 @@ router.beforeEach((to) => {
   if (to.path === "/auth" && allowed && !wantsRegister) {
     // authenticated/guest users should not visit auth page unless they explicitly want to register
     if (isAuth) {
-      return { path: "/welcome" };
+      return { path: "/home" };
     }
   }
 

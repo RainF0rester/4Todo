@@ -208,7 +208,7 @@ async function handleSubmit() {
             }
             await handlePostAuth()
             message.success('Login successful. Redirecting...')
-            router.push('/welcome')
+            router.push('/home')
         }
     } catch (e) {
         console.error(e)
