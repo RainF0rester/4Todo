@@ -29,7 +29,7 @@ router.beforeEach((to) => {
 
   // allow guests to access the registration page explicitly
   const wantsRegister =
-    to.path === "/auth" && to.query && to.query.mode === "register";
+    to.path === "/auth" && to.query && to.query.mode === "login";
 
   let guestModalOpen = false;
   if (to.path !== "/auth" && !allowed) {
@@ -39,14 +39,14 @@ router.beforeEach((to) => {
 
   // if the user is a guest and tries to access other pages, show a modal and redirect to auth
     if (isGuest && !isAuth) {
-    const guestOk = to.path === "/list" || to.path === "/auth";
+    const guestOk = (to.path === "/list") || (to.path === "/auth") || (to.path === "/home")
     if (!guestOk) {
       if (!guestModalOpen) {
-        guestModalOpen = true;
+        guestModalOpen =  true;
         Modal.confirm({
           title: "Guest Access Restricted",
           content:
-            "Unable to access this page for guests. Please log in or register to save your data.",
+            "Unable to access this page for guests. Please login or register to save your data.",
           okText: "login",
           cancelText: "cancel",
           centered: true,

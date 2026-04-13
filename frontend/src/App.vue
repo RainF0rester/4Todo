@@ -2,7 +2,7 @@
   <a-layout style="min-height:100vh;background:#f5f7fb">
     <!-- Top Nav -->
     <a-layout-header v-if="showHeader" class="topbar">
-      <div class="brand" @click="goToWelcome">Task Tracker</div>
+      <div class="brand" @click="homePage">Task Tracker</div>
       <a-menu mode="horizontal" :selectedKeys="[activeKey]" class="topmenu" @click="onMenuClick">
         <a-menu-item key="/list">List</a-menu-item>
         <a-menu-item key="/dashboard">Dashboard</a-menu-item>
@@ -27,7 +27,10 @@
           </a-dropdown>
         </div>
         <div v-else>
-          <a-button type="primary" @click="goToRegister">Register</a-button>
+          <div class="auth-buttons">
+            <a-button type="primary" @click="goToLogin">Login</a-button>
+            <a-button @click="goToRegister">Register</a-button>
+          </div>
         </div>
       </div>
     </a-layout-header>
@@ -42,6 +45,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { Modal } from 'ant-design-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -58,14 +62,21 @@ const userInitial = computed(() => {
   return email.trim().charAt(0).toUpperCase() || 'B'
 })
 
+
+
+
 function goToRegister() {
   localStorage.removeItem('authGuest')
   router.push({ path: '/auth', query: { mode: 'register' } })
   console.log('Redirecting to auth page for registration...')
 }
-
-function goToWelcome() {
-  router.push('/welcome')
+function goToLogin() {
+  localStorage.removeItem('authGuest')
+  router.push({ path: '/auth', query: { mode: 'login' } })
+  console.log('Redirecting to auth page for login...')
+}
+function homePage() {
+  router.push('/home')
 }
 
 function onMenuClick({ key }) {
@@ -134,12 +145,20 @@ function onMenuClick({ key }) {
   border: 1px solid #eef0f3;
 }
 
+
 .name {
   font-size: 14px;
 }
 
 .content {
   padding: 24px;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  align-items: center;
 }
 
 .content.centered {
