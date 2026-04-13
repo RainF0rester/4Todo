@@ -113,7 +113,7 @@ def test_restore_task_route_makes_task_visible_again(client, session, monkeypatc
     assert data["task_title"] == "Recover Me"
 
 
-@pytest.mark.xfail(reason="Current service.soft_delete_task does not safely handle nonexistent task before user_id check")
+# @pytest.mark.xfail(reason="Current service.soft_delete_task does not safely handle nonexistent task before user_id check")
 def test_delete_nonexistent_task_route_returns_400(client, session, monkeypatch, auth_headers):
     from modules.tasks import routes
 
