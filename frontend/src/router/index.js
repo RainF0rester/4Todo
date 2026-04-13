@@ -55,7 +55,7 @@ router.beforeEach((to) => {
             return router.push({ path: "/auth" });
           },
           onCancel() {
-            router.replace("/list");
+            guestModalOpen = false;
           },
           afterClose() {
             guestModalOpen = false;

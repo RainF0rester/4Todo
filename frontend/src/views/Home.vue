@@ -3,7 +3,7 @@
         <a-card class="home-card">
           <div class="home-header">
             <div class="left">
-              <div class="home-subtitle">Welcome to Task Tracker!</div>
+              <div class="home-subtitle">Welcome to Task Tracker! Have a quick look for today's tasks.</div>
               <h1>👋 Hi,{{ times }}</h1>
             </div>
             <div class="right">
@@ -21,11 +21,12 @@
           <h3>Today tasks</h3>
           <span class="task-count">{{ todayTasks.length }} task{{ todayTasks.length === 1 ? '' : 's' }}</span>
         </div> -->
-        <div v-if="todayTasks.length > 0" class="task-list-header">
-          <span><CarryOutOutlined />Task</span>
-          <span>Task type</span>
-          <span>Due time</span>
-        </div>
+        <div v-if="todayTasks.length > 0">
+          <div class="task-list-header">
+            <span>Task</span>
+            <span>Task type</span>
+            <span>Due time</span>
+          </div>
         <a-list
           :data-source="todayTasks"
           size="small"
@@ -41,6 +42,10 @@
             </a-list-item>
           </template>
         </a-list>
+         </div>
+          <div v-else class="task-empty">
+          <a-empty description="Please go to task Board to create tasks." />
+        </div>
       </div>
 
       <div class="actions">
@@ -57,7 +62,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getTaskList } from '../api/tasks'
-import { CarryOutOutlined  } from '@ant-design/icons-vue'
 
 
 const router = useRouter()
