@@ -81,6 +81,7 @@ function goToRegister() {
   router.push({ path: '/auth', query: { mode: 'register' } })
   console.log('Redirecting to auth page for registration...')
 }
+
 function goToLogin() {
   localStorage.removeItem('authGuest')
   router.push({ path: '/auth', query: { mode: 'login' } })
@@ -174,7 +175,7 @@ function onMenuClick({ key }) {
 .auth-buttons {
   display: flex;
   gap: 12px;
-  margin-top: 16px;
+  padding: 24px;
   align-items: center;
 }
 

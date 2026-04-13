@@ -45,6 +45,11 @@
                 </a-select>
             </div>
         </div>
+        <div class="reset-block">
+        <a-button type="default" danger @click="onResetToDefault">
+          Reset to Default
+        </a-button>
+        </div>
     </a-card>
 </div>
 </template>
@@ -52,7 +57,8 @@
 
 
 <script setup>
-import { THEME_OPTIONS, uiSettings, updateUiSettings } from "../stores/uiSettings";
+import { THEME_OPTIONS, uiSettings, updateUiSettings, resetUiThemeToDefault } from "../stores/uiSettings";
+import { Modal, message } from "ant-design-vue";
 
 function onThemeChange(value) {
   updateUiSettings({ theme: value });
@@ -65,12 +71,24 @@ function onFontSizeChange(value) {
 function onFontTypeChange(value) {
   updateUiSettings({ fontType: value });
 }
+
+  function onResetToDefault() {
+    Modal.confirm({
+      title: "Reset to Default",
+      content: "Do you want to reset your theme and font settings to default?",
+      onOk() {
+        resetUiThemeToDefault();
+        message.success("Theme and font settings have been reset to default.");
+      },
+    });
+}
+
 </script>
 
 
 <style scoped>
 .settings-page {
-  max-width: 1000px;
+  max-width: 800px;
   margin: 0 auto;
   color: var(--app-text);
 }
@@ -92,5 +110,10 @@ function onFontTypeChange(value) {
     font-weight: 600;
 }
 
+.reset-block {
+  margin-top: 32px;
+  display: flex;
+  justify-content: flex-start;
+}
 
 </style>

@@ -176,6 +176,7 @@ async function handleSubmit() {
             if (token) {
                 localStorage.setItem('authToken', token)
                 localStorage.setItem('authEmail', email.value.trim())
+                localStorage.removeItem('authGuest')
                 initUiSettings()
             }
             message.success('Registration successful. Redirecting...')
@@ -207,6 +208,7 @@ async function handleSubmit() {
             if (token) {
                 localStorage.setItem('authToken', token)
                 localStorage.setItem('authEmail', email.value.trim())
+                localStorage.removeItem('authGuest')
                 initUiSettings()
             }
             await handlePostAuth()

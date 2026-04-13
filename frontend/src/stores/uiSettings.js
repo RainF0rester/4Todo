@@ -240,5 +240,6 @@ export function resetUiThemeToDefault(clearStored = false) {
     }
   }
   resetToDefaultTheme();
+  saveSettings();
   applySettings();
 }
