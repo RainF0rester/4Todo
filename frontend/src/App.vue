@@ -1,5 +1,6 @@
 <template>
-  <a-layout style="min-height:100vh;background:#f5f7fb">
+  <a-config-provider :theme="antdTheme">
+    <a-layout style="min-height:100vh;background:#f5f7fb">
     <!-- Top Nav -->
     <a-layout-header v-if="showHeader" class="topbar">
       <div class="brand" @click="homePage">Task Tracker</div>
@@ -7,7 +8,7 @@
         <a-menu-item key="/list">List</a-menu-item>
         <a-menu-item key="/dashboard">Dashboard</a-menu-item>
         <a-menu-item key="/calendar">Calendar</a-menu-item>
-        <a-menu-item key="/pomodoro" disabled>Pomodoro</a-menu-item>
+        <!--todo: <a-menu-item key="/pomodoro" disabled>Pomodoro</a-menu-item> -->
       </a-menu>
 
       <div class="right">
@@ -18,7 +19,7 @@
             </a>
             <template #overlay>
               <a-menu @click="onMenuClick">
-                <a-menu-item key="profile">Profile</a-menu-item>
+                <!--todo: <a-menu-item key="profile">Profile</a-menu-item> -->
                 <a-menu-item key="settings">Settings</a-menu-item>
                 <a-menu-divider />
                 <a-menu-item key="logout">Logout</a-menu-item>
@@ -39,22 +40,26 @@
     <a-layout-content :class="['content', { centered: !showHeader }]">
       <router-view />
     </a-layout-content>
-  </a-layout>
+    </a-layout>
+  </a-config-provider>
 </template>
 
 <script setup>
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Modal } from 'ant-design-vue'
+import { getFontFamilyToken, getFontSizeToken, getThemeColor, initUiSettings, resetUiThemeToDefault, uiSettings } from './stores/uiSettings'
 
 const route = useRoute()
 const router = useRouter()
+initUiSettings()
 
 const activeKey = computed(() => route.path)
 const showHeader = computed(() => route.path !== '/auth')
 const isGuest = computed(() => {
   void route.path
-  return !!localStorage.getItem('authGuest')
+  const hasToken = !!localStorage.getItem('authToken')
+  const guestMode = !!localStorage.getItem('authGuest')
+  return guestMode || !hasToken
 })
 const userInitial = computed(() => {
   void route.path
@@ -62,7 +67,13 @@ const userInitial = computed(() => {
   return email.trim().charAt(0).toUpperCase() || 'B'
 })
 
-
+const antdTheme = computed(() => ({
+  token: {
+    colorPrimary: getThemeColor(uiSettings.theme),
+    fontSize: getFontSizeToken(uiSettings.fontSize),
+    fontFamily: getFontFamilyToken(uiSettings.fontType),
+  },
+}))
 
 
 function goToRegister() {
@@ -70,6 +81,7 @@ function goToRegister() {
   router.push({ path: '/auth', query: { mode: 'register' } })
   console.log('Redirecting to auth page for registration...')
 }
+
 function goToLogin() {
   localStorage.removeItem('authGuest')
   router.push({ path: '/auth', query: { mode: 'login' } })
@@ -86,7 +98,12 @@ function onMenuClick({ key }) {
     localStorage.removeItem('authToken')
     localStorage.removeItem('authGuest')
     localStorage.removeItem('authEmail')
+    resetUiThemeToDefault()
     router.push('/auth')
+    return
+  }
+  if (key === 'settings') {
+    router.push('/settings')
     return
   }
   router.push(key)
@@ -98,8 +115,8 @@ function onMenuClick({ key }) {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: #ffffff;
-  border-bottom: 1px solid #eef0f3;
+  background: var(--app-surface, #ffffff);
+  border-bottom: 1px solid var(--app-border, #eef0f3);
   display: flex;
   align-items: center;
   gap: 24px;
@@ -109,7 +126,7 @@ function onMenuClick({ key }) {
 .brand {
   font-size: 20px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--app-text, #1f2937);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -135,14 +152,14 @@ function onMenuClick({ key }) {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #1f2937;
+  color: var(--app-text, #1f2937);
 }
 
 .user :deep(.ant-avatar-sm) {
   width: 30px;
   height: 30px;
   line-height: 28px;
-  border: 1px solid #eef0f3;
+  border: 1px solid var(--app-border, #eef0f3);
 }
 
 
@@ -152,12 +169,13 @@ function onMenuClick({ key }) {
 
 .content {
   padding: 24px;
+  color: var(--app-text, #1f2937);
 }
 
 .auth-buttons {
   display: flex;
   gap: 12px;
-  margin-top: 16px;
+  padding: 24px;
   align-items: center;
 }
 

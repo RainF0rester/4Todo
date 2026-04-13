@@ -13,10 +13,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
 import { getTaskList } from '../api/tasks'
+import { getPalette, getThemeColor, uiSettings } from '../stores/uiSettings'
 
 const chartRef = ref(null)
 let chartInstance = null
@@ -42,6 +43,8 @@ async function renderCalendarHeatmap() {
   const data = buildHeatmapData(tasks)
   const year = selectedYear.value
   const maxCount = data.length ? Math.max(...data.map(([, count]) => count)) : 5
+  const primaryColor = getThemeColor(uiSettings.theme)
+  const palette = getPalette()
 
   chartInstance.setOption({
     tooltip: {
@@ -55,7 +58,10 @@ async function renderCalendarHeatmap() {
       left: 'center',
       top: 300,
       inRange: {
-        color: ['#e6f7ff', '#69c0ff', '#096dd9'],
+        color: ['#f5f5f5', primaryColor],
+      },
+      textStyle: {
+        color: palette.text,
       },
     },
     calendar: {
@@ -66,7 +72,7 @@ async function renderCalendarHeatmap() {
       range: year,
       itemStyle: {
         borderWidth: 1,
-        borderColor: '#f0f0f0',
+        borderColor: palette.border,
       },
       yearLabel: {
         show: false,
@@ -74,6 +80,10 @@ async function renderCalendarHeatmap() {
       dayLabel: {
         firstDay: 1,
         nameMap: 'en',
+        color: palette.subtext,
+      },
+      monthLabel: {
+        color: palette.subtext,
       },
     },
     series: [
@@ -104,6 +114,15 @@ function changeYear(delta) {
   selectedYear.value += delta
   renderCalendarHeatmap()
 }
+
+watch(
+  () => uiSettings.theme,
+  () => {
+    if (chartInstance) {
+      renderCalendarHeatmap()
+    }
+  },
+)
 </script>
 
 <style scoped>
@@ -127,9 +146,9 @@ function changeYear(delta) {
 }
 
 .calendar-year-control {
-  border: 1px solid #d9d9d9;
-  background: #fff;
-  color: #333;
+  border: 1px solid var(--app-border, #d9d9d9);
+  background: var(--app-surface, #ffffff);
+  color: var(--app-text, #1f2937);
   padding: 4px 10px;
   border-radius: 4px;
   cursor: pointer;
@@ -137,5 +156,6 @@ function changeYear(delta) {
 
 .calendar-year-label {
   font-weight: 600;
+  color: var(--app-text, #1f2937);
 }
 </style>

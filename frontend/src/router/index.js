@@ -3,8 +3,8 @@ import { Modal } from "ant-design-vue";
 import List from "../views/List.vue";
 import Calendar from "../views/Calendar.vue";
 import Dashboard from "../views/Dashboard.vue";
-import Pomodoro from "../views/Pomodoro.vue";
 import Auth from "../components/Auth.vue";
+import PageSettings from "../views/PageSettings.vue";
 import Home from "../views/Home.vue";
 
 const router = createRouter({
@@ -16,7 +16,8 @@ const router = createRouter({
     { path: "/list", component: List },
     { path: "/calendar", component: Calendar },
     { path: "/dashboard", component: Dashboard },
-    { path: "/pomodoro", component: Pomodoro },
+    // todo: { path: "/pomodoro", component: Pomodoro },
+    { path: "/settings", component: PageSettings },
 
   ],
 });
