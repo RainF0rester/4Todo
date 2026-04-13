@@ -41,6 +41,19 @@
                   <WarningOutlined />
                 </a-button>
               </a-tooltip>
+              
+              <a-tooltip :title="item.pinned ? 'Unpin task' : 'Pin task'">
+                <a-button
+                  type="text"
+                  class="pin-btn"
+                  danger
+                  :class="{ pinned: item.pinned }"
+                  @click="togglePin(item)"
+                >
+                  <PushpinOutlined />
+                </a-button>
+              </a-tooltip>
+
               <a-button v-if="!item.pendingDelete" type="text" danger @click="remove(item.id)">
                 <DeleteOutlined />
               </a-button>
@@ -60,7 +73,7 @@
 import { computed, ref, watchEffect, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { Modal, message } from 'ant-design-vue'
-import { DeleteOutlined, ExclamationCircleOutlined, WarningOutlined, RedoOutlined } from '@ant-design/icons-vue'
+import { DeleteOutlined, ExclamationCircleOutlined, WarningOutlined, RedoOutlined,PushpinOutlined} from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
 import '../styles/task-group-card.css'
 import TaskModal from '../components/TaskModal.vue'
