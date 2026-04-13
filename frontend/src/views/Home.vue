@@ -142,7 +142,6 @@ onMounted(() => {
 
 <style scoped>
 .home-page {
-  min-height: calc(100vh - 64px);
   padding: 32px 20px 48px;
   border-radius: 16px;
   background:
@@ -211,9 +210,6 @@ background: #ffffff;
   align-items: center;
   gap: 8px; 
 }
-
-
-
 
 
 .task-list {
