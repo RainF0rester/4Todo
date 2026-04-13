@@ -2,7 +2,10 @@ import pytest
 from app import create_app
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
 from modules.tasks.models import Base
+from modules.users.models import User
+from utils.jwt_utils import create_token
 
 
 @pytest.fixture(scope="session")
@@ -29,3 +32,30 @@ def session():
     yield db
 
     db.close()
+    Base.metadata.drop_all(bind=engine)
+    engine.dispose()
+
+
+@pytest.fixture()
+def test_user(session):
+    user = User(
+        username="lucia_test",
+        email="lucia_test@ad.unsw.edu.au",
+        password_hash="test_hash",
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
+
+
+@pytest.fixture()
+def auth_headers(test_user):
+    token = create_token(
+        test_user.id,
+        test_user.username,
+        test_user.email,
+    )
+    return {
+        "Authorization": f"Bearer {token}"
+    }

@@ -22,3 +22,5 @@ class LoginRespSchema(Schema):
     user = Nested(UserSchema)
     token = String()
 
+class RefreshRespSchema(Schema):
+    token = String()

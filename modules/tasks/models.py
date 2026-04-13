@@ -12,6 +12,9 @@ class Task(Base):
     task_description: Mapped[str | None] = mapped_column(Text, nullable=True)
     task_level: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
+    is_pinned: Mapped[int] = mapped_column(Integer, nullable=False, default=0)  # 0/1
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False)  # Foreign key to users.id
+
     is_finished: Mapped[int] = mapped_column(Integer, nullable=False ,default=0) # 0/1
     is_deleted: Mapped[int] = mapped_column(Integer, nullable=False ,default=0) # 0/1
 
@@ -26,6 +29,8 @@ class Task(Base):
             "task_due": self.task_due,
             "task_description": self.task_description,
             "task_level": self.task_level,
+            "is_pinned": self.is_pinned,
+            "user_id": self.user_id,
             "is_finished": self.is_finished,
             "created_at": str(self.created_at),
             "updated_at": str(self.updated_at),
@@ -40,4 +45,5 @@ class Task(Base):
             "task_description": self.task_description,
             "task_level": self.task_level,
             "is_finished": self.is_finished,
+            "is_pinned": self.is_pinned,
         }

@@ -5,9 +5,11 @@ def create_task():
     return Task(
         id=1,
         task_title="test",
-        task_due="2099-01-01",
+        task_due="2099-01-01 10:30:00",
         task_description="desc",
         task_level=1,
+        is_pinned=1,
+        user_id=123,
         is_finished=0,
         is_deleted=0,
     )
@@ -20,9 +22,11 @@ def test_to_dict():
 
     assert data["id"] == 1
     assert data["task_title"] == "test"
-    assert data["task_due"] == "2099-01-01"
+    assert data["task_due"] == "2099-01-01 10:30:00"
     assert data["task_description"] == "desc"
     assert data["task_level"] == 1
+    assert data["is_pinned"] == 1
+    assert data["user_id"] == 123
     assert data["is_finished"] == 0
     assert data["is_deleted"] == 0
 
@@ -35,11 +39,12 @@ def test_to_json():
 
     data = task.to_json()
 
-    assert data == {
-        "id": 1,
-        "task_title": "test",
-        "task_due": "2099-01-01",
-        "task_description": "desc",
-        "task_level": 1,
-        "is_finished": 0,
-    }
+    assert data["id"] == 1
+    assert data["task_title"] == "test"
+    assert data["task_due"] == "2099-01-01 10:30:00"
+    assert data["task_description"] == "desc"
+    assert data["task_level"] == 1
+    assert data["is_finished"] == 0
+    assert data["is_pinned"] == 1
+
+    assert "user_id" not in data
