@@ -4,6 +4,14 @@ const TASKS_API = "/api/tasks";
 const GUEST_KEY = "guest_tasks";
 const GUEST_LIMIT = 8;
 
+function getAuthHeaders() {
+  const token = localStorage.getItem("authToken");
+
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+}
+
 function isGuest() {
   return !!localStorage.getItem("authGuest");
 }
@@ -49,7 +57,9 @@ export async function getTaskList() {
     return tasks.map(normalizeTask);
   }
 
-  const res = await fetch(TASKS_API);
+  const res = await fetch(TASKS_API,{
+    headers: getAuthHeaders(),
+  });
   if (!res.ok) throw new Error("Unable to get tasks list");
   const data = await res.json();
   return data.map(normalizeTask);
@@ -61,7 +71,9 @@ export async function getDeletedTaskList() {
     return tasks.map(normalizeTask);
   }
 
-  const res = await fetch(`${TASKS_API}/deleted`);
+  const res = await fetch(`${TASKS_API}/deleted`, {
+    headers: getAuthHeaders(),
+  });
   if (!res.ok) throw new Error("Unable to get deleted tasks");
   const data = await res.json();
   return data.map(normalizeTask);
@@ -95,7 +107,7 @@ export async function addTask(task) {
 
   const res = await fetch(TASKS_API, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify(task),
   });
   if (!res.ok) {
@@ -123,7 +135,7 @@ export async function updateTask(id, task) {
 
   const res = await fetch(`${TASKS_API}/${id}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify(task),
   });
   if (!res.ok) {
@@ -148,6 +160,7 @@ export async function deleteTask(id) {
 
   const res = await fetch(`${TASKS_API}/${id}/delete`, {
     method: "PATCH",
+    headers: getAuthHeaders(),
   });
   if (!res.ok) throw new Error("Unable to delete task");
   return res.json();
@@ -164,6 +177,7 @@ export async function restoreTask(id) {
   }
   const res = await fetch(`${TASKS_API}/${id}/restore`, {
     method: "PATCH",
+    headers: getAuthHeaders(),
   });
   if (!res.ok) {
     const data = await res.json().catch(() => null);
