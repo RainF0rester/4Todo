@@ -1,7 +1,14 @@
 <template>
   <a-card title="Dashboard" class="dashboard-card">
     <div class="dashboard-filter">
-      <a-segmented v-model:value="selectedFilter" :options="segmentedOptions" />
+      <a-segmented v-model:value="statusFilter" :options="segmentedOptions" />
+    </div>
+    <div v-if="statusFilter !== 'deleted'" class="dashboard-filter-row">
+      <a-radio-group v-model:value="periodFilter">
+        <a-radio v-for="option in periodOptions" :key="option.value" :value="option.value">
+          {{ option.label }}
+        </a-radio>
+      </a-radio-group>
     </div>
 
     <div class="dashboard-summary">
@@ -21,8 +28,16 @@
         <template #renderItem="{ item }">
           <a-list-item>
             <div class="item-content">
-              <span class="item-title">{{ item.title }}</span>
+              <span class="item-title" :class="{ 'item-completed': isTaskDone(item) }">
+                <span v-if="statusFilter === 'deleted'" class="restore-icon" @click="restoreDeleted(item)">
+                  <RollbackOutlined />
+                </span>{{ item.title }}
+                <span v-if="isTaskDone(item)" class="completed-badge">
+                  (Completed)
+                </span>
+              </span>
               <span class="item-meta">{{ item.dueDate || 'No due date' }}</span>
+
             </div>
           </a-list-item>
         </template>
@@ -34,60 +49,99 @@
 <script setup>
 import { ref, computed, onMounted, h } from 'vue'
 import dayjs from 'dayjs'
-import { ClockCircleOutlined, CalendarOutlined, CheckCircleOutlined, FlagOutlined } from '@ant-design/icons-vue'
-import { getTaskList } from '../api/tasks'
+import { CalendarOutlined, CheckCircleOutlined, FlagOutlined, RollbackOutlined, DeleteOutlined } from '@ant-design/icons-vue'
+import { Radio as ARadio, RadioGroup as ARadioGroup } from 'ant-design-vue'
+import { getTaskList, getDeletedTaskList, restoreTask } from '../api/tasks'
 
 const tasks = ref([])
-const selectedFilter = ref('today')
+const statusFilter = ref('all')
+const periodFilter = ref('daily')
 
 const counts = computed(() => ({
-  today: tasks.value.filter((task) => {
-    if (!task.dueDate) return false
-    const due = dayjs(task.dueDate)
-    return due.isValid() && due.isSame(dayjs(), 'day')
-  }).length,
   all: tasks.value.length,
   completed: tasks.value.filter((task) => task.done).length,
   flagged: tasks.value.filter((task) => Number(task.task_level) >= 3).length,
+  deleted: deletedTasks.value.length,
 }))
+
+const deletedTasks = ref([])
+
+const isTaskDone = (task) => Boolean(task.done || task.is_finished)
 
 const filteredTasks = computed(() => {
   const now = dayjs()
-  switch (selectedFilter.value) {
-    case 'today':
-      return tasks.value.filter((task) => {
-        if (!task.dueDate) return false
-        const due = dayjs(task.dueDate)
-        return due.isValid() && due.isSame(now, 'day')
-      })
+  let result = statusFilter.value === 'deleted' ? deletedTasks.value : tasks.value
+
+  switch (statusFilter.value) {
     case 'completed':
-      return tasks.value.filter((task) => task.done)
+      result = result.filter((task) => task.done)
+      break
     case 'flagged':
-      // TODO
-      return tasks.value.filter((task) => Number(task.task_level) >= 3)
+      result = result.filter((task) => Number(task.task_level) >= 3)
+      break
+    case 'deleted':
+      break
     default:
-      return tasks.value
+      break
   }
+
+  if (statusFilter.value === 'deleted') {
+    return result
+  }
+
+  if (periodFilter.value !== 'daily') {
+    result = result.filter((task) => {
+      if (!task.dueDate) return false
+      const due = dayjs(task.dueDate)
+      if (!due.isValid()) return false
+      switch (periodFilter.value) {
+        case 'daily':
+          return due.isSame(now, 'day')
+        case 'weekly':
+          return due.isSame(now, 'week')
+        case 'monthly':
+          return due.isSame(now, 'month')
+        case 'quarterly':
+          return due.quarter() === now.quarter() && due.isSame(now, 'year')
+        case 'yearly':
+          return due.isSame(now, 'year')
+      }
+      return true
+    })
+  } else {
+    result = result.filter((task) => {
+      if (!task.dueDate) return false
+      const due = dayjs(task.dueDate)
+      return due.isValid() && due.isSame(now, 'day')
+    })
+  }
+
+  return result
 })
 
 const selectedLabel = computed(() => {
-  switch (selectedFilter.value) {
-    case 'today': return 'Today'
-    case 'completed': return 'Completed'
-    case 'flagged': return 'Flagged'
-    default: return 'All'
+  const statusLabels = {
+    all: 'All',
+    completed: 'Completed',
+    flagged: 'Flagged',
+    deleted: 'Deleted',
   }
+  const periodLabels = {
+    daily: 'Daily',
+    weekly: 'Weekly',
+    monthly: 'Monthly',
+    quarterly: 'Quarterly',
+    yearly: 'Yearly',
+  }
+
+  if (statusFilter.value === 'deleted') {
+    return statusLabels.deleted
+  }
+
+  return `${statusLabels[statusFilter.value] || 'All'} / ${periodLabels[periodFilter.value]}`
 })
 
 const segmentedOptions = computed(() => [
-  {
-    label: h('span', { class: 'segment-label' }, [
-      h(ClockCircleOutlined),
-      h('span', { class: 'segment-text' }, ' Today '),
-      h('span', { class: 'segment-count' }, counts.value.today),
-    ]),
-    value: 'today',
-  },
   {
     label: h('span', { class: 'segment-label' }, [
       h(CalendarOutlined),
@@ -112,16 +166,40 @@ const segmentedOptions = computed(() => [
     ]),
     value: 'flagged',
   },
+  {
+    label: h('span', { class: 'segment-label' }, [
+      h(DeleteOutlined),
+      h('span', { class: 'segment-text' }, ' Deleted '),
+      h('span', { class: 'segment-count' }, counts.value.deleted),
+    ]),
+    value: 'deleted',
+  },
+])
+const periodOptions = computed(() => [
+  { label: 'Daily', value: 'daily' },
+  { label: 'Weekly', value: 'weekly' },
+  { label: 'Monthly', value: 'monthly' },
+  { label: 'Quarterly', value: 'quarterly' },
+  { label: 'Yearly', value: 'yearly' },
 ])
 
 const paginationConfig = computed(() => filteredTasks.value.length > 20 ? { pageSize: 20 } : false)
 
 async function loadTasks() {
-  // TODO: get tasks from localstorage when guest login
   try {
     tasks.value = await getTaskList()
+    deletedTasks.value = await getDeletedTaskList()
   } catch (err) {
     console.error('Unable to load tasks', err)
+  }
+}
+
+async function restoreDeleted(task) {
+  try {
+    await restoreTask(task.id)
+    await loadTasks()
+  } catch (err) {
+    console.error('Unable to restore task', err)
   }
 }
 
@@ -135,6 +213,10 @@ onMounted(loadTasks)
 
 .dashboard-filter {
   margin-bottom: 24px;
+}
+
+.dashboard-filter-row {
+  margin-bottom: 16px;
 }
 
 .segment-label {
@@ -203,5 +285,27 @@ onMounted(loadTasks)
 
 .item-meta {
   color: #6b7280;
+}
+
+.restore-icon {
+  cursor: pointer;
+  color: #1890ff;
+  display: inline-flex;
+  align-items: center;
+  margin-right: 18px;
+}
+
+.item-completed {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.completed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #52c41a;
+  font-size: 12px;
+  margin-left: 12px;
 }
 </style>
