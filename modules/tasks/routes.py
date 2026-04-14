@@ -4,6 +4,7 @@ from db import get_session
 from . import service
 from .schemas import TaskSchema, TaskCreateSchema, TaskUpdateSchema, StatusSchema
 from utils.auth_decorator import require_auth
+from modules.tasks.service import cleanup_deleted_tasks
 
 bp = APIBlueprint("tasks", __name__, url_prefix="/tasks", tag="Tasks")
 
@@ -31,6 +32,7 @@ def create_task(json_data):
 @require_auth
 def get_task(task_id: int):
     session = get_session()
+    cleanup_deleted_tasks(session)
     try:
         user_id = int(g.user_id)
         if user_id is None:
