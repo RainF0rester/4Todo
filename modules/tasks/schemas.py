@@ -22,6 +22,7 @@ class TaskUpdateSchema(Schema):
     task_due = String(required=False, allow_none=True)
     task_description = String(required=False, allow_none=True)
     task_level = Integer(required=False)
+    is_finished = Integer(required=False, allow_none=True)
     is_pinned = Integer(required=False, allow_none=True)
 
 class StatusSchema(Schema):
