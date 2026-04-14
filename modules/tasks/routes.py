@@ -98,6 +98,8 @@ def restore_task(task_id: int):
 @require_auth
 def list_tasks():
     session = get_session()
+    cleanup_deleted_tasks(session)
+
     try:
         user_id = int(g.user_id)
         if user_id is None:
