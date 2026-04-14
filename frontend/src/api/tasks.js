@@ -96,6 +96,7 @@ export async function addTask(task) {
       task_due: task.task_due || null,
       task_description: task.task_description || null,
       task_level: task.task_level || 0,
+      is_pinned: task.is_pinned ? 1 : 0,
       is_finished: 0,
       created_at: now,
       updated_at: now,

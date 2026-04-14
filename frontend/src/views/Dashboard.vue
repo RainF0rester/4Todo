@@ -59,7 +59,7 @@ const periodFilter = ref('daily')
 const counts = computed(() => ({
   all: tasks.value.length,
   completed: tasks.value.filter((task) => task.done).length,
-  flagged: tasks.value.filter((task) => Number(task.task_level) >= 3).length,
+  flagged: tasks.value.filter((task) => task.pinned).length,
   deleted: deletedTasks.value.length,
 }))
 
@@ -76,7 +76,7 @@ const filteredTasks = computed(() => {
       result = result.filter((task) => task.done)
       break
     case 'flagged':
-      result = result.filter((task) => Number(task.task_level) >= 3)
+      result = result.filter((task) => task.pinned)
       break
     case 'deleted':
       break
@@ -84,16 +84,17 @@ const filteredTasks = computed(() => {
       break
   }
 
-  if (statusFilter.value === 'deleted') {
+  if (statusFilter.value === 'flagged') {
     return result
   }
 
+
   if (periodFilter.value !== 'daily') {
     result = result.filter((task) => {
-      if (!task.dueDate) return false
       const due = dayjs(task.dueDate)
-      if (!due.isValid()) return false
       switch (periodFilter.value) {
+        case 'unscheduled':
+          return !task.dueDate
         case 'daily':
           return due.isSame(now, 'day')
         case 'weekly':
@@ -126,6 +127,7 @@ const selectedLabel = computed(() => {
     deleted: 'Deleted',
   }
   const periodLabels = {
+    unscheduled: 'Unscheduled',
     daily: 'Daily',
     weekly: 'Weekly',
     monthly: 'Monthly',
@@ -136,6 +138,11 @@ const selectedLabel = computed(() => {
   if (statusFilter.value === 'deleted') {
     return statusLabels.deleted
   }
+
+  if (statusFilter.value === 'flagged') {
+    return statusLabels.flagged
+  }
+
 
   return `${statusLabels[statusFilter.value] || 'All'} / ${periodLabels[periodFilter.value]}`
 })
@@ -175,6 +182,7 @@ const segmentedOptions = computed(() => [
   },
 ])
 const periodOptions = computed(() => [
+  { label: 'Unscheduled', value: 'unscheduled' },
   { label: 'Daily', value: 'daily' },
   { label: 'Weekly', value: 'weekly' },
   { label: 'Monthly', value: 'monthly' },
