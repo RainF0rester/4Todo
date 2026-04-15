@@ -1,17 +1,24 @@
 <template>
     <a-modal :open="open" :title="mode === 'edit' ? 'Edit Task' : 'Add Task'" :okText="mode === 'edit' ? 'Save' : 'Add'"
         cancelText="Cancel" @ok="submitForm" @cancel="close" destroyOnClose>
-        <a-form ref="formRef" :model="formState" :rules="rules">
+        <a-form ref="formRef" :model="formState" :rules="rules" layout="vertical">
             <a-form-item name="title" label="Task title">
                 <a-input v-model:value="formState.title" placeholder="Task title" />
-            </a-form-item>
+            </a-form-item >
             <a-form-item name="dueDate" label="Due date">
                 <a-date-picker v-model:value="formState.dueDate" style="width: 100%" format="YYYY-MM-DD HH:mm"
                     valueFormat="YYYY-MM-DD HH:mm" :show-time="{ format: 'HH:mm' }" :disabled-date="disabledDate"
                     :allowClear="true" :disabled-time="disabledDateTime" />
             </a-form-item>
-            <a-form-item name="pinned" label="Pin to top">
+          <a-form-item name="pinned">
+            <a-row :gutter="24">
+                <a-col :span="20">
+                <span>Pin to top</span>
+                </a-col>
+                <a-col :span="4">
                 <a-switch v-model:checked="formState.pinned" />
+                </a-col>
+            </a-row>
             </a-form-item>
 
             <!-- <a-form-item name="assignee" label="Assignee">
