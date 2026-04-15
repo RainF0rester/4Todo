@@ -6,7 +6,6 @@ const GUEST_LIMIT = 8;
 
 function getAuthHeaders() {
   const token = localStorage.getItem("authToken");
-
   return {
     Authorization: `Bearer ${token}`,
   };

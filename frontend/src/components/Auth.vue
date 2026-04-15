@@ -245,7 +245,11 @@ async function handlePostAuth() {
                 const skippedIds = []
                 const failed = []
                 for (const t of guestTasks) {
-                    const payload = { task_title: t.task_title, task_level: t.task_level ?? 0 }
+                    const payload = {
+                        task_title: t.task_title,
+                        task_level: t.task_level ?? 0,
+                        is_pinned: t.is_pinned ? 1 : 0,
+                    }
                     if (t.task_due) payload.task_due = t.task_due
                     try {
                         const taskRes = await addTask(payload)

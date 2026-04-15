@@ -42,10 +42,10 @@
                   <WarningOutlined />
                 </a-button>
               </a-tooltip>
-
               <a-tooltip :title="item.pinned ? 'Unpin task' : 'Pin task'">
-                <a-button type="text" class="pin-btn" danger :class="{ pinned: item.pinned }" @click="togglePin(item)">
-                   <PushpinOutlined />
+                <a-button type="text" class="pin-btn" :class="{ pinned: item.pinned }" danger @click="togglePin(item)">
+                  <PushpinFilled v-if="item.pinned" />
+                  <PushpinOutlined v-else />
                 </a-button>
               </a-tooltip>
 
@@ -69,7 +69,7 @@
 import { computed, ref, watchEffect, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { Modal, message } from 'ant-design-vue'
-import { DeleteOutlined, ExclamationCircleOutlined, WarningOutlined, RedoOutlined,PushpinOutlined} from '@ant-design/icons-vue'
+import { DeleteOutlined, ExclamationCircleOutlined, WarningOutlined, RedoOutlined,PushpinOutlined,PushpinFilled} from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
 import '../styles/task-group-card.css'
 import TaskModal from '../components/TaskModal.vue'
@@ -333,8 +333,7 @@ async function handleSubmit(payload) {
         pendingDelete: false,
         deleting: false,
       }
-      task_info.value = sortPinnedFirst(task_info.value)
-      task_info.value.unshift(newTask)
+      task_info.value = sortPinnedFirst([newTask, ...task_info.value])
       message.success('Task created successfully.')
     } catch (e) {
       console.error(e)
@@ -351,7 +350,6 @@ async function handleSubmit(payload) {
         task_due: setDefaultDueDate(payload.dueDate),
         is_pinned: payload.pinned ? 1 : 0
       })
-      console.log('返回的 task:', t)
       const normalized = normalizeTask(t)
       const index = task_info.value.findIndex(x => x.id === normalized.id)
       if (index !== -1) {
@@ -359,6 +357,7 @@ async function handleSubmit(payload) {
           ...task_info.value[index],
           ...normalized,
         }
+        task_info.value = sortPinnedFirst(task_info.value)
         message.success('Task updated successfully.')
       }
     } catch (e) {

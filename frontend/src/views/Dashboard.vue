@@ -88,6 +88,9 @@ const filteredTasks = computed(() => {
     return result
   }
 
+  if (statusFilter.value === 'deleted') {
+    return result
+  }
 
   if (periodFilter.value !== 'daily') {
     result = result.filter((task) => {
@@ -190,8 +193,11 @@ const periodOptions = computed(() => [
   { label: 'Yearly', value: 'yearly' },
 ])
 
-const paginationConfig = computed(() => filteredTasks.value.length > 20 ? { pageSize: 20 } : false)
-
+const paginationConfig = computed(() => 
+  filteredTasks.value.length > 20 
+    ? { pageSize: 20 } 
+    : false
+)
 async function loadTasks() {
   try {
     tasks.value = await getTaskList()
