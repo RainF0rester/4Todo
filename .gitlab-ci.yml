@@ -10,7 +10,15 @@ backend_test:
   before_script:
     - pip install -r requirements.txt
   script:
-    - pytest tests
+    - pytest tests --junitxml=test-report.xml --cov=. --cov-report=term-missing --cov-report=html
+  artifacts:
+    reports:
+      junit: test-report.xml
+    paths:
+      - test-report.xml
+      - htmlcov/
+    expire_in: 10 days
+
 
 deploy:
   stage: deploy
