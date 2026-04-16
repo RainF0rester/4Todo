@@ -47,13 +47,13 @@ backend_test:
     expire_in: 10 days
 
 
-deploy:
-  stage: deploy
-  tags:
-    - tasktracker
-  only:
-    - main
-  script:
-    - cd /root/tasktracker/tasktracker
-    - git pull origin main
-    - bash deploy.sh
+#deploy:
+#  stage: deploy
+#  tags:
+#    - tasktracker
+#  only:
+#    - main
+#  script:
+#    - cd /root/tasktracker/tasktracker
+#    - git pull origin main
+#    - bash deploy.sh
