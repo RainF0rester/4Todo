@@ -1,11 +1,24 @@
 stages:
   - test
+  - deploy
 
 backend_test:
   stage: test
+#  tags:
+#    - test # docker runner
   image: python:3.10
   before_script:
     - pip install -r requirements.txt
-#    - pip install -r requirements-dev.txt
   script:
     - pytest tests
+
+deploy:
+  stage: deploy
+  tags:
+    - tasktracker
+  only:
+    - main
+  script:
+    - cd /root/tasktracker/tasktracker
+    - git pull origin main
+    - bash deploy.sh
