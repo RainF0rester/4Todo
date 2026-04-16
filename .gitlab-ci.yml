@@ -2,6 +2,26 @@ stages:
   - test
   - deploy
 
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+frontend_build:
+  stage: build
+  image: node:20
+  cache:
+    key: npm-cache
+    paths:
+      - frontend/node_modules/
+  before_script:
+    - cd frontend
+    - npm ci
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - frontend/dist/
+    expire_in: 10 days
+
 backend_test:
   stage: test
 #  tags:
