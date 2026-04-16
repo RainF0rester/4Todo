@@ -1,4 +1,7 @@
+# This file is used to configure the GitLab CI/CD pipeline for the project.
+# AI partially generated this file.
 stages:
+  - build
   - test
   - deploy
 
@@ -27,6 +30,10 @@ backend_test:
 #  tags:
 #    - test # docker runner
   image: python:3.10
+  cache:
+    key: pip-cache
+    paths:
+      - .cache/pip
   before_script:
     - pip install -r requirements.txt
   script:
