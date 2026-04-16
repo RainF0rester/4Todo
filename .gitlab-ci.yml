@@ -4,8 +4,8 @@ stages:
 
 backend_test:
   stage: test
-  tags:
-    - test # docker runner
+#  tags:
+#    - test # docker runner
   image: python:3.10
   before_script:
     - pip install -r requirements.txt
