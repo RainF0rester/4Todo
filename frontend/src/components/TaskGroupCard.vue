@@ -13,7 +13,8 @@
         <template #renderItem="{ item }">
           <a-list-item class="row" :class="{
             'pending-delete-row': item.pendingDelete,
-            'deleting-row': item.deleting
+            'deleting-row': item.deleting,
+            'pinned-row': item.pinned
           }">
             <div class="left">
               <a-checkbox :class="{ invisible: item.pendingDelete }" :disabled="!canComplete(item.dueDate)"
@@ -41,7 +42,15 @@
                   <WarningOutlined />
                 </a-button>
               </a-tooltip>
+              <a-tooltip :title="item.pinned ? 'Unpin task' : 'Pin task'">
+                <a-button type="text" class="pin-btn" :class="{ pinned: item.pinned }" danger @click="togglePin(item)">
+                  <PushpinFilled v-if="item.pinned" />
+                  <PushpinOutlined v-else />
+                </a-button>
+              </a-tooltip>
+
               <a-button v-if="!item.pendingDelete" type="text" danger @click="remove(item.id)">
+
                 <DeleteOutlined />
               </a-button>
               <a-button v-else type="text" class="undo-btn countdown" @click="undoRemove(item.id)">
@@ -60,11 +69,11 @@
 import { computed, ref, watchEffect, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { Modal, message } from 'ant-design-vue'
-import { DeleteOutlined, ExclamationCircleOutlined, WarningOutlined, RedoOutlined } from '@ant-design/icons-vue'
+import { DeleteOutlined, ExclamationCircleOutlined, WarningOutlined, RedoOutlined,PushpinOutlined,PushpinFilled} from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
 import '../styles/task-group-card.css'
 import TaskModal from '../components/TaskModal.vue'
-import { addTask, deleteTask, restoreTask, updateTask, normalizeTask } from '../api/tasks'
+import { addTask, deleteTask, restoreTask, updateTask, normalizeTask, pinTask, unpinTask } from '../api/tasks'
 
 const deleteTimers = new Map()
 const props = defineProps({
@@ -86,11 +95,12 @@ const peopleOptions = [
 
 const task_info = ref([])
 watchEffect(() => {
-  task_info.value = (props.initialItems || []).map(x => ({
+  task_info.value = sortPinnedFirst((props.initialItems || []).map(x => ({
     ...x,
+    pinned: Boolean(x.pinned),
     pendingDelete: false,
     deleting: false,
-  }))
+  })))
 })
 
 const palette = {
@@ -304,9 +314,12 @@ function setDefaultDueDate(dueDate) {
 async function handleSubmit(payload) {
   if (payload.mode === 'add') {
     try {
+      console.log('payload:', payload)
+
       const t = await addTask({
         task_title: payload.title,
         task_due: setDefaultDueDate(payload.dueDate),
+        is_pinned: payload.pinned ? 1 : 0,
         task_level: props.taskLevel
       })
       const normalized = normalizeTask(t)
@@ -316,10 +329,11 @@ async function handleSubmit(payload) {
       }
       const newTask = {
         ...normalized,
+        pinned: Boolean(normalized.pinned),
         pendingDelete: false,
         deleting: false,
       }
-      task_info.value.unshift(newTask)
+      task_info.value = sortPinnedFirst([newTask, ...task_info.value])
       message.success('Task created successfully.')
     } catch (e) {
       console.error(e)
@@ -330,9 +344,11 @@ async function handleSubmit(payload) {
 
   if (payload.mode === 'edit') {
     try {
+      console.log('payload:', payload)
       const t = await updateTask(payload.id, {
         task_title: payload.title,
         task_due: setDefaultDueDate(payload.dueDate),
+        is_pinned: payload.pinned ? 1 : 0
       })
       const normalized = normalizeTask(t)
       const index = task_info.value.findIndex(x => x.id === normalized.id)
@@ -341,6 +357,7 @@ async function handleSubmit(payload) {
           ...task_info.value[index],
           ...normalized,
         }
+        task_info.value = sortPinnedFirst(task_info.value)
         message.success('Task updated successfully.')
       }
     } catch (e) {
@@ -405,6 +422,28 @@ async function toggleDone(item, checked) {
     message.error(e?.message || 'Failed to update task status.')
   }
 }
+
+function sortPinnedFirst(items = []) {
+  return [...items].sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)))
+}
+
+async function togglePin(item) {
+  if (!item || item.pendingDelete) return
+  try {
+    if (item.pinned) {
+      await unpinTask(item.id)
+      message.success('Task unpinned.')
+    } else {
+      await pinTask(item.id)
+      message.success('Task pinned.')
+    }
+    emit('reload')
+  } catch (e) {
+    console.error(e)
+    message.error('Failed to update pin status.')
+  }
+}
+
 
 onBeforeUnmount(() => {
   for (const t of deleteTimers.values()) {

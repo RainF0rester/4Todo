@@ -6,7 +6,6 @@ const GUEST_LIMIT = 8;
 
 function getAuthHeaders() {
   const token = localStorage.getItem("authToken");
-
   return {
     Authorization: `Bearer ${token}`,
   };
@@ -47,6 +46,7 @@ export function normalizeTask(t) {
     title: t.task_title,
     dueDate: t.task_due ? t.task_due : "",
     done: t.is_finished ? true : false,
+    pinned: t.is_pinned ? true : false,
     task_level: limitTaskLevel(Number(t.task_level)),
   };
 }
@@ -95,6 +95,7 @@ export async function addTask(task) {
       task_due: task.task_due || null,
       task_description: task.task_description || null,
       task_level: task.task_level || 0,
+      is_pinned: task.is_pinned ? 1 : 0,
       is_finished: 0,
       created_at: now,
       updated_at: now,
@@ -182,6 +183,50 @@ export async function restoreTask(id) {
   if (!res.ok) {
     const data = await res.json().catch(() => null);
     throw new Error(data?.message || "Unable to restore task");
+  }
+  return res.json();
+}
+
+
+export async function pinTask(id) {
+  if (isGuest()) {
+    const tasks = loadGuestTasks();
+    const idx = tasks.findIndex((t) => Number(t.id) === Number(id));
+    if (idx === -1) throw new Error("Unable to pin task");
+    tasks[idx].is_pinned = 1;
+    tasks[idx].updated_at = new Date().toISOString();
+    saveGuestTasks(tasks);
+    return Promise.resolve(tasks[idx]);
+  }
+  const res = await fetch(`${TASKS_API}/${id}/pin`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.message || "Unable to pin task");
+  }
+  return res.json();
+}
+
+
+export async function unpinTask(id) {
+  if (isGuest()) {
+    const tasks = loadGuestTasks();
+    const idx = tasks.findIndex((t) => Number(t.id) === Number(id));
+    if (idx === -1) throw new Error("Unable to unpin task");
+    tasks[idx].is_pinned = 0;
+    tasks[idx].updated_at = new Date().toISOString();
+    saveGuestTasks(tasks);
+    return Promise.resolve(tasks[idx]);
+  }
+  const res = await fetch(`${TASKS_API}/${id}/unpin`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.message || "Unable to unpin task");
   }
   return res.json();
 }

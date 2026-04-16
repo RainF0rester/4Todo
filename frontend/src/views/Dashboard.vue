@@ -37,7 +37,6 @@
                 </span>
               </span>
               <span class="item-meta">{{ item.dueDate || 'No due date' }}</span>
-
             </div>
           </a-list-item>
         </template>
@@ -60,7 +59,7 @@ const periodFilter = ref('daily')
 const counts = computed(() => ({
   all: tasks.value.length,
   completed: tasks.value.filter((task) => task.done).length,
-  flagged: tasks.value.filter((task) => Number(task.task_level) >= 3).length,
+  flagged: tasks.value.filter((task) => task.pinned).length,
   deleted: deletedTasks.value.length,
 }))
 
@@ -77,12 +76,16 @@ const filteredTasks = computed(() => {
       result = result.filter((task) => task.done)
       break
     case 'flagged':
-      result = result.filter((task) => Number(task.task_level) >= 3)
+      result = result.filter((task) => task.pinned)
       break
     case 'deleted':
       break
     default:
       break
+  }
+
+  if (statusFilter.value === 'flagged') {
+    return result
   }
 
   if (statusFilter.value === 'deleted') {
@@ -91,10 +94,10 @@ const filteredTasks = computed(() => {
 
   if (periodFilter.value !== 'daily') {
     result = result.filter((task) => {
-      if (!task.dueDate) return false
       const due = dayjs(task.dueDate)
-      if (!due.isValid()) return false
       switch (periodFilter.value) {
+        case 'unscheduled':
+          return !task.dueDate
         case 'daily':
           return due.isSame(now, 'day')
         case 'weekly':
@@ -127,6 +130,7 @@ const selectedLabel = computed(() => {
     deleted: 'Deleted',
   }
   const periodLabels = {
+    unscheduled: 'Unscheduled',
     daily: 'Daily',
     weekly: 'Weekly',
     monthly: 'Monthly',
@@ -137,6 +141,11 @@ const selectedLabel = computed(() => {
   if (statusFilter.value === 'deleted') {
     return statusLabels.deleted
   }
+
+  if (statusFilter.value === 'flagged') {
+    return statusLabels.flagged
+  }
+
 
   return `${statusLabels[statusFilter.value] || 'All'} / ${periodLabels[periodFilter.value]}`
 })
@@ -176,6 +185,7 @@ const segmentedOptions = computed(() => [
   },
 ])
 const periodOptions = computed(() => [
+  { label: 'Unscheduled', value: 'unscheduled' },
   { label: 'Daily', value: 'daily' },
   { label: 'Weekly', value: 'weekly' },
   { label: 'Monthly', value: 'monthly' },
@@ -183,8 +193,11 @@ const periodOptions = computed(() => [
   { label: 'Yearly', value: 'yearly' },
 ])
 
-const paginationConfig = computed(() => filteredTasks.value.length > 20 ? { pageSize: 20 } : false)
-
+const paginationConfig = computed(() => 
+  filteredTasks.value.length > 20 
+    ? { pageSize: 20 } 
+    : false
+)
 async function loadTasks() {
   try {
     tasks.value = await getTaskList()
