@@ -172,7 +172,24 @@ async function handleSubmit() {
                 message.error(errMsg)
                 return
             }
-            const token = data?.token || data?.access_token || data?.auth_token
+            let token = data?.token || data?.access_token || data?.auth_token
+            if (!token) {
+                const loginRes = await fetch('/api/users/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identify: email.value.trim(), password: password.value }),
+                })
+                const loginText = await loginRes.text().catch(() => '')
+                let loginData = null
+                try { loginData = loginText ? JSON.parse(loginText) : null } catch (err) { loginData = null }
+                if (!loginRes.ok) {
+                    const errMsg = loginData?.message || loginText || `Server returned ${loginRes.status}`
+                    console.error('Login after register failed:', loginRes.status, loginText)
+                    message.error(`Registration succeeded, but auto-login failed: ${errMsg}`)
+                    return
+                }
+                token = loginData?.token || loginData?.access_token || loginData?.auth_token
+            }
             if (token) {
                 localStorage.setItem('authToken', token)
                 localStorage.setItem('authEmail', email.value.trim())
@@ -180,7 +197,7 @@ async function handleSubmit() {
                 initUiSettings()
             }
             message.success('Registration successful. Redirecting...')
-            router.push('/')
+            router.push('/home')
         } else {
             // login: send identify (email only)
             const identify = email.value.trim()

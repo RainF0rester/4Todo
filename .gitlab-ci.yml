@@ -1,16 +1,51 @@
+# This file is used to configure the GitLab CI/CD pipeline for the project.
+# AI partially generated this file.
 stages:
+  - build
   - test
   - deploy
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+frontend_build:
+  stage: build
+  image: node:20
+  cache:
+    key: npm-cache
+    paths:
+      - frontend/node_modules/
+  before_script:
+    - cd frontend
+    - npm ci
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - frontend/dist/
+    expire_in: 10 days
 
 backend_test:
   stage: test
 #  tags:
 #    - test # docker runner
   image: python:3.10
+  cache:
+    key: pip-cache
+    paths:
+      - .cache/pip
   before_script:
     - pip install -r requirements.txt
   script:
-    - pytest tests
+    - pytest tests --junitxml=test-report.xml --cov=. --cov-report=term-missing --cov-report=html
+  artifacts:
+    reports:
+      junit: test-report.xml
+    paths:
+      - test-report.xml
+      - htmlcov/
+    expire_in: 10 days
+
 
 deploy:
   stage: deploy

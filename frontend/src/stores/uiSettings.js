@@ -11,8 +11,8 @@ export const THEME_OPTIONS = [
 ];
 
 const THEME_MAP = Object.fromEntries(
-    THEME_OPTIONS.map((theme) => [theme.value, theme.color]),
-  );
+  THEME_OPTIONS.map((theme) => [theme.value, theme.color]),
+);
 
 // const THEME_MAP = {
 //     blue: "#1677ff",
@@ -20,7 +20,7 @@ const THEME_MAP = Object.fromEntries(
 //     green: "#52c41a",
 //     red: "#f5222d",
 //   };
-  
+
 const FONT_SIZE_MAP = {
   small: "12px",
   medium: "14px",
@@ -28,9 +28,10 @@ const FONT_SIZE_MAP = {
 };
 
 const FONT_TYPE_MAP = {
-  default: "inherit",
-  serif: "serif",
-  TimesNewRoman: "'Times New Roman'",
+  default:
+    'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  serif: 'Georgia, Cambria, "Times New Roman", Times, serif',
+  TimesNewRoman: '"Times New Roman", Times, serif',
 };
 const THEME_HOME_BACKGROUND_MAP = {
   blue: {
@@ -75,44 +76,45 @@ function getStorageKeyByEmail() {
 
 //check if user is logged in
 function isLogin() {
-    const token = localStorage.getItem("authToken");
-    const isGuest = localStorage.getItem("authGuest");
-    return token && !isGuest;}
-    
+  const token = localStorage.getItem("authToken");
+  const isGuest = localStorage.getItem("authGuest");
+  return token && !isGuest;
+}
+
 //get theme color
 export function getThemeColor(themeName) {
-    if (THEME_MAP[themeName]) {
-      return THEME_MAP[themeName];
-    }
-    return THEME_MAP[defaults.theme];
+  if (THEME_MAP[themeName]) {
+    return THEME_MAP[themeName];
   }
+  return THEME_MAP[defaults.theme];
+}
 //get home page background
 export function getHomePageBackground(themeName) {
-    if (THEME_HOME_BACKGROUND_MAP[themeName]) {
-      return THEME_HOME_BACKGROUND_MAP[themeName];
-    }
-    return THEME_HOME_BACKGROUND_MAP[defaults.theme];
+  if (THEME_HOME_BACKGROUND_MAP[themeName]) {
+    return THEME_HOME_BACKGROUND_MAP[themeName];
   }
-//get font size 
+  return THEME_HOME_BACKGROUND_MAP[defaults.theme];
+}
+//get font size
 export function getFontSizeToken(fontSizeConfig) {
-  const size = FONT_SIZE_MAP[fontSizeConfig] || FONT_SIZE_MAP[defaults.fontSize];
+  const size =
+    FONT_SIZE_MAP[fontSizeConfig] || FONT_SIZE_MAP[defaults.fontSize];
   return parseFloat(size);
 }
 //get font family
 export function getFontFamilyToken(fontTypeConfig) {
-    if (FONT_TYPE_MAP[fontTypeConfig]) {
-      return FONT_TYPE_MAP[fontTypeConfig];
-    }
-    return FONT_TYPE_MAP[defaults.fontType];
+  if (FONT_TYPE_MAP[fontTypeConfig]) {
+    return FONT_TYPE_MAP[fontTypeConfig];
   }
-  
+  return FONT_TYPE_MAP[defaults.fontType];
+}
 
 function getFontSize(fontSizeConfig) {
-    if (FONT_SIZE_MAP[fontSizeConfig]) {
-      return FONT_SIZE_MAP[fontSizeConfig];
-    }
-    return FONT_SIZE_MAP[defaults.fontSize];
+  if (FONT_SIZE_MAP[fontSizeConfig]) {
+    return FONT_SIZE_MAP[fontSizeConfig];
   }
+  return FONT_SIZE_MAP[defaults.fontSize];
+}
 
 //save settings to local storage
 function saveSettings() {
@@ -144,27 +146,27 @@ function resetToDefaultTheme() {
 }
 //apply theme
 function applyTheme(theme) {
-    const root = document.documentElement;
-    const bg = getHomePageBackground(theme);
-  
-    root.style.setProperty("--app-primary", getThemeColor(theme));
-    root.style.setProperty("--home-bg-radial", bg.radial);
-    root.style.setProperty("--home-bg-top", bg.top);
-    root.style.setProperty("--home-bg-mid", bg.mid);
-    root.style.setProperty("--home-bg-bottom", bg.bottom);
+  const root = document.documentElement;
+  const bg = getHomePageBackground(theme);
+
+  root.style.setProperty("--app-primary", getThemeColor(theme));
+  root.style.setProperty("--home-bg-radial", bg.radial);
+  root.style.setProperty("--home-bg-top", bg.top);
+  root.style.setProperty("--home-bg-mid", bg.mid);
+  root.style.setProperty("--home-bg-bottom", bg.bottom);
 }
 
 //apply font size
 function applyFontSize(fontSize) {
-    const root = document.documentElement;
-    const size = getFontSize(fontSize);
-  
-    root.style.setProperty("--app-font-size", size);
-    root.style.fontSize = size;
-  
-    if (document.body) {
-      document.body.style.fontSize = size;
-    }
+  const root = document.documentElement;
+  const size = getFontSize(fontSize);
+
+  root.style.setProperty("--app-font-size", size);
+  root.style.fontSize = size;
+
+  if (document.body) {
+    document.body.style.fontSize = size;
+  }
 }
 
 function applyFontType(fontType) {
@@ -179,14 +181,13 @@ function applyFontType(fontType) {
 }
 //apply settings
 function applySettings() {
-    const theme = isLogin()? uiSettings.theme : defaults.theme;
-    const fontSize = isLogin()? uiSettings.fontSize : defaults.fontSize;
-    const fontType = isLogin()? uiSettings.fontType : defaults.fontType;
-    applyTheme(theme);
-    applyFontSize(fontSize);
-    applyFontType(fontType);
-  }
-
+  const theme = isLogin() ? uiSettings.theme : defaults.theme;
+  const fontSize = isLogin() ? uiSettings.fontSize : defaults.fontSize;
+  const fontType = isLogin() ? uiSettings.fontType : defaults.fontType;
+  applyTheme(theme);
+  applyFontSize(fontSize);
+  applyFontType(fontType);
+}
 
 export function initUiSettings() {
   if (!isLogin()) {
@@ -214,21 +215,28 @@ export function initUiSettings() {
 }
 //update ui settings
 export function updateUiSettings(partial) {
-    if (!isLogin()) {
-      resetToDefaultTheme();
-      applySettings();
-      return;
-    }
-    if (partial.theme) {
-        uiSettings.theme = THEME_MAP[partial.theme]? partial.theme: defaults.theme;}
-    if (partial.fontSize) {
-      uiSettings.fontSize = FONT_SIZE_MAP[partial.fontSize]? partial.fontSize: defaults.fontSize;
-    }
-    if (partial.fontType) {
-      uiSettings.fontType = FONT_TYPE_MAP[partial.fontType]? partial.fontType: defaults.fontType;
-    }
-    saveSettings();
+  if (!isLogin()) {
+    resetToDefaultTheme();
     applySettings();
+    return;
+  }
+  if (partial.theme) {
+    uiSettings.theme = THEME_MAP[partial.theme]
+      ? partial.theme
+      : defaults.theme;
+  }
+  if (partial.fontSize) {
+    uiSettings.fontSize = FONT_SIZE_MAP[partial.fontSize]
+      ? partial.fontSize
+      : defaults.fontSize;
+  }
+  if (partial.fontType) {
+    uiSettings.fontType = FONT_TYPE_MAP[partial.fontType]
+      ? partial.fontType
+      : defaults.fontType;
+  }
+  saveSettings();
+  applySettings();
 }
 
 //reset ui theme to default
