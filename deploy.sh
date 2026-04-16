@@ -1,4 +1,4 @@
-#!/usr/bin bash
+#!/usr/bin/bash
 
 mkdir -p ./data
 if [ ! -f ./data/taskmaster.db ]; then
