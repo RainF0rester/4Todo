@@ -6,9 +6,9 @@
 | ------- | -------------------- |
 | R1      | #110    |
 | R2      | #111    |
-| R3      | #TODO_ISSUE_ID_3     |
-| R4      | #TODO_ISSUE_ID_4     |
-| R5      | #TODO_ISSUE_ID_5     |
+| R3      |    |
+| R4      |    |
+| R5      |    |
 
 ---
 
@@ -75,21 +75,62 @@ or plan a migration to a more robust architecture.
 
 ---
 
-## R3 — Inadequate Viewport Adaptability Leading to UX Degradation
+### R3 — Poor mobile responsiveness and UI distortion
 
-**Risk statement:** If our Definition of Done (DoD) lacks mandatory viewport testing and mobile-first CSS (`@media` breakpoints), then the frontend DOM elements risk severe layout distortion on smaller screens post-deployment, severely limiting our market reach for mobile-centric end-users.
+**Risk statement:** 
+If mobile compatibility testing is skipped during development,
+then the application UI may break or become unusable on smaller screens,
+because the current Vue components are hardcoded primarily for desktop viewports.
 
-**Likelihood (L):** High (Current production audits have already confirmed fragmented UX on mobile viewports.)
+**Likelihood / Impact:**
+High / Medium
 
-**Impact (I):** Medium (While backend logic remains intact, this critically degrades product usability and user retention.)
+**Owner:**
+Susie
+
+**Mitigation:**
+Given the tight sprint deadline, development focused primarily on core desktop functionality.
+Mobile testing was deprioritized but has been flagged for subsequent sprints.
+
+**Contingency:**
+If critical mobile layout bugs block usage, we will deploy quick CSS hotfixes.
+A dedicated UI CSS refactor is planned for the next iteration.
+
+**Evidence:**
+- Issue #112 — Implement responsive mobile UI
+- Frontend CSS lacking `@media` queries
+
+Status:
+open
+
+Last reviewed:
+2026-04-18
+
+---
+
+### R4 — Client–Server Time Inconsistency
+
+**Risk statement:**
+If task-related logic depends on client-side device time,
+then task expiration and scheduling may be inconsistent,
+because client clocks may differ from server time.
+
+**Likelihood (L):** Medium  
+(Client devices may have incorrect system time or operate across time zones.)
+
+**Impact (I):** Medium  
+(Inconsistent task status or delayed/early expiration may affect user trust and system correctness.)
 
 **Owner:** Susie
 
-**Mitigation or contingency:** 
-- **Mitigation:** Augment our agile DoD to mandate viewport adaptability validation for all future frontend tickets prior to merging.
-- **Contingency:** Create and prioritize a "fast-follow" UI refactor Epic in GitLab. Implement headless browser viewport testing (e.g., Cypress/Playwright) in our CI pipeline to catch CSS regressions systematically.
+**Mitigation or contingency:**
+- **Mitigation:** The backend is treated as the single source of truth for all task-related timestamps. Time values are stored and processed on the backend, while the frontend is responsible only for display.
+- **Contingency:** If inconsistencies are observed, timestamps will be validated against backend values and frontend display logic will be adjusted accordingly.
 
-**Evidence link:** Frontend CSS stylesheets / Vue Components (Lack of responsive `@media` utility classes)
+**Evidence:**
+- `schema.sql` — backend timestamp fields
+- `modules/tasks/service.py` — timestamp processing logic
+- frontend date handling (e.g., `utils/date.js`) — display formatting
 
 **Status:** open
 
@@ -97,47 +138,36 @@ or plan a migration to a more robust architecture.
 
 ---
 
-## R4 — Distributed State Synchronization Risk (Client-Trust Vulnerability)
+### R5 — API Gateway timeout under load (Synchronous WSGI)
 
-**Risk statement:** If the backend explicitly relies on or mirrors the client's localized device clock for task logic, then the UI might misrepresent task expiration metrics due to a temporal state inconsistency, fundamentally violating the "Never trust the client" (Zero Trust) security principle.
+**Risk statement:** 
+If the application receives a sudden burst of high-traffic or large file uploads,
+then the server may completely block and drop user requests (504 errors),
+because the current Flask architecture uses single-threaded synchronous WSGI workers.
 
-**Likelihood (L):** Medium (Highly probable for users operating across multiple time zones or misconfigured local clocks.)
+**Likelihood / Impact:**
+Low / High
 
-**Impact (I):** High (Can trigger premature data purging, rendering critical user schedules unreliable.)
+**Owner:**
+Yulin Liu
 
-**Owner:** Susie
+**Mitigation:**
+In this sprint, the priority was proving business logic rather than extreme scalability. 
+The current configuration is entirely sufficient for our small testing user base.
 
-**Mitigation or contingency:** 
-- **Mitigation:** Designate the backend SQLite/Database as the "Single Source of Truth". Standardize all API payloads to transmit purely in ISO-8601 UTC formats, delegating local timestamp transformation entirely to the Vue presentation layer.
-- **Contingency:** Expose a resilient `/sys/time` fallback endpoint to proactively audit and synchronize the temporal delta between the server and the local device upon application bootstrap.
+**Contingency:**
+If server timeouts become frequent, we will immediately tune Gunicorn worker scaling,
+or schedule a migration to an ASGI framework like FastAPI in a future sprint.
 
-**Evidence link:** `schema.sql` (Timestamps handled dynamically without strict UTC isolation constraints) & Frontend Date modules.
+**Evidence:**
+- Issue #114 — Evaluate asynchronous server framework (ASGI)
+- `app.py` standard synchronous setup
 
-**Status:** open
+Status:
+accepted
 
-**Last reviewed:** 2026-04-18
-
----
-
-## R5 — WSGI Synchronous Blocking Architecture Under High Concurrency
-
-**Risk statement:** If the application encounters traffic surges or I/O-intensive operations (e.g., handling bulky uploads or waiting on external APIs), then the server may begin blocking entirely and dropping requests with HTTP Gateway Timeouts (504s), because the underlying Flask (APIFlask) implementation relies on single-threaded synchronous WSGI workers which cannot non-blockingly multiplex connections.
-
-**Likelihood (L):** Low (Unlikely to manifest in the current prototyping phase with minimal active load.)
-
-**Impact (I):** Critical (Complete service unavailability and severe drop in throughput under production load phenomena like a "thundering herd".)
-
-**Owner:** Yulin Liu
-
-**Mitigation or contingency:** 
-- **Mitigation:** Document this framework constraint. For Sprint 3, ensure we properly configure our production Gunicorn cluster (e.g., in `supervisord.conf` or `docker-compose.yml`) to scale up multiple worker processes (`--workers=4` or `--threads=2`) to partially absorb the load.
-- **Contingency:** For future phases that necessitate hundred-thousand tier connection loads, migrate Python middleware logic to an asynchronous `ASGI` gateway framework (e.g., FastAPI, Quart) leveraging native `async/await` non-blocking I/O alongside `Uvicorn`.
-
-**Evidence link:** `app.py` & standard WSGI Flask architecture without explicit async abstractions.
-
-**Status:** accepted
-
-**Last reviewed:** 2026-04-18
+Last reviewed:
+2026-04-18
 
 ---
 
