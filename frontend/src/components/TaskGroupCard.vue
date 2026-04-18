@@ -8,7 +8,9 @@
 
     <!-- list -->
     <!-- <div class="card-body"> -->
-    <div class="card-body" :style="{ backgroundColor: palette[color]?.body }">
+    <div class="card-body" :style="{ backgroundColor: palette[color]?.body }"
+      :class="{ 'drag-over': dragState.overGroup }" @dragover.prevent="onDragOver" @dragenter.prevent="onDragEnter"
+      @dragleave.prevent="onDragLeave" @drop="onDrop">
       <a-list :data-source="task_info" class="task-list" :pagination="{ pageSize: 3 }">
         <template #renderItem="{ item }">
           <a-list-item class="row" :class="{
@@ -16,8 +18,9 @@
             'deleting-row': item.deleting,
             'pinned-row': item.pinned,
             'removing-row': item.removing,
-            'overdue-row': getDueStatus(item.dueDate) === 'overdue'
-          }">
+            'overdue-row': getDueStatus(item.dueDate) === 'overdue',
+            'dragging-row': item.dragging,
+          }" draggable="true" @dragstart="(e) => onDragStart(item, e)" @dragend="onDragEnd">
             <div class="left">
               <a-checkbox :class="{ invisible: item.pendingDelete }" :disabled="item.pendingDelete" :checked="item.done"
                 @change="(e) => toggleDone(item, e.target.checked)" />
@@ -86,7 +89,7 @@ const props = defineProps({
   taskLevel: { type: Number, required: true },
 })
 
-const emit = defineEmits(['reload'])
+const emit = defineEmits(['reload', 'task-moved'])
 const router = useRouter()
 
 const peopleOptions = [
@@ -461,6 +464,63 @@ async function togglePin(item) {
     console.error(e)
     message.error('Failed to update pin status.')
   }
+}
+
+const dragState = ref({ sourceTask: null, overGroup: false })
+
+function onDragStart(item, event) {
+  if (item.pendingDelete) {
+    event.preventDefault()
+    return
+  }
+  item.dragging = true
+  dragState.value.sourceTask = item
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData('application/json', JSON.stringify({ id: item.id, task_level: item.task_level }))
+}
+
+function onDragEnd() {
+  if (dragState.value.sourceTask) {
+    dragState.value.sourceTask.dragging = false
+  }
+  dragState.value.sourceTask = null
+  dragState.value.overGroup = false
+}
+
+function onDragOver(event) {
+  event.dataTransfer.dropEffect = 'move'
+}
+
+function onDragEnter() {
+  dragState.value.overGroup = true
+}
+
+function onDragLeave() {
+  dragState.value.overGroup = false
+}
+
+async function onDrop(event) {
+  event.preventDefault()
+  dragState.value.overGroup = false
+  const raw = event.dataTransfer.getData('application/json')
+  if (!raw) return
+  let dropped
+  try {
+    dropped = JSON.parse(raw)
+  } catch {
+    return
+  }
+  const sourceId = dropped.id
+  const sourceLevel = dropped.task_level
+  if (!sourceId || sourceLevel === undefined) return
+
+  if (sourceLevel === props.taskLevel) return
+
+  emit('task-moved', {
+    id: sourceId,
+    fromLevel: sourceLevel,
+    toLevel: props.taskLevel,
+  })
 }
 
 

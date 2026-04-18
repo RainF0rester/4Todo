@@ -206,3 +206,13 @@
     transform: rotate(360deg);
   }
 }
+
+.cards-group .card-body.drag-over {
+  border: 2px dashed rgba(0, 0, 0, 0.2);
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.cards-group .row.dragging-row {
+  opacity: 0.5;
+  transform: scale(0.98);
+}
