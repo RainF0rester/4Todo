@@ -10,6 +10,9 @@
                     valueFormat="YYYY-MM-DD HH:mm" :show-time="{ format: 'HH:mm' }" :allowClear="true"
                     :disabled-date="disabledDate" :disabled-time="disabledDateTime" />
             </a-form-item>
+            <a-form-item v-if="mode === 'edit'" name="taskLevel" label="Urgency Level">
+                <a-select v-model:value="formState.task_level" :options="urgencyOptions" placeholder="Select urgency" />
+            </a-form-item>
             <a-form-item name="pinned">
                 <a-row :gutter="24">
                     <a-col :span="20">
@@ -46,7 +49,8 @@ const formState = reactive({
     title: '',
     dueDate: null,
     assignee: null,
-    pinned: false
+    pinned: false,
+    task_level: null,
 })
 const rules = {
     title: [{ required: true, message: 'Task title is required', trigger: 'blur' },
@@ -69,6 +73,7 @@ function fillForEdit(t) {
     formState.dueDate = normalizeDueDate(t?.dueDate)
     formState.assignee = t?.assignee ?? null
     formState.pinned = Boolean(t?.pinned)
+    formState.task_level = t?.task_level ?? null
     formRef.value?.clearValidate?.()
 }
 
@@ -131,6 +136,7 @@ function submitForm() {
                 dueDate: toBackendDueDate(formState.dueDate),
                 assignee: formState.assignee,
                 pinned: formState.pinned,
+                task_level: formState.task_level,
                 mode: props.mode,
             })
             close()
@@ -156,4 +162,11 @@ function toBackendDueDate(value) {
     if (!value) return null
     return normalizeDueDate(value)
 }
+
+const urgencyOptions = [
+    { label: 'Important & Urgent', value: 1 },
+    { label: 'Important but Not Urgent', value: 2 },
+    { label: 'Not Important but Urgent', value: 3 },
+    { label: 'Not Important & Not Urgent', value: 4 },
+]
 </script>

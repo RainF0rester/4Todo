@@ -355,7 +355,8 @@ async function handleSubmit(payload) {
       const t = await updateTask(payload.id, {
         task_title: payload.title,
         task_due: payload.dueDate,
-        is_pinned: payload.pinned ? 1 : 0
+        is_pinned: payload.pinned ? 1 : 0,
+        task_level: payload.task_level,
       })
       const normalized = normalizeTask(t)
       const index = task_info.value.findIndex(x => x.id === normalized.id)
@@ -366,6 +367,9 @@ async function handleSubmit(payload) {
         }
         task_info.value = sortPinnedFirst(task_info.value)
         message.success('Task updated successfully.')
+        if (normalized.task_level !== props.taskLevel) {
+          emit('reload')
+        }
       }
     } catch (e) {
       console.error(e)
