@@ -25,7 +25,7 @@
 - **Mitigation:** We are intentionally adopting this "lazy execution" model as a simplified approach for Sprint 3. This risk is currently *accepted* due to our small scale.
 - **Contingency:** In future iterations, we will decouple the cleanup logic from `routes.py` and replace it with a dedicated background task scheduler like `cron`, `APScheduler`, or `Celery`.
 
-**Evidence link:** `modules/tasks/routes.py` (`clean_deleted_tasks` invoked inside `get_task` and `list_tasks`)
+**Evidence link:** `modules/tasks/routes.py` (`clean_deleted_tasks` invoked inside `get_task` and `list_tasks`)  - issues: #70 #88 | merge requests: !30
 
 **Status:** accepted
 
@@ -47,7 +47,7 @@
 - **Mitigation:** We have abstracted database operations in `repo.py`. If concurrency errors occur frequently in testing/production, we will migrate the SQLAlchemy connection string from SQLite to PostgreSQL in `config.py`.
 - **Contingency:** Implement retry mechanisms and exponential backoff for write operations in the database session wrapper.
 
-**Evidence link:** `config.py` (Line 4: `SQLALCHEMY_DATABASE_URL = "sqlite:///taskmaster.db"`)
+**Evidence link:** `config.py` (Line 4: `SQLALCHEMY_DATABASE_URL = "sqlite:///taskmaster.db"`) | merge requests: !2
 
 **Status:** open
 
