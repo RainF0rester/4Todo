@@ -14,11 +14,13 @@
           <a-list-item class="row" :class="{
             'pending-delete-row': item.pendingDelete,
             'deleting-row': item.deleting,
-            'pinned-row': item.pinned
+            'pinned-row': item.pinned,
+            'removing-row': item.removing,
+            'overdue-row': getDueStatus(item.dueDate) === 'overdue'
           }">
             <div class="left">
-              <a-checkbox :class="{ invisible: item.pendingDelete }" :disabled="!canComplete(item.dueDate)"
-                :checked="item.done" @change="(e) => toggleDone(item, e.target.checked)" />
+              <a-checkbox :class="{ invisible: item.pendingDelete }" :disabled="item.pendingDelete" :checked="item.done"
+                @change="(e) => toggleDone(item, e.target.checked)" />
               <div class="text" @click="showEditDialog(item)">
                 <a-tooltip :title="item.title.length > 15 ? item.title : null">
                   <div class="name" :class="{ done: item.done }" @click="!item.pendingDelete && showEditDialog(item)">
@@ -42,7 +44,8 @@
                   <WarningOutlined />
                 </a-button>
               </a-tooltip>
-              <a-tooltip :title="item.pinned ? 'Unpin task' : 'Pin task'">
+              <a-tooltip v-if="getDueStatus(item.dueDate) !== 'overdue'"
+                :title="item.pinned ? 'Unpin task' : 'Pin task'">
                 <a-button type="text" class="pin-btn" :class="{ pinned: item.pinned }" danger @click="togglePin(item)">
                   <PushpinFilled v-if="item.pinned" />
                   <PushpinOutlined v-else />
@@ -69,7 +72,7 @@
 import { computed, ref, watchEffect, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { Modal, message } from 'ant-design-vue'
-import { DeleteOutlined, ExclamationCircleOutlined, WarningOutlined, RedoOutlined,PushpinOutlined,PushpinFilled} from '@ant-design/icons-vue'
+import { DeleteOutlined, ExclamationCircleOutlined, WarningOutlined, RedoOutlined, PushpinOutlined, PushpinFilled } from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
 import '../styles/task-group-card.css'
 import TaskModal from '../components/TaskModal.vue'
@@ -95,12 +98,15 @@ const peopleOptions = [
 
 const task_info = ref([])
 watchEffect(() => {
-  task_info.value = sortPinnedFirst((props.initialItems || []).map(x => ({
-    ...x,
-    pinned: Boolean(x.pinned),
-    pendingDelete: false,
-    deleting: false,
-  })))
+  task_info.value = sortPinnedFirst((props.initialItems || [])
+    .filter(x => !x.done)
+    .map(x => ({
+      ...x,
+      pinned: Boolean(x.pinned),
+      pendingDelete: false,
+      deleting: false,
+      removing: false,
+    })))
 })
 
 const palette = {
@@ -377,7 +383,7 @@ function getDueStatus(dueDateStr) {
   const due = parseDueDate(dueDateStr)
   if (!due) return 'normal'
 
-// if the time is afternow , overdue
+  // if the time is afternow , overdue
   if (!due.isAfter(now)) return 'overdue'
 
   const diffMinutes = due.diff(now, 'minute')
@@ -391,7 +397,7 @@ function dueTooltip(dueDateStr) {
   const now = dayjs()
   const due = parseDueDate(dueDateStr)
   if (!due) return ''
-//if overdue, return the overdue time
+  //if overdue, return the overdue time
   if (!due.isAfter(now)) {
     const overdueSeconds = Math.max(0, now.diff(due, 'second'))
     const overdueMinutes = Math.floor(overdueSeconds / 60)
@@ -417,9 +423,16 @@ async function toggleDone(item, checked) {
   item.done = checked
   try {
     await updateTask(item.id, { is_finished: checked ? 1 : 0 })
-    message.success('Task status updated.')
+    if (checked && !prevDone) {
+      item.removing = true
+      setTimeout(() => {
+        task_info.value = task_info.value.filter(x => x.id !== item.id)
+      }, 1200)
+    }
+    message.success('mark as ' + (checked ? 'completed' : 'incomplete') + '.')
   } catch (e) {
     item.done = prevDone
+    item.removing = false
     console.error(e)
     message.error(e?.message || 'Failed to update task status.')
   }
