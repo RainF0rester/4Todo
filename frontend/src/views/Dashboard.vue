@@ -321,4 +321,56 @@ onMounted(loadTasks)
   font-size: 12px;
   margin-left: 12px;
 }
+ 
+/* this part is partially modified by AI */
+@media (max-width: 576px) {
+  .dashboard-filter :deep(.ant-segmented) {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .dashboard-filter :deep(.ant-segmented-item) {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .dashboard-filter :deep(.ant-segmented-item-label) {
+    padding-inline: 6px;
+  }
+
+  .dashboard-filter :deep(.segment-label) {
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .dashboard-filter-row :deep(.ant-radio-group) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+
+  .dashboard-filter-row :deep(.ant-radio-wrapper) {
+    margin-inline-end: 0;
+  }
+
+  .item-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .item-title {
+    max-width: 100%;
+    word-break: break-word;
+  }
+}
+
+@media (max-width: 400px) {
+  .dashboard-filter :deep(.segment-text) {
+    display: none;
+  }
+}
 </style>
