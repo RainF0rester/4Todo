@@ -8,6 +8,7 @@
 | R2      | !2     |
 | R3      | #TODO_ISSUE_ID_3     |
 | R4      | #TODO_ISSUE_ID_4     |
+| R5      | #TODO_ISSUE_ID_5     |
 
 ---
 
@@ -99,6 +100,28 @@
 
 ---
 
+## R5 — WSGI Synchronous Blocking Architecture Under High Concurrency
+
+**Risk statement:** If the application encounters traffic surges or I/O-intensive operations (e.g., handling bulky uploads or waiting on external APIs), then the server may begin blocking entirely and dropping requests with HTTP Gateway Timeouts (504s), because the underlying Flask (APIFlask) implementation relies on single-threaded synchronous WSGI workers which cannot non-blockingly multiplex connections.
+
+**Likelihood (L):** Low (Unlikely to manifest in the current prototyping phase with minimal active load.)
+
+**Impact (I):** Critical (Complete service unavailability and severe drop in throughput under production load phenomena like a "thundering herd".)
+
+**Owner:** [Your Architecture Lead]
+
+**Mitigation or contingency:** 
+- **Mitigation:** Document this framework constraint. For Sprint 3, ensure we properly configure our production Gunicorn cluster (e.g., in `supervisord.conf` or `docker-compose.yml`) to scale up multiple worker processes (`--workers=4` or `--threads=2`) to partially absorb the load.
+- **Contingency:** For future phases that necessitate hundred-thousand tier connection loads, migrate Python middleware logic to an asynchronous `ASGI` gateway framework (e.g., FastAPI, Quart) leveraging native `async/await` non-blocking I/O alongside `Uvicorn`.
+
+**Evidence link:** `app.py` & standard WSGI Flask architecture without explicit async abstractions.
+
+**Status:** accepted
+
+**Last reviewed:** 2026-04-18
+
+---
+
 ## Optional: monitoring (1–2 indicators per risk)
 
 | Risk ID | Triggers & SLI Monitoring (How we know mitigation is working) |
@@ -107,3 +130,4 @@
 | R2      | Alert triggered if `OperationalError: db is locked` error rate exceeds 1% of total transactions over a 1-hour window in Sentry/Log. |
 | R3      | Automated CI viewport tests pass targeting `375px` and `768px` breakpoints successfully. |
 | R4      | Backend test coverage confirms 100% of serialized timestamp outputs rely on UTC contexts, with 0 client-time dependencies. |
+| R5      | Monitoring API Gateway/Nginx metrics to ensure 0 HTTP 504 Gateway Timeout or Dropped Connection events. |
