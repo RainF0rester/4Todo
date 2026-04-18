@@ -6,9 +6,9 @@
 | ------- | -------------------- |
 | R1      | #110    |
 | R2      | #111    |
-| R3      |    |
-| R4      |    |
-| R5      |    |
+| R3      | -    |
+| R4      | -    |
+| R5      | -    |
 
 ---
 
@@ -75,36 +75,32 @@ or plan a migration to a more robust architecture.
 
 ---
 
-### R3 — Poor mobile responsiveness and UI distortion
+### R3 — Poor Mobile Responsiveness
 
 **Risk statement:** 
 If mobile compatibility testing is skipped during development,
 then the application UI may break or become unusable on smaller screens,
 because the current Vue components are hardcoded primarily for desktop viewports.
 
-**Likelihood / Impact:**
-High / Medium
+**Likelihood (L):** High  
+(Current stylesheets are missing flexible scaling or extensive `@media` queries.)
 
-**Owner:**
-Susie
+**Impact (I):** Medium  
+(Backend logic remains intact, but degraded usability will negatively impact mobile users.)
 
-**Mitigation:**
-Given the tight sprint deadline, development focused primarily on core desktop functionality.
-Mobile testing was deprioritized but has been flagged for subsequent sprints.
+**Owner:** Susie
 
-**Contingency:**
-If critical mobile layout bugs block usage, we will deploy quick CSS hotfixes.
-A dedicated UI CSS refactor is planned for the next iteration.
+**Mitigation or contingency:**
+- **Mitigation:** Given the sprint deadlines, the team prioritized functional desktop delivery over mobile layouts. This limitation is formally acknowledged and documented.
+- **Contingency:** A UI refactoring phase will be initiated in the next iteration to add CSS flexbox and media queries. Any critical layout breaks rendering the app unusable will be hotfixed.
 
 **Evidence:**
-- Issue #112 — Implement responsive mobile UI
-- Frontend CSS lacking `@media` queries
+- `frontend/src/style.css` (or global Vue styles) — absence of responsive `@media` utility coverage.
+- `frontend/src/components/` — UI components utilizing fixed-width elements.
 
-Status:
-open
+**Status:** accepted
 
-Last reviewed:
-2026-04-18
+**Last reviewed:** 2026-04-18
 
 ---
 
@@ -138,36 +134,32 @@ because client clocks may differ from server time.
 
 ---
 
-### R5 — API Gateway timeout under load (Synchronous WSGI)
+### R5 — API Gateway Timeout Under Load
 
 **Risk statement:** 
-If the application receives a sudden burst of high-traffic or large file uploads,
-then the server may completely block and drop user requests (504 errors),
-because the current Flask architecture uses single-threaded synchronous WSGI workers.
+If the application receives a sudden burst of high concurrent traffic,
+then the server may temporarily block and drop user requests,
+because the current architecture uses single-threaded synchronous WSGI workers.
 
-**Likelihood / Impact:**
-Low / High
+**Likelihood (L):** Low  
+(The application focuses on prototyping and currently experiences only minimal testing loads.)
 
-**Owner:**
-Yulin Liu
+**Impact (I):** High  
+(Under production surges, this would cause HTTP 504 timeouts and unresponsiveness.)
 
-**Mitigation:**
-In this sprint, the priority was proving business logic rather than extreme scalability. 
-The current configuration is entirely sufficient for our small testing user base.
+**Owner:** Yulin Liu
 
-**Contingency:**
-If server timeouts become frequent, we will immediately tune Gunicorn worker scaling,
-or schedule a migration to an ASGI framework like FastAPI in a future sprint.
+**Mitigation or contingency:**
+- **Mitigation:** Emphasizing MVP business logic correctly functioning was prioritized over extreme backend scalability. The default synchronous setup is completely sufficient for the current sprint scope.
+- **Contingency:** If performance degrades during beta testing, we will tune worker scaling parameters in deployment. If long-term capacity maxes out, an ASGI evaluation will be triggered.
 
 **Evidence:**
-- Issue #114 — Evaluate asynchronous server framework (ASGI)
-- `app.py` standard synchronous setup
+- `app.py` — standard synchronous APIFlask instantiation.
+- `requirements.txt` / Deployment configurations — absence of asynchronous servers (like `uvicorn`) or non-blocking workers.
 
-Status:
-accepted
+**Status:** accepted
 
-Last reviewed:
-2026-04-18
+**Last reviewed:** 2026-04-18
 
 ---
 
