@@ -49,9 +49,9 @@ Last reviewed:
 
 ## R2 — Database Write-Contention and Transaction Bottleneck
 
-**Risk statement:** If the application scales to handle multiple concurrent `INSERT` or `UPDATE` transactions, then the system may encounter severe `OperationalError: db is locked` downtime, because the current persistence layer relies on a single-file `SQLite` database which uses coarse-grained file locks, natively failing to support concurrent writes.
+**Risk statement:** If the application attempts to handle multiple concurrent `INSERT` or `UPDATE` transactions—such as a user rapidly clicking to delete 10 tasks simultaneously without frontend UI debouncing—then the system may encounter severe `OperationalError: db is locked` downtime, because the underlying single-file `SQLite` database fails to natively support concurrent writes.
 
-**Likelihood (L):** Medium (Likelihood increases linearly with traffic growth.)
+**Likelihood (L):** Medium (Likelihood increases with lack of UI rate-limiting and normal traffic growth.)
 
 **Impact (I):** High (Potential for unhandled HTTP 500s leading to data loss and severe SLA breaches.)
 
@@ -59,7 +59,7 @@ Last reviewed:
 
 **Mitigation:**
 The current design intentionally prioritizes simplicity and rapid development
-to meet sprint goals. Potential scalability limitations have been identified,
+to meet sprint goals. Potential scalability limitations (and missing frontend input debouncing) have been identified,
 and future architectural improvements are planned.
 
 **Contingency:**
@@ -107,21 +107,21 @@ because the current Vue components are hardcoded primarily for desktop viewports
 ### R4 — Client–Server Time Inconsistency
 
 **Risk statement:**
-If task-related logic depends on client-side device time,
-then task expiration and scheduling may be inconsistent,
-because client clocks may differ from server time.
+If task-related logic heavily depends on client-side device time, and the frontend validation logic lacks robustness against edge cases,
+then task expiration and scheduling may be highly inconsistent or exploitable,
+because client clocks may differ from server time, and insufficient validation allows malformed states to persist.
 
 **Likelihood (L):** Medium  
-(Client devices may have incorrect system time or operate across time zones.)
+(Client devices operate across diverse time zones, and legacy validation logic leaves gaps.)
 
 **Impact (I):** Medium  
-(Inconsistent task status or delayed/early expiration may affect user trust and system correctness.)
+(Inconsistent task status or delayed/early expiration degrades system correctness and user trust.)
 
 **Owner:** Susie
 
 **Mitigation or contingency:**
-- **Mitigation:** The backend is treated as the single source of truth for all task-related timestamps. Time values are stored and processed on the backend, while the frontend is responsible only for display.
-- **Contingency:** If inconsistencies are observed, timestamps will be validated against backend values and frontend display logic will be adjusted accordingly.
+- **Mitigation:** The backend is designated as the single source of truth for timestamps. Moving forward, robust frontend date validation will be re-implemented to act as a strict baseline before payload submission, while the backend recalculates and stores the authoritative time.
+- **Contingency:** If rapid inconsistencies are observed (or bugs from weak previous validation arise), timestamps will be strictly validated against backend values, and legacy frontend display logic will be hotfixed.
 
 **Evidence:**
 - `schema.sql` — backend timestamp fields
