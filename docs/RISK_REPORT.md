@@ -14,28 +14,28 @@
 
 ### R1 — Delayed task cleanup due to missing scheduler
 
-Risk statement:
+**Risk statement:** 
 If scheduled deletion is only triggered during task access (get/list),
 then expired tasks may persist longer than expected,
 because there is no background scheduler to enforce timely cleanup.
 
-Likelihood / Impact:
+**Likelihood / Impact:**
 Medium / Medium
 
-Owner:
+**Owner:**
 Lucia Luo
 
-Mitigation:
+**Mitigation:**
 Due to sprint time constraints and implementation complexity,
 a full scheduler-based solution was not implemented.
 Instead, a simplified lazy deletion mechanism was introduced
 in get_task and list_tasks to partially reduce the impact.
 
-Contingency:
+**Contingency:**
 If this issue affects system correctness, we will manually trigger cleanup
 or deploy a hotfix to remove expired tasks.
 
-Evidence:
+**Evidence:**
 - Issue #110 — Implement proper scheduled deletion mechanism
 - Code changes in list_tasks / get_task (lazy deletion logic) !30
 
@@ -57,13 +57,19 @@ Last reviewed:
 
 **Owner:** Yulin Liu
 
-**Mitigation or contingency:** 
-- **Mitigation:** We have proactively abstracted our data access layer via `repo.py` to decouple business logic from the ORM.
-- **Contingency:** If the concurrency error rate surpasses our predefined SLI threshold, we will execute our database migration plan, hot-swapping the `SQLALCHEMY_DATABASE_URL` in `config.py` from SQLite to a robust RDBMS (e.g., `PostgreSQL`), requiring zero changes to the core service layer.
+**Mitigation:**
+The current design intentionally prioritizes simplicity and rapid development
+to meet sprint goals. Potential scalability limitations have been identified,
+and future architectural improvements are planned.
 
-**Evidence link:** `config.py` (Line 4: `SQLALCHEMY_DATABASE_URL = "sqlite:///taskmaster.db"`) | merge requests: !2
+**Contingency:**
+If scalability issues arise, we will refactor the system incrementally
+or plan a migration to a more robust architecture.
 
-**Status:** open
+**Evidence:**
+- Issue #111 — Evaluate migration to scalable architecture
+
+**Status:** accepted
 
 **Last reviewed:** 2026-04-18
 
