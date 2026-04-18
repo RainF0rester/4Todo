@@ -247,13 +247,24 @@ background: #ffffff;
 
 
 .actions {
-  margin-top: 24px;
   display: flex;
-  gap: 20px;
   justify-content: center;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  margin-top: 20px;
 }
 
-
+@media (max-width: 768px) {
+  .actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .actions .ant-btn {
+    width: 100%;
+    min-width: 0;
+  }
+}
 </style>
 
 
