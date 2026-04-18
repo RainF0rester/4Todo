@@ -54,7 +54,7 @@ import { getTaskList, getDeletedTaskList, restoreTask } from '../api/tasks'
 
 const tasks = ref([])
 const statusFilter = ref('all')
-const periodFilter = ref('daily')
+const periodFilter = ref('any')
 
 const counts = computed(() => ({
   all: tasks.value.length,
@@ -89,6 +89,10 @@ const filteredTasks = computed(() => {
   }
 
   if (statusFilter.value === 'deleted') {
+    return result
+  }
+
+  if (periodFilter.value === 'any') {
     return result
   }
 
@@ -131,6 +135,7 @@ const selectedLabel = computed(() => {
   }
   const periodLabels = {
     unscheduled: 'Unscheduled',
+    any: 'Any time',
     daily: 'Daily',
     weekly: 'Weekly',
     monthly: 'Monthly',
@@ -150,12 +155,24 @@ const selectedLabel = computed(() => {
   return `${statusLabels[statusFilter.value] || 'All'} / ${periodLabels[periodFilter.value]}`
 })
 
+const formatCount = (count) => {
+  if (count >= 1000000) {
+    const value = count / 1000000
+    return Number.isInteger(value) ? `${value}M` : `${parseFloat(value.toFixed(1))}M`
+  }
+  if (count >= 1000) {
+    const value = count / 1000
+    return Number.isInteger(value) ? `${value}k` : `${parseFloat(value.toFixed(1))}k`
+  }
+  return String(count)
+}
+
 const segmentedOptions = computed(() => [
   {
     label: h('span', { class: 'segment-label' }, [
       h(CalendarOutlined),
       h('span', { class: 'segment-text' }, ' All '),
-      h('span', { class: 'segment-count' }, counts.value.all),
+      h('span', { class: 'segment-count' }, formatCount(counts.value.all)),
     ]),
     value: 'all',
   },
@@ -163,7 +180,7 @@ const segmentedOptions = computed(() => [
     label: h('span', { class: 'segment-label' }, [
       h(CheckCircleOutlined),
       h('span', { class: 'segment-text' }, ' Completed '),
-      h('span', { class: 'segment-count' }, counts.value.completed),
+      h('span', { class: 'segment-count' }, formatCount(counts.value.completed)),
     ]),
     value: 'completed',
   },
@@ -171,7 +188,7 @@ const segmentedOptions = computed(() => [
     label: h('span', { class: 'segment-label' }, [
       h(FlagOutlined),
       h('span', { class: 'segment-text' }, ' Flagged '),
-      h('span', { class: 'segment-count' }, counts.value.flagged),
+      h('span', { class: 'segment-count' }, formatCount(counts.value.flagged)),
     ]),
     value: 'flagged',
   },
@@ -179,12 +196,13 @@ const segmentedOptions = computed(() => [
     label: h('span', { class: 'segment-label' }, [
       h(DeleteOutlined),
       h('span', { class: 'segment-text' }, ' Deleted '),
-      h('span', { class: 'segment-count' }, counts.value.deleted),
+      h('span', { class: 'segment-count' }, formatCount(counts.value.deleted)),
     ]),
     value: 'deleted',
   },
 ])
 const periodOptions = computed(() => [
+  { label: 'Any time', value: 'any' },
   { label: 'Unscheduled', value: 'unscheduled' },
   { label: 'Daily', value: 'daily' },
   { label: 'Weekly', value: 'weekly' },
@@ -193,9 +211,9 @@ const periodOptions = computed(() => [
   { label: 'Yearly', value: 'yearly' },
 ])
 
-const paginationConfig = computed(() => 
-  filteredTasks.value.length > 20 
-    ? { pageSize: 20 } 
+const paginationConfig = computed(() =>
+  filteredTasks.value.length > 20
+    ? { pageSize: 20 }
     : false
 )
 async function loadTasks() {
@@ -245,8 +263,9 @@ onMounted(loadTasks)
 .segment-count {
   background: rgba(0, 0, 0, 0.06);
   border-radius: 50%;
-  padding: 0 8px;
-  font-size: 12px;
+  /* padding: 0 8px; */
+  font-size: 0.54rem;
+  font-weight: 600;
   width: 25px;
   height: 25px;
   line-height: 25px;
@@ -321,7 +340,7 @@ onMounted(loadTasks)
   font-size: 12px;
   margin-left: 12px;
 }
- 
+
 /* this part is partially modified by AI */
 @media (max-width: 576px) {
   .dashboard-filter :deep(.ant-segmented) {
