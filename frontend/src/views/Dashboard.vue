@@ -31,6 +31,9 @@
               <span class="item-title" :class="{ 'item-completed': isTaskDone(item) }">
                 <span v-if="statusFilter === 'deleted'" class="restore-icon" @click="restoreDeleted(item)">
                   <RollbackOutlined />
+                </span>
+                <span v-else class="delete-icon" @click.stop="confirmDelete(item)">
+                  <DeleteOutlined />
                 </span>{{ item.title }}
                 <span v-if="isTaskDone(item)" class="completed-badge">
                   (Completed)
@@ -50,7 +53,8 @@ import { ref, computed, onMounted, h } from 'vue'
 import dayjs from 'dayjs'
 import { CalendarOutlined, CheckCircleOutlined, FlagOutlined, RollbackOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import { Radio as ARadio, RadioGroup as ARadioGroup } from 'ant-design-vue'
-import { getTaskList, getDeletedTaskList, restoreTask } from '../api/tasks'
+import { getTaskList, getDeletedTaskList, restoreTask, deleteTask } from '../api/tasks'
+import { Modal, message } from 'ant-design-vue'
 
 const tasks = ref([])
 const statusFilter = ref('all')
@@ -234,6 +238,30 @@ async function restoreDeleted(task) {
   }
 }
 
+async function confirmDelete(task) {
+  const DELETE_MODAL_TITLE = 'Delete Task'
+  const DELETE_MODAL_CONTENT = 'Do you want to delete this task?'
+  const DELETE_OK_TEXT = 'Delete'
+  const DELETE_CANCEL_TEXT = 'Cancel'
+
+  Modal.confirm({
+    title: DELETE_MODAL_TITLE,
+    content: DELETE_MODAL_CONTENT,
+    okText: DELETE_OK_TEXT,
+    cancelText: DELETE_CANCEL_TEXT,
+    onOk: async () => {
+      try {
+        await deleteTask(task.id)
+        await loadTasks()
+        message.success('Task deleted.')
+      } catch (err) {
+        console.error(err)
+        message.error(err?.message || 'Failed to delete task.')
+      }
+    },
+  })
+}
+
 onMounted(loadTasks)
 </script>
 
@@ -322,8 +350,12 @@ onMounted(loadTasks)
 .restore-icon {
   cursor: pointer;
   color: #1890ff;
-  display: inline-flex;
-  align-items: center;
+  margin-right: 18px;
+}
+
+.delete-icon {
+  cursor: pointer;
+  color: #ff4d4f;
   margin-right: 18px;
 }
 
