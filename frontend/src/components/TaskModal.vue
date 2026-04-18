@@ -4,21 +4,21 @@
         <a-form ref="formRef" :model="formState" :rules="rules" layout="vertical">
             <a-form-item name="title" label="Task title">
                 <a-input v-model:value="formState.title" placeholder="Task title" />
-            </a-form-item >
+            </a-form-item>
             <a-form-item name="dueDate" label="Due date">
                 <a-date-picker v-model:value="formState.dueDate" style="width: 100%" format="YYYY-MM-DD HH:mm"
-                    valueFormat="YYYY-MM-DD HH:mm" :show-time="{ format: 'HH:mm' }" 
-                    :allowClear="true"/>
+                    valueFormat="YYYY-MM-DD HH:mm" :show-time="{ format: 'HH:mm' }" :allowClear="true"
+                    :disabled-date="disabledDate" :disabled-time="disabledDateTime" />
             </a-form-item>
-          <a-form-item name="pinned">
-            <a-row :gutter="24">
-                <a-col :span="20">
-                <span>Pin to top</span>
-                </a-col>
-                <a-col :span="4">
-                <a-switch v-model:checked="formState.pinned" />
-                </a-col>
-            </a-row>
+            <a-form-item name="pinned">
+                <a-row :gutter="24">
+                    <a-col :span="20">
+                        <span>Pin to top</span>
+                    </a-col>
+                    <a-col :span="4">
+                        <a-switch v-model:checked="formState.pinned" />
+                    </a-col>
+                </a-row>
             </a-form-item>
 
             <!-- <a-form-item name="assignee" label="Assignee">
@@ -60,7 +60,7 @@ function resetForAdd() {
     formState.dueDate = null
     formRef.value?.clearValidate?.()
     formState.assignee = null,
-    formState.pinned = false
+        formState.pinned = false
 }
 
 function fillForEdit(t) {
@@ -99,28 +99,27 @@ function disabledDate(current) {
     return current.isBefore(dayjs().startOf('day'))
 }
 
-// function disabledDateTime(current) {
-//     if (!current) return {}
-//     const now = dayjs()
-//     if (!current.isSame(now, 'day')) {
-//         return {}
-//     }
+function disabledDateTime(current) {
+    if (!current) return {}
+    const now = dayjs()
+    if (!current.isSame(now, 'day')) {
+        return {}
+    }
 
-//     const currentHour = now.hour()
-//     const currentMinute = now.minute()
+    const currentHour = now.hour()
+    const currentMinute = now.minute()
 
-//     return {
-//         disabledHours: () =>
-//             Array.from({ length: currentHour }, (_, i) => i),
-
-//         disabledMinutes: (selectedHour) => {
-//             if (selectedHour === currentHour) {
-//                 return Array.from({ length: currentMinute }, (_, i) => i)
-//             }
-//             return []
-//         }
-//     }
-// }
+    return {
+        disabledHours: () => Array.from({ length: currentHour }, (_, i) => i),
+        disabledMinutes: (selectedHour) => {
+            if (selectedHour === currentHour) {
+                return Array.from({ length: currentMinute }, (_, i) => i)
+            }
+            return []
+        },
+        disabledSeconds: () => []
+    }
+}
 
 function submitForm() {
     formRef.value
@@ -142,8 +141,14 @@ function submitForm() {
 function normalizeDueDate(value) {
     if (!value) return null
     if (dayjs.isDayjs(value)) {
-       return value.isValid() ? value.format('YYYY-MM-DD HH:mm') : null
-     }
+        return value.isValid() ? value.format('YYYY-MM-DD HH:mm') : null
+    }
+    if (typeof value === 'string') {
+        const parsed = dayjs(value, ['YYYY-MM-DD HH:mm', 'YYYY-MM-DD'], true)
+        if (parsed.isValid()) return parsed.format('YYYY-MM-DD HH:mm')
+        const fallback = dayjs(value)
+        return fallback.isValid() ? fallback.format('YYYY-MM-DD HH:mm') : null
+    }
     return null
 }
 
