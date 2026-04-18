@@ -48,13 +48,16 @@
 .cards-group .row {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    min-width: 0;
 }
 
 .cards-group .left {
     display: flex;
     align-items: flex-start;
     gap: 10px;
+    flex: 1;
+    min-width: 0;
 }
 
 .cards-group .text {
@@ -62,14 +65,16 @@
     flex-direction: column;
     gap: 4px;
     cursor: pointer;
+    min-width: 0;
+    flex: 1;
 }
 
 .cards-group .name {
     font-size: calc(var(--app-font-size, 16px) * 0.875);
     font-weight: 600;
     color: #1f2937;
-    width: 190px;
-    overflow: clip;
+    max-width: 190px;
+    overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
@@ -77,6 +82,10 @@
 .cards-group .meta {
     font-size: calc(var(--app-font-size, 16px) * 0.75);
     color: #6b7280;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .cards-group .done {
@@ -88,6 +97,11 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    flex-shrink: 0;
+}
+
+.cards-group .right .ant-btn {
+    padding-inline: 6px;
 }
 
 .cards-group .mini {
