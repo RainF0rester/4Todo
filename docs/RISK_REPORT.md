@@ -108,7 +108,7 @@
 
 **Impact (I):** Critical (Complete service unavailability and severe drop in throughput under production load phenomena like a "thundering herd".)
 
-**Owner:** [Your Architecture Lead]
+**Owner:** Yulin Liu
 
 **Mitigation or contingency:** 
 - **Mitigation:** Document this framework constraint. For Sprint 3, ensure we properly configure our production Gunicorn cluster (e.g., in `supervisord.conf` or `docker-compose.yml`) to scale up multiple worker processes (`--workers=4` or `--threads=2`) to partially absorb the load.
