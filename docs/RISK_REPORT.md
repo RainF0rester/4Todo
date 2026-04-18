@@ -5,7 +5,7 @@
 | Risk ID | Related issues / MRs |
 | ------- | -------------------- |
 | R1      | #70 #88 !30     |
-| R2      | #TODO_ISSUE_ID_2     |
+| R2      | !2     |
 | R3      | #TODO_ISSUE_ID_3     |
 | R4      | #TODO_ISSUE_ID_4     |
 
@@ -33,8 +33,31 @@
 
 ---
 
+## R2 — SQLite Database Concurrency Bottleneck
+
+**Risk statement:** If multiple users attempt to create or update tasks simultaneously, then the system may experience database lock errors or timeouts, because `SQLite` (`taskmaster.db`) does not natively support high-concurrency writes well compared to PostgreSQL or MySQL.
+
+**Likelihood (L):** Medium
+
+**Impact (I):** High (service interruption or data saving failures for users)
+
+**Owner:** Yulin Liu
+
+**Mitigation or contingency:** 
+- **Mitigation:** We have abstracted database operations in `repo.py`. If concurrency errors occur frequently in testing/production, we will migrate the SQLAlchemy connection string from SQLite to PostgreSQL in `config.py`.
+- **Contingency:** Implement retry mechanisms and exponential backoff for write operations in the database session wrapper.
+
+**Evidence link:** `config.py` (Line 4: `SQLALCHEMY_DATABASE_URL = "sqlite:///taskmaster.db"`)
+
+**Status:** open
+
+**Last reviewed:** 2026-04-18
+
+---
+
 ## Optional: monitoring (1–2 indicators per risk)
 
 | Risk ID | How we know mitigation is working |
 | ------- | --------------------------------- |
 | R1      | Deleted tasks are successfully cleared from the DB as soon as someone triggers the API. |
+| R2      | 0 database `OperationalError: database is locked` logs in Sentry/logging. |
