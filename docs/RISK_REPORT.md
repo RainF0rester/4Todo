@@ -4,7 +4,7 @@
 
 | Risk ID | Related issues / MRs |
 | ------- | -------------------- |
-| R1      | #70 #88 !30     |
+| R1      | #110    |
 | R2      | !2     |
 | R3      | #TODO_ISSUE_ID_3     |
 | R4      | #TODO_ISSUE_ID_4     |
@@ -12,25 +12,38 @@
 
 ---
 
-## R1 — Synchronous Background Task Coupling (Architectural Scalability Risk)
+### R1 — Delayed task cleanup due to missing scheduler
 
-**Risk statement:** If automated background processes (such as `clean_deleted_tasks`) are tightly coupled to synchronous user-facing API requests, then the system may experience unpredicted tail latency degradation (P99 spikes) and violate the Single Responsibility Principle (SRP). 
+Risk statement:
+If scheduled deletion is only triggered during task access (get/list),
+then expired tasks may persist longer than expected,
+because there is no background scheduler to enforce timely cleanup.
 
-**Likelihood (L):** High (This bottleneck occurs predictably during concurrent request surges.)
+Likelihood / Impact:
+Medium / Medium
 
-**Impact (I):** Medium (While currently stable under small user bases, this architectural flaw will block horizontal scaling in production.)
+Owner:
+Lucia Luo
 
-**Owner:** Lucia Luo
+Mitigation:
+Due to sprint time constraints and implementation complexity,
+a full scheduler-based solution was not implemented.
+Instead, a simplified lazy deletion mechanism was introduced
+in get_task and list_tasks to partially reduce the impact.
 
-**Mitigation or contingency:**
-- **Mitigation:** Document this as an accepted technical debt for Sprint 3. We intentionally adopt this "lazy execution" model as a simplified MVP approach.
-- **Contingency:** For the next architectural iteration, decouple the cleanup logic from `routes.py` and replace it with a dedicated asynchronous background task scheduler (e.g., `Celery`, `Redis Queues`, or `cron`).
+Contingency:
+If this issue affects system correctness, we will manually trigger cleanup
+or deploy a hotfix to remove expired tasks.
 
-**Evidence link:** `modules/tasks/routes.py` (`clean_deleted_tasks` invoked inside `get_task` and `list_tasks`)  - issues: #70 #88 | merge requests: !30
+Evidence:
+- Issue #110 — Implement proper scheduled deletion mechanism
+- Code changes in list_tasks / get_task (lazy deletion logic) !30
 
-**Status:** accepted
+Status:
+accepted
 
-**Last reviewed:** 2026-04-18
+Last reviewed:
+2026-04-18
 
 ---
 
