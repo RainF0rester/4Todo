@@ -5,7 +5,7 @@
 | Risk ID | Related issues / MRs |
 | ------- | -------------------- |
 | R1      | #110    |
-| R2      | !2     |
+| R2      | #111    |
 | R3      | #TODO_ISSUE_ID_3     |
 | R4      | #TODO_ISSUE_ID_4     |
 | R5      | #TODO_ISSUE_ID_5     |
