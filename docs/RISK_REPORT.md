@@ -11,19 +11,19 @@
 
 ---
 
-## R1 — Inefficient Trigger for Scheduled Task Deletion
+## R1 — Synchronous Background Task Coupling (Architectural Scalability Risk)
 
-**Risk statement:** If the `clean_deleted_tasks` background cleanup function is only triggered passively through `get_task` and `list_tasks` API calls in `routes.py`, then tasks may not be deleted at their precise scheduled time, because the cleanup inherently relies on user traffic rather than a dedicated timer sequence. This also slightly increases API response latency.
+**Risk statement:** If automated background processes (such as `clean_deleted_tasks`) are tightly coupled to synchronous user-facing API requests, then the system may experience unpredicted tail latency degradation (P99 spikes) and violate the Single Responsibility Principle (SRP). 
 
-**Likelihood (L):** High (guaranteed to delay cleanup if the system has no active users)
+**Likelihood (L):** High (This bottleneck occurs predictably during concurrent request surges.)
 
-**Impact (I):** Low (leaves stale data temporarily in `SQLite` and causes minor API overhead, but does not block core functionalities given the current small user base)
+**Impact (I):** Medium (While currently stable under small user bases, this architectural flaw will block horizontal scaling in production.)
 
 **Owner:** Lucia Luo
 
 **Mitigation or contingency:**
-- **Mitigation:** We are intentionally adopting this "lazy execution" model as a simplified approach for Sprint 3. This risk is currently *accepted* due to our small scale.
-- **Contingency:** In future iterations, we will decouple the cleanup logic from `routes.py` and replace it with a dedicated background task scheduler like `cron`, `APScheduler`, or `Celery`.
+- **Mitigation:** Document this as an accepted technical debt for Sprint 3. We intentionally adopt this "lazy execution" model as a simplified MVP approach.
+- **Contingency:** For the next architectural iteration, decouple the cleanup logic from `routes.py` and replace it with a dedicated asynchronous background task scheduler (e.g., `Celery`, `Redis Queues`, or `cron`).
 
 **Evidence link:** `modules/tasks/routes.py` (`clean_deleted_tasks` invoked inside `get_task` and `list_tasks`)  - issues: #70 #88 | merge requests: !30
 
@@ -33,19 +33,19 @@
 
 ---
 
-## R2 — SQLite Database Concurrency Bottleneck
+## R2 — Database Write-Contention and Transaction Bottleneck
 
-**Risk statement:** If multiple users attempt to create or update tasks simultaneously, then the system may experience database lock errors or timeouts, because `SQLite` (`taskmaster.db`) does not natively support high-concurrency writes well compared to PostgreSQL or MySQL.
+**Risk statement:** If the application scales to handle multiple concurrent `INSERT` or `UPDATE` transactions, then the system may encounter severe `OperationalError: db is locked` downtime, because the current persistence layer relies on a single-file `SQLite` database which uses coarse-grained file locks, natively failing to support concurrent writes.
 
-**Likelihood (L):** Medium
+**Likelihood (L):** Medium (Likelihood increases linearly with traffic growth.)
 
-**Impact (I):** High (service interruption or data saving failures for users)
+**Impact (I):** High (Potential for unhandled HTTP 500s leading to data loss and severe SLA breaches.)
 
 **Owner:** Yulin Liu
 
 **Mitigation or contingency:** 
-- **Mitigation:** We have abstracted database operations in `repo.py`. If concurrency errors occur frequently in testing/production, we will migrate the SQLAlchemy connection string from SQLite to PostgreSQL in `config.py`.
-- **Contingency:** Implement retry mechanisms and exponential backoff for write operations in the database session wrapper.
+- **Mitigation:** We have proactively abstracted our data access layer via `repo.py` to decouple business logic from the ORM.
+- **Contingency:** If the concurrency error rate surpasses our predefined SLI threshold, we will execute our database migration plan, hot-swapping the `SQLALCHEMY_DATABASE_URL` in `config.py` from SQLite to a robust RDBMS (e.g., `PostgreSQL`), requiring zero changes to the core service layer.
 
 **Evidence link:** `config.py` (Line 4: `SQLALCHEMY_DATABASE_URL = "sqlite:///taskmaster.db"`) | merge requests: !2
 
@@ -55,9 +55,55 @@
 
 ---
 
+## R3 — Inadequate Viewport Adaptability Leading to UX Degradation
+
+**Risk statement:** If our Definition of Done (DoD) lacks mandatory viewport testing and mobile-first CSS (`@media` breakpoints), then the frontend DOM elements risk severe layout distortion on smaller screens post-deployment, severely limiting our market reach for mobile-centric end-users.
+
+**Likelihood (L):** High (Current production audits have already confirmed fragmented UX on mobile viewports.)
+
+**Impact (I):** Medium (While backend logic remains intact, this critically degrades product usability and user retention.)
+
+**Owner:** Susie
+
+**Mitigation or contingency:** 
+- **Mitigation:** Augment our agile DoD to mandate viewport adaptability validation for all future frontend tickets prior to merging.
+- **Contingency:** Create and prioritize a "fast-follow" UI refactor Epic in GitLab. Implement headless browser viewport testing (e.g., Cypress/Playwright) in our CI pipeline to catch CSS regressions systematically.
+
+**Evidence link:** Frontend CSS stylesheets / Vue Components (Lack of responsive `@media` utility classes)
+
+**Status:** open
+
+**Last reviewed:** 2026-04-18
+
+---
+
+## R4 — Distributed State Synchronization Risk (Client-Trust Vulnerability)
+
+**Risk statement:** If the backend explicitly relies on or mirrors the client's localized device clock for task logic, then the UI might misrepresent task expiration metrics due to a temporal state inconsistency, fundamentally violating the "Never trust the client" (Zero Trust) security principle.
+
+**Likelihood (L):** Medium (Highly probable for users operating across multiple time zones or misconfigured local clocks.)
+
+**Impact (I):** High (Can trigger premature data purging, rendering critical user schedules unreliable.)
+
+**Owner:** Susie
+
+**Mitigation or contingency:** 
+- **Mitigation:** Designate the backend SQLite/Database as the "Single Source of Truth". Standardize all API payloads to transmit purely in ISO-8601 UTC formats, delegating local timestamp transformation entirely to the Vue presentation layer.
+- **Contingency:** Expose a resilient `/sys/time` fallback endpoint to proactively audit and synchronize the temporal delta between the server and the local device upon application bootstrap.
+
+**Evidence link:** `schema.sql` (Timestamps handled dynamically without strict UTC isolation constraints) & Frontend Date modules.
+
+**Status:** open
+
+**Last reviewed:** 2026-04-18
+
+---
+
 ## Optional: monitoring (1–2 indicators per risk)
 
-| Risk ID | How we know mitigation is working |
-| ------- | --------------------------------- |
-| R1      | Deleted tasks are successfully cleared from the DB as soon as someone triggers the API. |
-| R2      | 0 database `OperationalError: database is locked` logs in Sentry/logging. |
+| Risk ID | Triggers & SLI Monitoring (How we know mitigation is working) |
+| ------- | ----------------------------------------------------------- |
+| R1      | P99 API Latency on `get_task` remains stable. No CPU spiking observed during standard traffic loads. |
+| R2      | Alert triggered if `OperationalError: db is locked` error rate exceeds 1% of total transactions over a 1-hour window in Sentry/Log. |
+| R3      | Automated CI viewport tests pass targeting `375px` and `768px` breakpoints successfully. |
+| R4      | Backend test coverage confirms 100% of serialized timestamp outputs rely on UTC contexts, with 0 client-time dependencies. |
