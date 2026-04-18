@@ -141,17 +141,9 @@ function submitForm() {
 
 function normalizeDueDate(value) {
     if (!value) return null
-
-    const dateTime = dayjs(value, 'YYYY-MM-DD HH:mm', true)
-    if (dateTime.isValid()) {
-        return dateTime.format('YYYY-MM-DD HH:mm')
-    }
-
-    const dateOnly = dayjs(value, 'YYYY-MM-DD', true)
-    if (dateOnly.isValid()) {
-        return `${dateOnly.format('YYYY-MM-DD')} 00:00`
-    }
-
+    if (dayjs.isDayjs(value)) {
+       return value.isValid() ? value.format('YYYY-MM-DD HH:mm') : null
+     }
     return null
 }
 

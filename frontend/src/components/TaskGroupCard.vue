@@ -186,13 +186,14 @@ function dueText(dueDateStr) {
   const due = parseDueDate(dueDateStr)
   if (!due) return ''
 
-  const diffMinutes = due.diff(dayjs(), 'minute')
+  const now = dayjs()
   const displayText = due.format('YYYY-MM-DD HH:mm')
 
-  if (diffMinutes < 0) {
+  if (!due.isAfter(now)) {
     return `${displayText} · Overdue`
   }
 
+  const diffMinutes = due.diff(now, 'minute')
   return `${displayText} · ${formatRemaining(diffMinutes)}`
 }
 
@@ -376,9 +377,10 @@ function getDueStatus(dueDateStr) {
   const due = parseDueDate(dueDateStr)
   if (!due) return 'normal'
 
-  const diffMinutes = due.diff(now, 'minute')
+// if the time is afternow , overdue
+  if (!due.isAfter(now)) return 'overdue'
 
-  if (diffMinutes < 0) return 'overdue'
+  const diffMinutes = due.diff(now, 'minute')
   if (diffMinutes <= 3 * 24 * 60) return 'warning'
   return 'normal'
 }
@@ -389,26 +391,26 @@ function dueTooltip(dueDateStr) {
   const now = dayjs()
   const due = parseDueDate(dueDateStr)
   if (!due) return ''
-
-  const diffMinutes = due.diff(now, 'minute')
-
-  if (diffMinutes < 0) {
-    const overdueMinutes = Math.abs(diffMinutes)
+//if overdue, return the overdue time
+  if (!due.isAfter(now)) {
+    const overdueSeconds = Math.max(0, now.diff(due, 'second'))
+    const overdueMinutes = Math.floor(overdueSeconds / 60)
     const days = Math.floor(overdueMinutes / (24 * 60))
     const hours = Math.floor((overdueMinutes % (24 * 60)) / 60)
     const minutes = overdueMinutes % 60
 
-    if (days > 0) return `Overdue ${days} day ${hours} hours ${minutes} minutes`
-    if (hours > 0) return `Overdue ${hours} hours ${minutes} minutes`
-    return `Overdue ${minutes} minutes`
-  }
+    const day = days === 1 ? 'day' : 'days'
+    const hour = hours === 1 ? 'hour' : 'hours'
+    const minute = minutes === 1 ? 'minute' : 'minutes'
 
-  if (diffMinutes <= 3 * 24 * 60) {
-    return formatRemaining(diffMinutes)
+    if (days > 0) return `Overdue ${days} ${day} ${hours} ${hour} ${minutes} ${minute}`
+    if (hours > 0) return `Overdue ${hours} ${hour} ${minutes} ${minute}`
+    if (minutes > 0) return `Overdue ${minutes} ${minute}`
+    return ''
   }
-
   return ''
 }
+
 
 async function toggleDone(item, checked) {
   const prevDone = item.done

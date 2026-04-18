@@ -5,6 +5,8 @@
     height: 350px;
     border-radius: 14px;
     overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 /* header */
@@ -75,8 +77,6 @@
     color: #1f2937;
     max-width: 190px;
     overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
 }
 
 .cards-group .meta {
