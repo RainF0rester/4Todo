@@ -7,8 +7,8 @@
             </a-form-item >
             <a-form-item name="dueDate" label="Due date">
                 <a-date-picker v-model:value="formState.dueDate" style="width: 100%" format="YYYY-MM-DD HH:mm"
-                    valueFormat="YYYY-MM-DD HH:mm" :show-time="{ format: 'HH:mm' }" :disabled-date="disabledDate"
-                    :allowClear="true" :disabled-time="disabledDateTime" />
+                    valueFormat="YYYY-MM-DD HH:mm" :show-time="{ format: 'HH:mm' }" 
+                    :allowClear="true"/>
             </a-form-item>
           <a-form-item name="pinned">
             <a-row :gutter="24">
@@ -99,28 +99,28 @@ function disabledDate(current) {
     return current.isBefore(dayjs().startOf('day'))
 }
 
-function disabledDateTime(current) {
-    if (!current) return {}
-    const now = dayjs()
-    if (!current.isSame(now, 'day')) {
-        return {}
-    }
+// function disabledDateTime(current) {
+//     if (!current) return {}
+//     const now = dayjs()
+//     if (!current.isSame(now, 'day')) {
+//         return {}
+//     }
 
-    const currentHour = now.hour()
-    const currentMinute = now.minute()
+//     const currentHour = now.hour()
+//     const currentMinute = now.minute()
 
-    return {
-        disabledHours: () =>
-            Array.from({ length: currentHour }, (_, i) => i),
+//     return {
+//         disabledHours: () =>
+//             Array.from({ length: currentHour }, (_, i) => i),
 
-        disabledMinutes: (selectedHour) => {
-            if (selectedHour === currentHour) {
-                return Array.from({ length: currentMinute }, (_, i) => i)
-            }
-            return []
-        }
-    }
-}
+//         disabledMinutes: (selectedHour) => {
+//             if (selectedHour === currentHour) {
+//                 return Array.from({ length: currentMinute }, (_, i) => i)
+//             }
+//             return []
+//         }
+//     }
+// }
 
 function submitForm() {
     formRef.value

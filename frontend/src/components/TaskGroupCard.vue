@@ -302,13 +302,13 @@ function showEditDialog(item) {
   open.value = true
 }
 
-//Set default due date 
-const TASK_DUE_SUBMIT_DEFAULT = 6
-function setDefaultDueDate(dueDate) {
-  return dueDate
-    ? dayjs(dueDate).add(TASK_DUE_SUBMIT_DEFAULT, 'minute').format('YYYY-MM-DD HH:mm')
-    : null
-}
+// //Set default due date 
+// const TASK_DUE_SUBMIT_DEFAULT = 6
+// function setDefaultDueDate(dueDate) {
+//   return dueDate
+//     ? dayjs(dueDate).add(TASK_DUE_SUBMIT_DEFAULT, 'minute').format('YYYY-MM-DD HH:mm')
+//     : null
+// }
 
 
 async function handleSubmit(payload) {
@@ -318,7 +318,7 @@ async function handleSubmit(payload) {
 
       const t = await addTask({
         task_title: payload.title,
-        task_due: setDefaultDueDate(payload.dueDate),
+        task_due: payload.dueDate,
         is_pinned: payload.pinned ? 1 : 0,
         task_level: props.taskLevel
       })
@@ -347,7 +347,7 @@ async function handleSubmit(payload) {
       console.log('payload:', payload)
       const t = await updateTask(payload.id, {
         task_title: payload.title,
-        task_due: setDefaultDueDate(payload.dueDate),
+        task_due: payload.dueDate,
         is_pinned: payload.pinned ? 1 : 0
       })
       const normalized = normalizeTask(t)
