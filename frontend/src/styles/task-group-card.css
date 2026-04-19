@@ -216,3 +216,31 @@
   opacity: 0.5;
   transform: scale(0.98);
 }
+
+.cards-group .list-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  padding: 0 10px 10px;
+}
+
+.cards-group .list-controls .ant-checkbox-wrapper {
+  margin: 0;
+}
+
+.cards-group .list-controls .ant-pagination {
+  margin: 0;
+}
+
+@media (max-width: 540px) {
+  .cards-group .list-controls {
+    justify-content: flex-start;
+  }
+
+  .cards-group .list-controls .ant-pagination {
+    width: 100%;
+  }
+}

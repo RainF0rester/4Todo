@@ -11,7 +11,7 @@
     <div class="card-body" :style="{ backgroundColor: palette[color]?.body }"
       :class="{ 'drag-over': dragState.overGroup }" @dragover.prevent="onDragOver" @dragenter.prevent="onDragEnter"
       @dragleave.prevent="onDragLeave" @drop="onDrop">
-      <a-list :data-source="task_info" class="task-list" :pagination="{ pageSize: 3 }">
+      <a-list :data-source="displayItems" class="task-list" :pagination="false">
         <template #renderItem="{ item }">
           <a-list-item class="row" :class="{
             'pending-delete-row': item.pendingDelete,
@@ -66,13 +66,18 @@
           </a-list-item>
         </template>
       </a-list>
+      <div class="list-controls">
+        <a-checkbox v-model:checked="showCompleted">Show completed</a-checkbox>
+        <a-pagination :current="currentPage" :page-size="pageSize" :total="filteredTasks.length" simple
+          :show-less-items="true" @change="onPageChange" />
+      </div>
     </div>
   </a-card>
   <TaskModal v-model:open="open" :mode="modalMode" :task="editingTask" :people="peopleOptions" @submit="handleSubmit" />
 </template>
 
 <script setup>
-import { computed, ref, watchEffect, onBeforeUnmount } from 'vue'
+import { computed, ref, watchEffect, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Modal, message } from 'ant-design-vue'
 import { DeleteOutlined, ExclamationCircleOutlined, WarningOutlined, RedoOutlined, PushpinOutlined, PushpinFilled } from '@ant-design/icons-vue'
@@ -102,7 +107,6 @@ const peopleOptions = [
 const task_info = ref([])
 watchEffect(() => {
   task_info.value = sortPinnedFirst((props.initialItems || [])
-    .filter(x => !x.done)
     .map(x => ({
       ...x,
       pinned: Boolean(x.pinned),
@@ -111,6 +115,27 @@ watchEffect(() => {
       removing: false,
     })))
 })
+
+const currentPage = ref(1)
+const pageSize = ref(3)
+const showCompleted = ref(false)
+
+const filteredTasks = computed(() => {
+  return task_info.value.filter(item => showCompleted.value || !item.done)
+})
+
+const displayItems = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return filteredTasks.value.slice(start, start + pageSize.value)
+})
+
+watch([showCompleted, () => props.initialItems], () => {
+  currentPage.value = 1
+})
+
+function onPageChange(page) {
+  currentPage.value = page
+}
 
 const palette = {
   red: {
