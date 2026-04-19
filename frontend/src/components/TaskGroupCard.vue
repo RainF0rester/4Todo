@@ -67,7 +67,13 @@
         </template>
       </a-list>
       <div class="list-controls">
-        <a-checkbox v-model:checked="showCompleted">Show completed</a-checkbox>
+        <div class="switch-control">
+          <a-switch v-model:checked="showCompleted" checkedChildren="" unCheckedChildren="" />
+          <span>
+            {{ showCompleted ? 'Show completed tasks' : 'Hide completed tasks' }}
+            <component :is="showCompleted ? EyeOutlined : EyeInvisibleOutlined" class="toggle-icon" />
+          </span>
+        </div>
         <a-pagination :current="currentPage" :page-size="pageSize" :total="filteredTasks.length" simple
           :show-less-items="true" @change="onPageChange" />
       </div>
@@ -80,7 +86,7 @@
 import { computed, ref, watchEffect, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Modal, message } from 'ant-design-vue'
-import { DeleteOutlined, ExclamationCircleOutlined, WarningOutlined, RedoOutlined, PushpinOutlined, PushpinFilled } from '@ant-design/icons-vue'
+import { DeleteOutlined, ExclamationCircleOutlined, WarningOutlined, RedoOutlined, PushpinOutlined, PushpinFilled, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
 import '../styles/task-group-card.css'
 import TaskModal from '../components/TaskModal.vue'
@@ -121,7 +127,7 @@ const pageSize = ref(3)
 const showCompleted = ref(false)
 
 const filteredTasks = computed(() => {
-  return task_info.value.filter(item => showCompleted.value || !item.done)
+  return task_info.value.filter(item => showCompleted.value || !item.done || item.removing)
 })
 
 const displayItems = computed(() => {
@@ -456,10 +462,14 @@ async function toggleDone(item, checked) {
   try {
     await updateTask(item.id, { is_finished: checked ? 1 : 0 })
     if (checked && !prevDone) {
-      item.removing = true
-      setTimeout(() => {
-        task_info.value = task_info.value.filter(x => x.id !== item.id)
-      }, 1200)
+      if (!showCompleted.value) {
+        item.removing = true
+        setTimeout(() => {
+          task_info.value = task_info.value.filter(x => x.id !== item.id)
+        }, 1200)
+      } else {
+        item.removing = false
+      }
     }
     message.success('mark as ' + (checked ? 'completed' : 'incomplete') + '.')
   } catch (e) {
