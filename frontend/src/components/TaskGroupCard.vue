@@ -209,7 +209,6 @@ function formatRemaining(diffMinutes) {
   const days = Math.floor(diffMinutes / (24 * 60))
   const hours = Math.floor((diffMinutes % (24 * 60)) / 60)
   const minutes = diffMinutes % 60
-
   if (days > 0) return `In ${days}d ${hours ? hours + 'h' : ''}`
   if (hours > 0) return `In ${hours}h ${minutes ? minutes + 'm' : ''}`
   return `In ${minutes}m`
@@ -416,11 +415,9 @@ async function handleSubmit(payload) {
 
 function getDueStatus(dueDateStr) {
   if (!dueDateStr) return 'normal'
-
   const now = dayjs()
   const due = parseDueDate(dueDateStr)
   if (!due) return 'normal'
-
   // if the time is afternow , overdue
   if (!due.isAfter(now)) return 'overdue'
 
@@ -431,10 +428,10 @@ function getDueStatus(dueDateStr) {
 
 function dueTooltip(dueDateStr) {
   if (!dueDateStr) return ''
-
   const now = dayjs()
   const due = parseDueDate(dueDateStr)
   if (!due) return ''
+
   //if overdue, return the overdue time
   if (!due.isAfter(now)) {
     const overdueSeconds = Math.max(0, now.diff(due, 'second'))
@@ -442,15 +439,18 @@ function dueTooltip(dueDateStr) {
     const days = Math.floor(overdueMinutes / (24 * 60))
     const hours = Math.floor((overdueMinutes % (24 * 60)) / 60)
     const minutes = overdueMinutes % 60
-
     const day = days === 1 ? 'day' : 'days'
     const hour = hours === 1 ? 'hour' : 'hours'
     const minute = minutes === 1 ? 'minute' : 'minutes'
-
     if (days > 0) return `Overdue ${days} ${day} ${hours} ${hour} ${minutes} ${minute}`
     if (hours > 0) return `Overdue ${hours} ${hour} ${minutes} ${minute}`
     if (minutes > 0) return `Overdue ${minutes} ${minute}`
-    return ''
+    return 'Overdue just now'
+  }
+  const diffMinutes = due.diff(now, 'minute')
+  if (diffMinutes <= 3 * 24 * 60) {
+    if (diffMinutes < 1) return 'Due within 1 minute'
+    return formatRemaining(diffMinutes)
   }
   return ''
 }
