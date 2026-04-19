@@ -235,6 +235,28 @@
   margin: 0;
 }
 
+.cards-group .list-controls .switch-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cards-group .list-controls .switch-control span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cards-group .list-controls .switch-control .toggle-icon {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.cards-group .list-controls .switch-control span {
+  font-size: 14px;
+  color: #4b5563;
+}
+
 @media (max-width: 540px) {
   .cards-group .list-controls {
     justify-content: flex-start;
