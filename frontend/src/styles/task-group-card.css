@@ -1,120 +1,136 @@
 /* task-group-card.css */
 .cards-group {
-    display: flex;
-    flex-direction: column;
-    height: 350px;
-    border-radius: 14px;
-    overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 350px;
+  border-radius: 14px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* header */
 .cards-group .header {
-    padding: 16px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    color: #fff;
+  padding: 16px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #fff;
 }
 
 .cards-group .title {
-    font-size: calc(var(--app-font-size, 16px) * 1.125);
-    font-weight: 700;
+  font-size: calc(var(--app-font-size, 16px) * 1.125);
+  font-weight: 700;
 }
 
 .cards-group .add-btn {
-    border: 0;
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    font-weight: 700;
+  border: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  font-weight: 700;
 }
 
 /* body */
 .cards-group .card-body {
-    padding: 10px 12px 12px 12px;
-    height: 300px;
+  padding: 10px 12px 12px 12px;
+  height: 300px;
 }
 
 .cards-group .task-list .ant-list-item {
-    padding: 12px 8px;
-    min-height: 40%;
+  padding: 12px 8px;
+  min-height: 40%;
 }
 
 .cards-group .task-list .ant-spin-container {
-    height: 200px;
+  height: 200px;
 }
 
 /* row layout */
 .cards-group .row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  min-width: 0;
 }
 
 .cards-group .left {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
 }
 
 .cards-group .text {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  min-width: 0;
+  flex: 1;
 }
 
 .cards-group .name {
-    font-size: calc(var(--app-font-size, 16px) * 0.875);
-    font-weight: 600;
-    color: #1f2937;
-    width: 190px;
-    overflow: clip;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+  font-size: calc(var(--app-font-size, 16px) * 0.875);
+  font-weight: 600;
+  color: #1f2937;
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cards-group .meta {
-    font-size: calc(var(--app-font-size, 16px) * 0.75);
-    color: #6b7280;
+  font-size: calc(var(--app-font-size, 16px) * 0.75);
+  color: #6b7280;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cards-group .done {
-    text-decoration: line-through;
-    color: #9ca3af;
+  text-decoration: line-through;
+  color: #9ca3af;
 }
 
 .cards-group .right {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.cards-group .right .ant-btn {
+  padding-inline: 6px;
 }
 
 .cards-group .mini {
-    opacity: 0.7;
+  opacity: 0.7;
 }
 
 /* footer */
 .cards-group .footer {
-    margin-top: 6px;
-    padding: 10px 8px;
-    color: #6b7280;
-    cursor: pointer;
-    border-top: 1px dashed #e5e7eb;
+  margin-top: 6px;
+  padding: 10px 8px;
+  color: #6b7280;
+  cursor: pointer;
+  border-top: 1px dashed #e5e7eb;
 }
 
 .cards-group .footer:hover {
-    color: #111827;
+  color: #111827;
 }
 
 .cards-group .overdue-btn,
 .cards-group .overdue-btn.ant-btn-text:hover {
-    color: #dc2626;
+  color: #dc2626;
 }
 
 .cards-group .warning-btn,
 .cards-group .warning-btn.ant-btn-text:hover {
-    color: #f59e0b;
+  color: #f59e0b;
 }
 
 .pending-delete-row {
@@ -124,7 +140,45 @@
 .deleting-row {
   opacity: 0;
   transform: translateX(8px);
-  transition: opacity 0.4s ease, transform 0.4s ease;
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease;
+}
+
+.removing-row {
+  animation: slideOutLeft 1.2s ease forwards;
+  overflow: hidden;
+}
+
+@keyframes slideOutLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  60% {
+    opacity: 1;
+    transform: translateX(-60%);
+  }
+
+  90% {
+    opacity: 0;
+    transform: translateX(-120%);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(-120%);
+    max-height: 0;
+    margin: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    min-height: 0;
+  }
+}
+
+.overdue-row {
+  background-color: rgba(0, 0, 0, 0.04) !important;
 }
 
 .undo-btn {
@@ -150,5 +204,65 @@
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+.cards-group .card-body.drag-over {
+  border: 2px dashed rgba(0, 0, 0, 0.2);
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.cards-group .row.dragging-row {
+  opacity: 0.5;
+  transform: scale(0.98);
+}
+
+.cards-group .list-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  padding: 0 10px 10px;
+}
+
+.cards-group .list-controls .ant-checkbox-wrapper {
+  margin: 0;
+}
+
+.cards-group .list-controls .ant-pagination {
+  margin: 0;
+}
+
+.cards-group .list-controls .switch-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cards-group .list-controls .switch-control span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cards-group .list-controls .switch-control .toggle-icon {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.cards-group .list-controls .switch-control span {
+  font-size: 14px;
+  color: #4b5563;
+}
+
+@media (max-width: 540px) {
+  .cards-group .list-controls {
+    justify-content: flex-start;
+  }
+
+  .cards-group .list-controls .ant-pagination {
+    width: 100%;
   }
 }

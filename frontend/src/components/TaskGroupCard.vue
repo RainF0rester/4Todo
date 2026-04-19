@@ -8,17 +8,22 @@
 
     <!-- list -->
     <!-- <div class="card-body"> -->
-    <div class="card-body" :style="{ backgroundColor: palette[color]?.body }">
-      <a-list :data-source="task_info" class="task-list" :pagination="{ pageSize: 3 }">
+    <div class="card-body" :style="{ backgroundColor: palette[color]?.body }"
+      :class="{ 'drag-over': dragState.overGroup }" @dragover.prevent="onDragOver" @dragenter.prevent="onDragEnter"
+      @dragleave.prevent="onDragLeave" @drop="onDrop">
+      <a-list :data-source="displayItems" class="task-list" :pagination="false">
         <template #renderItem="{ item }">
           <a-list-item class="row" :class="{
             'pending-delete-row': item.pendingDelete,
             'deleting-row': item.deleting,
-            'pinned-row': item.pinned
-          }">
+            'pinned-row': item.pinned,
+            'removing-row': item.removing,
+            'overdue-row': getDueStatus(item.dueDate) === 'overdue',
+            'dragging-row': item.dragging,
+          }" draggable="true" @dragstart="(e) => onDragStart(item, e)" @dragend="onDragEnd">
             <div class="left">
-              <a-checkbox :class="{ invisible: item.pendingDelete }" :disabled="!canComplete(item.dueDate)"
-                :checked="item.done" @change="(e) => toggleDone(item, e.target.checked)" />
+              <a-checkbox :class="{ invisible: item.pendingDelete }" :disabled="item.pendingDelete" :checked="item.done"
+                @change="(e) => toggleDone(item, e.target.checked)" />
               <div class="text" @click="showEditDialog(item)">
                 <a-tooltip :title="item.title.length > 15 ? item.title : null">
                   <div class="name" :class="{ done: item.done }" @click="!item.pendingDelete && showEditDialog(item)">
@@ -42,7 +47,8 @@
                   <WarningOutlined />
                 </a-button>
               </a-tooltip>
-              <a-tooltip :title="item.pinned ? 'Unpin task' : 'Pin task'">
+              <a-tooltip v-if="getDueStatus(item.dueDate) !== 'overdue'"
+                :title="item.pinned ? 'Unpin task' : 'Pin task'">
                 <a-button type="text" class="pin-btn" :class="{ pinned: item.pinned }" danger @click="togglePin(item)">
                   <PushpinFilled v-if="item.pinned" />
                   <PushpinOutlined v-else />
@@ -60,16 +66,27 @@
           </a-list-item>
         </template>
       </a-list>
+      <div class="list-controls">
+        <div class="switch-control">
+          <a-switch v-model:checked="showCompleted" checkedChildren="" unCheckedChildren="" />
+          <span>
+            {{ showCompleted ? 'Show completed tasks' : 'Hide completed tasks' }}
+            <component :is="showCompleted ? EyeOutlined : EyeInvisibleOutlined" class="toggle-icon" />
+          </span>
+        </div>
+        <a-pagination :current="currentPage" :page-size="pageSize" :total="filteredTasks.length" simple
+          :show-less-items="true" @change="onPageChange" />
+      </div>
     </div>
   </a-card>
   <TaskModal v-model:open="open" :mode="modalMode" :task="editingTask" :people="peopleOptions" @submit="handleSubmit" />
 </template>
 
 <script setup>
-import { computed, ref, watchEffect, onBeforeUnmount } from 'vue'
+import { computed, ref, watchEffect, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Modal, message } from 'ant-design-vue'
-import { DeleteOutlined, ExclamationCircleOutlined, WarningOutlined, RedoOutlined,PushpinOutlined,PushpinFilled} from '@ant-design/icons-vue'
+import { DeleteOutlined, ExclamationCircleOutlined, WarningOutlined, RedoOutlined, PushpinOutlined, PushpinFilled, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
 import '../styles/task-group-card.css'
 import TaskModal from '../components/TaskModal.vue'
@@ -83,7 +100,7 @@ const props = defineProps({
   taskLevel: { type: Number, required: true },
 })
 
-const emit = defineEmits(['reload'])
+const emit = defineEmits(['reload', 'task-moved'])
 const router = useRouter()
 
 const peopleOptions = [
@@ -95,13 +112,36 @@ const peopleOptions = [
 
 const task_info = ref([])
 watchEffect(() => {
-  task_info.value = sortPinnedFirst((props.initialItems || []).map(x => ({
-    ...x,
-    pinned: Boolean(x.pinned),
-    pendingDelete: false,
-    deleting: false,
-  })))
+  task_info.value = sortPinnedFirst((props.initialItems || [])
+    .map(x => ({
+      ...x,
+      pinned: Boolean(x.pinned),
+      pendingDelete: false,
+      deleting: false,
+      removing: false,
+    })))
 })
+
+const currentPage = ref(1)
+const pageSize = ref(3)
+const showCompleted = ref(false)
+
+const filteredTasks = computed(() => {
+  return task_info.value.filter(item => showCompleted.value || !item.done || item.removing)
+})
+
+const displayItems = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return filteredTasks.value.slice(start, start + pageSize.value)
+})
+
+watch([showCompleted, () => props.initialItems], () => {
+  currentPage.value = 1
+})
+
+function onPageChange(page) {
+  currentPage.value = page
+}
 
 const palette = {
   red: {
@@ -186,13 +226,14 @@ function dueText(dueDateStr) {
   const due = parseDueDate(dueDateStr)
   if (!due) return ''
 
-  const diffMinutes = due.diff(dayjs(), 'minute')
+  const now = dayjs()
   const displayText = due.format('YYYY-MM-DD HH:mm')
 
-  if (diffMinutes < 0) {
+  if (!due.isAfter(now)) {
     return `${displayText} · Overdue`
   }
 
+  const diffMinutes = due.diff(now, 'minute')
   return `${displayText} · ${formatRemaining(diffMinutes)}`
 }
 
@@ -302,13 +343,13 @@ function showEditDialog(item) {
   open.value = true
 }
 
-//Set default due date 
-const TASK_DUE_SUBMIT_DEFAULT = 6
-function setDefaultDueDate(dueDate) {
-  return dueDate
-    ? dayjs(dueDate).add(TASK_DUE_SUBMIT_DEFAULT, 'minute').format('YYYY-MM-DD HH:mm')
-    : null
-}
+// //Set default due date 
+// const TASK_DUE_SUBMIT_DEFAULT = 6
+// function setDefaultDueDate(dueDate) {
+//   return dueDate
+//     ? dayjs(dueDate).add(TASK_DUE_SUBMIT_DEFAULT, 'minute').format('YYYY-MM-DD HH:mm')
+//     : null
+// }
 
 
 async function handleSubmit(payload) {
@@ -318,7 +359,7 @@ async function handleSubmit(payload) {
 
       const t = await addTask({
         task_title: payload.title,
-        task_due: setDefaultDueDate(payload.dueDate),
+        task_due: payload.dueDate,
         is_pinned: payload.pinned ? 1 : 0,
         task_level: props.taskLevel
       })
@@ -347,8 +388,9 @@ async function handleSubmit(payload) {
       console.log('payload:', payload)
       const t = await updateTask(payload.id, {
         task_title: payload.title,
-        task_due: setDefaultDueDate(payload.dueDate),
-        is_pinned: payload.pinned ? 1 : 0
+        task_due: payload.dueDate,
+        is_pinned: payload.pinned ? 1 : 0,
+        task_level: payload.task_level,
       })
       const normalized = normalizeTask(t)
       const index = task_info.value.findIndex(x => x.id === normalized.id)
@@ -359,6 +401,9 @@ async function handleSubmit(payload) {
         }
         task_info.value = sortPinnedFirst(task_info.value)
         message.success('Task updated successfully.')
+        if (normalized.task_level !== props.taskLevel) {
+          emit('reload')
+        }
       }
     } catch (e) {
       console.error(e)
@@ -376,9 +421,10 @@ function getDueStatus(dueDateStr) {
   const due = parseDueDate(dueDateStr)
   if (!due) return 'normal'
 
-  const diffMinutes = due.diff(now, 'minute')
+  // if the time is afternow , overdue
+  if (!due.isAfter(now)) return 'overdue'
 
-  if (diffMinutes < 0) return 'overdue'
+  const diffMinutes = due.diff(now, 'minute')
   if (diffMinutes <= 3 * 24 * 60) return 'warning'
   return 'normal'
 }
@@ -389,35 +435,46 @@ function dueTooltip(dueDateStr) {
   const now = dayjs()
   const due = parseDueDate(dueDateStr)
   if (!due) return ''
-
-  const diffMinutes = due.diff(now, 'minute')
-
-  if (diffMinutes < 0) {
-    const overdueMinutes = Math.abs(diffMinutes)
+  //if overdue, return the overdue time
+  if (!due.isAfter(now)) {
+    const overdueSeconds = Math.max(0, now.diff(due, 'second'))
+    const overdueMinutes = Math.floor(overdueSeconds / 60)
     const days = Math.floor(overdueMinutes / (24 * 60))
     const hours = Math.floor((overdueMinutes % (24 * 60)) / 60)
     const minutes = overdueMinutes % 60
 
-    if (days > 0) return `Overdue ${days} day ${hours} hours ${minutes} minutes`
-    if (hours > 0) return `Overdue ${hours} hours ${minutes} minutes`
-    return `Overdue ${minutes} minutes`
-  }
+    const day = days === 1 ? 'day' : 'days'
+    const hour = hours === 1 ? 'hour' : 'hours'
+    const minute = minutes === 1 ? 'minute' : 'minutes'
 
-  if (diffMinutes <= 3 * 24 * 60) {
-    return formatRemaining(diffMinutes)
+    if (days > 0) return `Overdue ${days} ${day} ${hours} ${hour} ${minutes} ${minute}`
+    if (hours > 0) return `Overdue ${hours} ${hour} ${minutes} ${minute}`
+    if (minutes > 0) return `Overdue ${minutes} ${minute}`
+    return ''
   }
-
   return ''
 }
+
 
 async function toggleDone(item, checked) {
   const prevDone = item.done
   item.done = checked
   try {
     await updateTask(item.id, { is_finished: checked ? 1 : 0 })
-    message.success('Task status updated.')
+    if (checked && !prevDone) {
+      if (!showCompleted.value) {
+        item.removing = true
+        setTimeout(() => {
+          task_info.value = task_info.value.filter(x => x.id !== item.id)
+        }, 1200)
+      } else {
+        item.removing = false
+      }
+    }
+    message.success('mark as ' + (checked ? 'completed' : 'incomplete') + '.')
   } catch (e) {
     item.done = prevDone
+    item.removing = false
     console.error(e)
     message.error(e?.message || 'Failed to update task status.')
   }
@@ -442,6 +499,63 @@ async function togglePin(item) {
     console.error(e)
     message.error('Failed to update pin status.')
   }
+}
+
+const dragState = ref({ sourceTask: null, overGroup: false })
+
+function onDragStart(item, event) {
+  if (item.pendingDelete) {
+    event.preventDefault()
+    return
+  }
+  item.dragging = true
+  dragState.value.sourceTask = item
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData('application/json', JSON.stringify({ id: item.id, task_level: item.task_level }))
+}
+
+function onDragEnd() {
+  if (dragState.value.sourceTask) {
+    dragState.value.sourceTask.dragging = false
+  }
+  dragState.value.sourceTask = null
+  dragState.value.overGroup = false
+}
+
+function onDragOver(event) {
+  event.dataTransfer.dropEffect = 'move'
+}
+
+function onDragEnter() {
+  dragState.value.overGroup = true
+}
+
+function onDragLeave() {
+  dragState.value.overGroup = false
+}
+
+async function onDrop(event) {
+  event.preventDefault()
+  dragState.value.overGroup = false
+  const raw = event.dataTransfer.getData('application/json')
+  if (!raw) return
+  let dropped
+  try {
+    dropped = JSON.parse(raw)
+  } catch {
+    return
+  }
+  const sourceId = dropped.id
+  const sourceLevel = dropped.task_level
+  if (!sourceId || sourceLevel === undefined) return
+
+  if (sourceLevel === props.taskLevel) return
+
+  emit('task-moved', {
+    id: sourceId,
+    fromLevel: sourceLevel,
+    toLevel: props.taskLevel,
+  })
 }
 
 

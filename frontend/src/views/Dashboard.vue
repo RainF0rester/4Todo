@@ -31,6 +31,9 @@
               <span class="item-title" :class="{ 'item-completed': isTaskDone(item) }">
                 <span v-if="statusFilter === 'deleted'" class="restore-icon" @click="restoreDeleted(item)">
                   <RollbackOutlined />
+                </span>
+                <span v-else class="delete-icon" @click.stop="confirmDelete(item)">
+                  <DeleteOutlined />
                 </span>{{ item.title }}
                 <span v-if="isTaskDone(item)" class="completed-badge">
                   (Completed)
@@ -50,11 +53,12 @@ import { ref, computed, onMounted, h } from 'vue'
 import dayjs from 'dayjs'
 import { CalendarOutlined, CheckCircleOutlined, FlagOutlined, RollbackOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import { Radio as ARadio, RadioGroup as ARadioGroup } from 'ant-design-vue'
-import { getTaskList, getDeletedTaskList, restoreTask } from '../api/tasks'
+import { getTaskList, getDeletedTaskList, restoreTask, deleteTask } from '../api/tasks'
+import { Modal, message } from 'ant-design-vue'
 
 const tasks = ref([])
 const statusFilter = ref('all')
-const periodFilter = ref('daily')
+const periodFilter = ref('any')
 
 const counts = computed(() => ({
   all: tasks.value.length,
@@ -89,6 +93,10 @@ const filteredTasks = computed(() => {
   }
 
   if (statusFilter.value === 'deleted') {
+    return result
+  }
+
+  if (periodFilter.value === 'any') {
     return result
   }
 
@@ -131,6 +139,7 @@ const selectedLabel = computed(() => {
   }
   const periodLabels = {
     unscheduled: 'Unscheduled',
+    any: 'Any time',
     daily: 'Daily',
     weekly: 'Weekly',
     monthly: 'Monthly',
@@ -150,12 +159,24 @@ const selectedLabel = computed(() => {
   return `${statusLabels[statusFilter.value] || 'All'} / ${periodLabels[periodFilter.value]}`
 })
 
+const formatCount = (count) => {
+  if (count >= 1000000) {
+    const value = count / 1000000
+    return Number.isInteger(value) ? `${value}M` : `${parseFloat(value.toFixed(1))}M`
+  }
+  if (count >= 1000) {
+    const value = count / 1000
+    return Number.isInteger(value) ? `${value}k` : `${parseFloat(value.toFixed(1))}k`
+  }
+  return String(count)
+}
+
 const segmentedOptions = computed(() => [
   {
     label: h('span', { class: 'segment-label' }, [
       h(CalendarOutlined),
       h('span', { class: 'segment-text' }, ' All '),
-      h('span', { class: 'segment-count' }, counts.value.all),
+      h('span', { class: 'segment-count' }, formatCount(counts.value.all)),
     ]),
     value: 'all',
   },
@@ -163,7 +184,7 @@ const segmentedOptions = computed(() => [
     label: h('span', { class: 'segment-label' }, [
       h(CheckCircleOutlined),
       h('span', { class: 'segment-text' }, ' Completed '),
-      h('span', { class: 'segment-count' }, counts.value.completed),
+      h('span', { class: 'segment-count' }, formatCount(counts.value.completed)),
     ]),
     value: 'completed',
   },
@@ -171,7 +192,7 @@ const segmentedOptions = computed(() => [
     label: h('span', { class: 'segment-label' }, [
       h(FlagOutlined),
       h('span', { class: 'segment-text' }, ' Flagged '),
-      h('span', { class: 'segment-count' }, counts.value.flagged),
+      h('span', { class: 'segment-count' }, formatCount(counts.value.flagged)),
     ]),
     value: 'flagged',
   },
@@ -179,12 +200,13 @@ const segmentedOptions = computed(() => [
     label: h('span', { class: 'segment-label' }, [
       h(DeleteOutlined),
       h('span', { class: 'segment-text' }, ' Deleted '),
-      h('span', { class: 'segment-count' }, counts.value.deleted),
+      h('span', { class: 'segment-count' }, formatCount(counts.value.deleted)),
     ]),
     value: 'deleted',
   },
 ])
 const periodOptions = computed(() => [
+  { label: 'Any time', value: 'any' },
   { label: 'Unscheduled', value: 'unscheduled' },
   { label: 'Daily', value: 'daily' },
   { label: 'Weekly', value: 'weekly' },
@@ -193,9 +215,9 @@ const periodOptions = computed(() => [
   { label: 'Yearly', value: 'yearly' },
 ])
 
-const paginationConfig = computed(() => 
-  filteredTasks.value.length > 20 
-    ? { pageSize: 20 } 
+const paginationConfig = computed(() =>
+  filteredTasks.value.length > 20
+    ? { pageSize: 20 }
     : false
 )
 async function loadTasks() {
@@ -214,6 +236,30 @@ async function restoreDeleted(task) {
   } catch (err) {
     console.error('Unable to restore task', err)
   }
+}
+
+async function confirmDelete(task) {
+  const DELETE_MODAL_TITLE = 'Delete Task'
+  const DELETE_MODAL_CONTENT = 'Do you want to delete this task?'
+  const DELETE_OK_TEXT = 'Delete'
+  const DELETE_CANCEL_TEXT = 'Cancel'
+
+  Modal.confirm({
+    title: DELETE_MODAL_TITLE,
+    content: DELETE_MODAL_CONTENT,
+    okText: DELETE_OK_TEXT,
+    cancelText: DELETE_CANCEL_TEXT,
+    onOk: async () => {
+      try {
+        await deleteTask(task.id)
+        await loadTasks()
+        message.success('Task deleted.')
+      } catch (err) {
+        console.error(err)
+        message.error(err?.message || 'Failed to delete task.')
+      }
+    },
+  })
 }
 
 onMounted(loadTasks)
@@ -245,8 +291,9 @@ onMounted(loadTasks)
 .segment-count {
   background: rgba(0, 0, 0, 0.06);
   border-radius: 50%;
-  padding: 0 8px;
-  font-size: 12px;
+  /* padding: 0 8px; */
+  font-size: 0.54rem;
+  font-weight: 600;
   width: 25px;
   height: 25px;
   line-height: 25px;
@@ -303,8 +350,12 @@ onMounted(loadTasks)
 .restore-icon {
   cursor: pointer;
   color: #1890ff;
-  display: inline-flex;
-  align-items: center;
+  margin-right: 18px;
+}
+
+.delete-icon {
+  cursor: pointer;
+  color: #ff4d4f;
   margin-right: 18px;
 }
 
@@ -320,5 +371,57 @@ onMounted(loadTasks)
   color: #52c41a;
   font-size: 12px;
   margin-left: 12px;
+}
+
+/* this part is partially modified by AI */
+@media (max-width: 576px) {
+  .dashboard-filter :deep(.ant-segmented) {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .dashboard-filter :deep(.ant-segmented-item) {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .dashboard-filter :deep(.ant-segmented-item-label) {
+    padding-inline: 6px;
+  }
+
+  .dashboard-filter :deep(.segment-label) {
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .dashboard-filter-row :deep(.ant-radio-group) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+
+  .dashboard-filter-row :deep(.ant-radio-wrapper) {
+    margin-inline-end: 0;
+  }
+
+  .item-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .item-title {
+    max-width: 100%;
+    word-break: break-word;
+  }
+}
+
+@media (max-width: 400px) {
+  .dashboard-filter :deep(.segment-text) {
+    display: none;
+  }
 }
 </style>
