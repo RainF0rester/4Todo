@@ -37,7 +37,7 @@ or deploy a hotfix to remove expired tasks.
 
 **Evidence:**
 - Issue #110 — Implement proper scheduled deletion mechanism
-- Code changes in list_tasks / get_task (lazy deletion logic) !30
+- Code changes in list_tasks / get_task (lazy deletion logic) MR !30 — Feat/sp3 lucia scheduled task deletion (#88)
 
 Status:
 accepted
@@ -75,7 +75,7 @@ or plan a migration to a more robust architecture.
 
 ---
 
-### R3 — Poor Mobile Responsiveness
+## R3 — Poor Mobile Responsiveness
 
 **Risk statement:** 
 If mobile compatibility testing is skipped during development,
@@ -104,7 +104,7 @@ because the current Vue components are hardcoded primarily for desktop viewports
 
 ---
 
-### R4 — Client–Server Time Inconsistency
+## R4 — Client–Server Time Inconsistency
 
 **Risk statement:**
 If task-related logic heavily depends on client-side device time, and the frontend validation logic lacks robustness against edge cases,
@@ -124,9 +124,8 @@ because client clocks may differ from server time, and insufficient validation a
 - **Contingency:** If rapid inconsistencies are observed (or bugs from weak previous validation arise), timestamps will be strictly validated against backend values, and legacy frontend display logic will be hotfixed.
 
 **Evidence:**
-- `schema.sql` — backend timestamp fields
-- `modules/tasks/service.py` — timestamp processing logic
-- frontend date handling (e.g., `utils/date.js`) — display formatting
+- MR !40 — Fix/Adjust feature details before sprint3 demo  
+  (Includes fixes to due date logic and frontend–backend consistency)
 
 **Status:** open
 
@@ -134,7 +133,7 @@ because client clocks may differ from server time, and insufficient validation a
 
 ---
 
-### R5 — API Gateway Timeout Under Load
+## R5 — API Gateway Timeout Under Load
 
 **Risk statement:** 
 If the application receives a sudden burst of high concurrent traffic,
