@@ -51,14 +51,14 @@ Our CI pipeline executes on GitLab natively via `.gitlab-ci.yml`. On every merge
 
 ## Where to find project evidence
 
-| Artifact | Where                                                                                                            |
-|----------|------------------------------------------------------------------------------------------------------------------|
-| **Risk report** | [docs/RISK_REPORT.md](./docs/RISK_REPORT.md)                                                                     |
-| **Refactoring & complexity report** | [docs.COMPLEXITY_REPORT.md](./docs/COMPLEXITY_REPORT.md)                                                         |
-| **Issue board** | [GitLab Issue Board](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/boards) |
-| **Team contract** | [docs/team-contract.md](./docs/team-contract.md)                                                                 |
-| **Meeting notes** | [GitLab Wiki](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/wikis/home)    |
-| **Sprint 3 group retrospective** | *(To be added / Please link file here)*                                                                          |
+| Artifact | Where                                                                                                                                                                                           |
+|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Risk report** | [docs/RISK_REPORT.md](./docs/RISK_REPORT.md)                                                                                                                                                    |
+| **Refactoring & complexity report** | [docs.COMPLEXITY_REPORT.md](./docs/COMPLEXITY_REPORT.md)                                                                                                                                        |
+| **Issue board** | [GitLab Issue Board](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/boards)                                                                                |
+| **Team contract** | [docs/team-contract.md](./docs/team-contract.md)                                                                                                                                                |
+| **Meeting notes** | [GitLab Wiki](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/wikis/home)                                                                                   |
+| **Sprint 3 group retrospective** | [Sp3 Retrospective](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/wikis/home/Sp3-Retrospective) |
 
 ## Repository layout
 
