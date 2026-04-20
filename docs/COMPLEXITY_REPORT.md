@@ -1,6 +1,6 @@
 # COMP9820 Sprint 3: Complexity Report
 
-**This file is wrote with help with generative ai tools.**
+**This report was prepared with the assistance of generative AI tools for language refinement and structuring. All core ideas, analysis, and technical content were developed by the authors.**
 
 ## 1. Essential vs. Accidental Complexity
 
