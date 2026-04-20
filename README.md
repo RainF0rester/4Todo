@@ -1,18 +1,19 @@
-# 4Todo
+# Task Tracker (COMP9820)
 
-## How to Run the Project
+A web-based modern task management application, designed for users to intuitively manage their to-dos, keep track of due dates, and securely organize their daily routines.
 
-Getting started is simple. Just run:
+## What this project does
 
-```bash
-bash deploy.sh
-```
+- **User / context**: Individuals, students, and professionals looking for a simple yet feature-rich daily task tracking tool with secure authentication capabilities.
+- **Problem**: Solves the problem of forgotten tasks and poorly managed schedules by centralizing tasks with pinning, due dates, and auto-cleanup mechanisms.
+- **Stories**: 
+  - User Registration and Login.
+  - CRUD operations for Task entries (Create, Read, Update, Delete).
+  - Pinning critical tasks to the top.
+  - Scheduled auto-deletion / soft deletion for expired tasks.
+  - Setting and tracking Task Due Times.
 
-Access the app at `http://localhost:8080`
-
----
-
-## Tech Stack
+## Tech stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -22,9 +23,45 @@ Access the app at `http://localhost:8080`
 | Deployment | Docker + Nginx + Gunicorn + Supervisor |
 | CI/CD | GitLab CI/CD + GitLab Runner |
 
----
+## Prerequisites
 
-## Project Structure
+- **Python 3.10+** (For backend API operations)
+- **Node.js LTS** (For frontend Vue dependencies)
+- **Docker** (Optional, for running production-grade deployments through `docker-compose`)
+
+## How to run locally
+
+Getting started is simple. Just run:
+
+```bash
+bash deploy.sh
+```
+```
+
+## How to run tests and checks
+
+```bash
+# Ensure you are at the project root and venv is activated
+pytest tests/
+```
+*Test coverage is accessible via the `.coverage` tooling and generated reports such as `coverage.xml`.*
+
+## CI pipeline
+
+Our CI pipeline executes on GitLab natively via `.gitlab-ci.yml`. On every merge request / push to `main`, it spins up a testing environment to validate code integrity and executes all `pytest` suites to ensure backward compatibility and feature safety.
+
+## Where to find project evidence
+
+| Artifact | Where |
+|----------|--------|
+| **Risk report** | [docs/RISK_REPORT.md](./docs/RISK_REPORT.md) |
+| **Refactoring & complexity report** | *(To be added / Please link file here)* |
+| **Issue board** | [GitLab Issue Board](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/boards) |
+| **Team contract** | [docs/team-contract.md](./docs/team-contract.md) |
+| **Meeting notes** | [GitLab Wiki](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/wikis/home) |
+| **Sprint 3 group retrospective** | *(To be added / Please link file here)* |
+
+## Repository layout
 
 ```
 tasktracker/
@@ -73,8 +110,6 @@ tasktracker/
 └── .gitlab-ci.yml              # CI/CD pipeline config
 ```
 
----
-
 ## How It All Works Together
 
 **Request Flow:**
@@ -94,5 +129,7 @@ Nginx (port 8080)
         SQLAlchemy → SQLite
 ```
 
----
+## Team & course
 
+- **Course**: COMP9820 — 26T1
+- **Group**: T09A-B

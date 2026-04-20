@@ -4,21 +4,24 @@
         <a-form ref="formRef" :model="formState" :rules="rules" layout="vertical">
             <a-form-item name="title" label="Task title">
                 <a-input v-model:value="formState.title" placeholder="Task title" />
-            </a-form-item >
+            </a-form-item>
             <a-form-item name="dueDate" label="Due date">
                 <a-date-picker v-model:value="formState.dueDate" style="width: 100%" format="YYYY-MM-DD HH:mm"
-                    valueFormat="YYYY-MM-DD HH:mm" :show-time="{ format: 'HH:mm' }" :disabled-date="disabledDate"
-                    :allowClear="true" :disabled-time="disabledDateTime" />
+                    valueFormat="YYYY-MM-DD HH:mm" :show-time="{ format: 'HH:mm' }" :allowClear="true"
+                    :disabled-date="disabledDate" :disabled-time="disabledDateTime" />
             </a-form-item>
-          <a-form-item name="pinned">
-            <a-row :gutter="24">
-                <a-col :span="20">
-                <span>Pin to top</span>
-                </a-col>
-                <a-col :span="4">
-                <a-switch v-model:checked="formState.pinned" />
-                </a-col>
-            </a-row>
+            <a-form-item v-if="mode === 'edit'" name="taskLevel" label="Urgency Level">
+                <a-select v-model:value="formState.task_level" :options="urgencyOptions" placeholder="Select urgency" />
+            </a-form-item>
+            <a-form-item name="pinned">
+                <a-row :gutter="24">
+                    <a-col :span="20">
+                        <span>Pin to top</span>
+                    </a-col>
+                    <a-col :span="4">
+                        <a-switch v-model:checked="formState.pinned" />
+                    </a-col>
+                </a-row>
             </a-form-item>
 
             <!-- <a-form-item name="assignee" label="Assignee">
@@ -46,7 +49,8 @@ const formState = reactive({
     title: '',
     dueDate: null,
     assignee: null,
-    pinned: false
+    pinned: false,
+    task_level: null,
 })
 const rules = {
     title: [{ required: true, message: 'Task title is required', trigger: 'blur' },
@@ -60,7 +64,7 @@ function resetForAdd() {
     formState.dueDate = null
     formRef.value?.clearValidate?.()
     formState.assignee = null,
-    formState.pinned = false
+        formState.pinned = false
 }
 
 function fillForEdit(t) {
@@ -69,6 +73,7 @@ function fillForEdit(t) {
     formState.dueDate = normalizeDueDate(t?.dueDate)
     formState.assignee = t?.assignee ?? null
     formState.pinned = Boolean(t?.pinned)
+    formState.task_level = t?.task_level ?? null
     formRef.value?.clearValidate?.()
 }
 
@@ -110,15 +115,14 @@ function disabledDateTime(current) {
     const currentMinute = now.minute()
 
     return {
-        disabledHours: () =>
-            Array.from({ length: currentHour }, (_, i) => i),
-
+        disabledHours: () => Array.from({ length: currentHour }, (_, i) => i),
         disabledMinutes: (selectedHour) => {
             if (selectedHour === currentHour) {
                 return Array.from({ length: currentMinute }, (_, i) => i)
             }
             return []
-        }
+        },
+        disabledSeconds: () => []
     }
 }
 
@@ -132,6 +136,7 @@ function submitForm() {
                 dueDate: toBackendDueDate(formState.dueDate),
                 assignee: formState.assignee,
                 pinned: formState.pinned,
+                task_level: formState.task_level,
                 mode: props.mode,
             })
             close()
@@ -141,17 +146,15 @@ function submitForm() {
 
 function normalizeDueDate(value) {
     if (!value) return null
-
-    const dateTime = dayjs(value, 'YYYY-MM-DD HH:mm', true)
-    if (dateTime.isValid()) {
-        return dateTime.format('YYYY-MM-DD HH:mm')
+    if (dayjs.isDayjs(value)) {
+        return value.isValid() ? value.format('YYYY-MM-DD HH:mm') : null
     }
-
-    const dateOnly = dayjs(value, 'YYYY-MM-DD', true)
-    if (dateOnly.isValid()) {
-        return `${dateOnly.format('YYYY-MM-DD')} 00:00`
+    if (typeof value === 'string') {
+        const parsed = dayjs(value, ['YYYY-MM-DD HH:mm', 'YYYY-MM-DD'], true)
+        if (parsed.isValid()) return parsed.format('YYYY-MM-DD HH:mm')
+        const fallback = dayjs(value)
+        return fallback.isValid() ? fallback.format('YYYY-MM-DD HH:mm') : null
     }
-
     return null
 }
 
@@ -159,4 +162,11 @@ function toBackendDueDate(value) {
     if (!value) return null
     return normalizeDueDate(value)
 }
+
+const urgencyOptions = [
+    { label: 'Important & Urgent', value: 1 },
+    { label: 'Important but Not Urgent', value: 2 },
+    { label: 'Not Important but Urgent', value: 3 },
+    { label: 'Not Important & Not Urgent', value: 4 },
+]
 </script>

@@ -25,6 +25,7 @@
             <span>Task</span>
             <span>Task type</span>
             <span>Due time</span>
+            <span>Status</span>
           </div>
         <a-list
           :data-source="todayTasks"
@@ -37,6 +38,13 @@
                 <span class="task-title">{{ item.title }}</span>
                 <span class="task-type">{{ taskTypeLabel(item.task_level) }}</span>
                 <span class="task-due-date">{{ formatDate(item.dueDate) }}</span>
+                <span
+                  class="task-status"
+                  :class="{
+                    'task-status-overdue': statusOverdue(item),
+                    'task-status-completed': item?.done,
+                  }"
+                >{{ taskStatusText(item) }}</span>
               </div>
             </a-list-item>
           </template>
@@ -60,6 +68,7 @@
 
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import dayjs from 'dayjs'
 import { getTaskList } from '../api/tasks'
 
 
@@ -122,6 +131,34 @@ function formatDate(dateStr) {
     minute: '2-digit',
     hour12: false
   })
+}
+
+function statusOverdue(item) {
+  if (item?.done) return false
+  if (!item?.dueDate) return false
+  const due = dayjs(item.dueDate)
+  if (!due.isValid()) return false
+  return !due.isAfter(dayjs())
+}
+
+function taskStatusText(item) {
+  // if completed, return 'Completed'
+  if (item?.done) {
+    return 'Completed'
+  }
+  if (!item?.dueDate) {
+    return 'Incomplete'
+  }
+  // if due date is invalid, return 'Incomplete'
+  const due = dayjs(item.dueDate)
+  if (!due.isValid()) {
+    return 'Incomplete'
+  }
+  // if overdue, return 'Overdue'
+  if (!due.isAfter(dayjs())) {
+    return 'Overdue'
+  }
+  return 'Incomplete'
 }
 
 
@@ -219,7 +256,7 @@ background: #ffffff;
 .task-list-header,
 .task-item {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr; 
+  grid-template-columns: 1fr 1fr 1fr 1fr; 
   align-items: center;
 }
 
@@ -247,13 +284,79 @@ background: #ffffff;
 
 
 .actions {
-  margin-top: 24px;
   display: flex;
-  gap: 20px;
   justify-content: center;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  margin-top: 20px;
 }
 
+.task-status-overdue {
+  color: #dc2626;
+  font-weight: 600;
+}
 
+.task-status-completed {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .home-page {
+    padding: 20px 12px 40px;
+  }
+
+  .home-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .task-list-header,
+  .task-item {
+    grid-template-columns:
+      minmax(0, 1.1fr)
+      minmax(0, 1fr)
+      minmax(0, 0.75fr)
+      minmax(6.25rem, 1fr);
+    gap: 6px 4px;
+    font-size: calc(var(--app-font-size, 16px) * 0.8);
+  }
+
+  .task-list-header span:not(:last-child),
+  .task-item .task-title,
+  .task-item .task-type,
+  .task-item .task-due-date {
+    padding: 0 2px;
+    word-break: break-word;
+    white-space: normal;
+  }
+
+  .task-list-header span:last-child,
+  .task-item .task-status {
+    padding: 0 4px;
+    white-space: nowrap;
+    word-break: normal;
+  }
+
+  .task-title {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .actions .ant-btn {
+    width: 100%;
+    min-width: 0;
+  }
+}
 </style>
 
 

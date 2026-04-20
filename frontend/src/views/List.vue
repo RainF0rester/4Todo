@@ -2,13 +2,13 @@
   <div class="body-container">
     <div ref="gridRef" class="grid">
       <TaskGroupCard title="Important & Urgent" color="red" :task-level="1" :initialItems="urgentImportant"
-        @reload="loadTasks" />
+        @reload="loadTasks" @task-moved="handleTaskMoved" />
       <TaskGroupCard title="Important but Not Urgent" color="yellow" :task-level="2" :initialItems="importantNotUrgent"
-        @reload="loadTasks" />
+        @reload="loadTasks" @task-moved="handleTaskMoved" />
       <TaskGroupCard title="Not Important but Urgent" color="blue" :task-level="3" :initialItems="urgentNotImportant"
-        @reload="loadTasks" />
+        @reload="loadTasks" @task-moved="handleTaskMoved" />
       <TaskGroupCard title="Not Important & Not Urgent" color="green" :task-level="4"
-        :initialItems="notUrgentNotImportant" @reload="loadTasks" />
+        :initialItems="notUrgentNotImportant" @reload="loadTasks" @task-moved="handleTaskMoved" />
     </div>
     <a-dropdown placement="topRight" :trigger="['hover']">
       <a-button type="primary" shape="circle" size="large" class="export-btn">
@@ -29,7 +29,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import TaskGroupCard from '../components/TaskGroupCard.vue'
-import { getTaskList } from '../api/tasks'
+import { getTaskList, updateTask } from '../api/tasks'
 import { DownloadOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import * as XLSX from 'xlsx'
@@ -183,6 +183,16 @@ function exportTasks({ key }) {
   }
 }
 
+async function handleTaskMoved({ id, toLevel }) {
+  try {
+    await updateTask(id, { task_level: toLevel })
+    message.success('Task urgency updated.')
+    await loadTasks()
+  } catch (e) {
+    console.error(e)
+    message.error(e?.message || 'Failed to move task.')
+  }
+}
 </script>
 
 <style scoped>
