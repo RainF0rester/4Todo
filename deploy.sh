@@ -7,7 +7,9 @@ if [ ! -f ./data/taskmaster.db ]; then
 fi
 
 docker compose down
-docker build -f Dockerfile.prod -t tasktracker:latest .
+docker build -t tasktracker:latest .
+# the command below is used for server in China mainland
+#docker build -f Dockerfile.prod -t tasktracker:latest .
 docker compose up -d
 
 echo "Done. Running at http://localhost:8080"

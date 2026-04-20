@@ -15,34 +15,26 @@ A web-based modern task management application, designed for users to intuitivel
 
 ## Tech stack
 
-- **Language / runtime**: Python 3.x (Backend), Node.js (Frontend)
-- **Framework / libraries**: APIFlask (Backend RESTful API), Vue 3 + Vite + Vue Router (Frontend)
-- **Persistence**: SQLite (`taskmaster.db`) interacted via SQLAlchemy 2.0 ORM.
-- **Containerization**: Docker & Docker Compose (for production deployments).
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Vue 3 + Ant Design Vue + Vite |
+| Backend | Python + APIFlask |
+| Database | SQLite + SQLAlchemy |
+| Deployment | Docker + Nginx + Gunicorn + Supervisor |
+| CI/CD | GitLab CI/CD + GitLab Runner |
 
 ## Prerequisites
 
 - **Python 3.10+** (For backend API operations)
 - **Node.js LTS** (For frontend Vue dependencies)
-- **Docker** (Optional, for running production-grade deployments through `docker-compose`)
+- **Docker** (For running production-grade deployments through `docker-compose`)
 
-## How to run locally
+## How to run it
 
-### Backend (APIFlask)
+Getting started is simple. Just run:
+
 ```bash
-# Navigate to the project root
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python app.py
-```
-*Note: The backend will run on `http://127.0.0.1:5000` by default. Database configurations are managed automatically via `config.py`.*
-
-### Frontend (Vue 3)
-```bash
-cd frontend
-npm install
-npm run dev
+bash deploy.sh
 ```
 
 ## How to run tests and checks
@@ -59,22 +51,82 @@ Our CI pipeline executes on GitLab natively via `.gitlab-ci.yml`. On every merge
 
 ## Where to find project evidence
 
-| Artifact | Where |
-|----------|--------|
-| **Risk report** | [docs/RISK_REPORT.md](./docs/RISK_REPORT.md) |
-| **Refactoring & complexity report** | *(To be added / Please link file here)* |
-| **Issue board** | [GitLab Issue Board](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/boards) |
-| **Team contract** | [docs/team-contract.md](./docs/team-contract.md) |
-| **Meeting notes** | [GitLab Wiki](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/wikis/home) |
-| **Sprint 3 group retrospective** | *(To be added / Please link file here)* |
+| Artifact | Where                                                                                                                                                                                           |
+|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Risk report** | [docs/RISK_REPORT.md](./docs/RISK_REPORT.md)                                                                                                                                                    |
+| **Refactoring & complexity report** | [docs.COMPLEXITY_REPORT.md](./docs/COMPLEXITY_REPORT.md)                                                                                                                                        |
+| **Issue board** | [GitLab Issue Board](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/boards)                                                                                |
+| **Team contract** | [docs/team-contract.md](./docs/team-contract.md)                                                                                                                                                |
+| **Meeting notes** | [GitLab Wiki](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/wikis/home)                                                                                   |
+| **Sprint 3 group retrospective** | [Sp3 Retrospective](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/wikis/home/Sp3-Retrospective) |
 
 ## Repository layout
 
-- `modules/` - Domain-driven backend structure separated by domains (`tasks`, `users`). Contains routes, services, schemas, and models.
-- `frontend/` - Independent Vue 3 + Vite SPA frontend code.
-- `docs/` - Contains our Risk Reports and other engineering documentations.
-- `tests/` - Comprehensive Pytest suites for testing backend functionality.
-- `Dockerfile` / `docker-compose.yml` - Container environments for straightforward deployment.
+```
+tasktracker/
+├── app.py                      # Flask application entry point
+├── config.py                   # App configuration
+├── db.py                       # Database setup
+├── schema.sql                  # Database schema
+├── requirements.txt            # Python dependencies
+├── requirements-dev.txt        # Python dev dependencies
+├── modules/
+│   ├── tasks/                  # Task module
+│   │   ├── models.py           # Task data models
+│   │   ├── repo.py             # Task database operations
+│   │   ├── routes.py           # Task API routes
+│   │   ├── schemas.py          # Task request/response schemas
+│   │   └── service.py         # Task business logic
+│   └── users/                  # User module
+│       ├── models.py           # User data models
+│       ├── repo.py             # User database operations
+│       ├── routes.py           # User API routes
+│       ├── schemas.py          # User request/response schemas
+│       └── service.py         # User business logic
+├── utils/
+│   ├── auth_decorator.py       # Auth middleware
+│   └── jwt_utils.py            # JWT utilities
+├── tests/
+│   ├── tasks/                  # Task unit tests
+│   ├── users/                  # User unit tests
+│   └── utils/                  # Utility unit tests
+├── frontend/                   # Vue 3 frontend
+│   ├── src/
+│   │   ├── api/                # API calls
+│   │   ├── components/         # Reusable Vue components
+│   │   ├── views/              # Page views
+│   │   ├── router/             # Vue Router config
+│   │   └── stores/             # State management
+│   ├── package.json
+│   └── vite.config.js
+├── docs/                       # Project documentation
+├── Dockerfile                  # For non-China environments
+├── Dockerfile.prod             # For China environments (with mirror sources)
+├── docker-compose.yml          # Container orchestration
+├── nginx.conf                  # Nginx configuration
+├── supervisord.conf            # Supervisor configuration
+├── deploy.sh                   # Deployment script
+└── .gitlab-ci.yml              # CI/CD pipeline config
+```
+
+## How It All Works Together
+
+**Request Flow:**
+```
+User Browser
+    ↓
+Nginx (port 8080)
+    ↓
+    ├── Static files (/, *.js, *.css)  →  Vue 3 Frontend
+    │
+    └── API requests (/api/*)
+            ↓
+        Gunicorn (port 5000, 4 workers)
+            ↓
+        APIFlask
+            ↓
+        SQLAlchemy → SQLite
+```
 
 ## Team & course
 
