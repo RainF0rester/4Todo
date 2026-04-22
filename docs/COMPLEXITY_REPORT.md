@@ -56,3 +56,21 @@ As the backend scaled to handle both Task and User entity logic alongside JSON W
     *   [`2a0afcf`](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/commit/2a0afcf): *feat(tasks): add due time parsing and validation in task normalization (#58)*
     *   [`3845712`](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/commit/3845712): *fix(tasks): improve due date validation in task normalization (#58)*
     *   [`949559b`](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/commit/949559b): *feat(tasks): enhance task title validation in normalization (#55)*
+
+---
+
+## 4. Refactoring: Flask → APIFlask Migration (Sprint 1)
+
+While our refactoring effort across the project was intentionally limited—we preferred small, targeted improvements over large-scale rewrites—one significant structural refactor took place in Sprint 1: migrating the backend framework from **Flask** to **APIFlask**.
+
+*   **Why We Refactored:** The original Flask setup required manual effort to document and validate API contracts. As the team adopted a frontend/backend split workflow, the lack of a shared API specification became a coordination overhead—frontend developers had to rely on verbal communication or ad-hoc notes to know what endpoints existed and what payloads they accepted.
+
+*   **What Changed:** We replaced Flask with APIFlask, which provides built-in support for:
+    *   **Swagger UI** — auto-generated interactive API documentation at `/docs`, giving the frontend team a live reference without any extra maintenance
+    *   **Schema-based input/output validation** — request payloads are validated against `marshmallow` schemas (`schemas.py`) before reaching route handlers, removing the need for manual `request.json.get()` checks scattered across routes
+
+*   **Impact:** This refactor reduced accidental complexity in the route layer. Before the migration, each route handler was responsible for both extracting and validating raw request data. After, `routes.py` handlers receive already-validated, typed dictionaries from APIFlask's `@bp.input()` decorator, keeping the controller layer thin and focused solely on HTTP concerns.
+
+*   **Evidence:**
+    *   [`3360e99`](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/commit/3360e99): *feat: switch Flask to APIFlask*
+    *   [`f87f83d`](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/commit/f87f83d): *fix: modify apis because of switch flask to apiflask* (updated routes, added `schemas.py`)
