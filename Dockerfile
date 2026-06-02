@@ -10,9 +10,9 @@ FROM python:3.12-slim
 # nginx and supervisor
 RUN apt-get update && apt-get install -y nginx supervisor && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt gunicorn
-COPY . .
+COPY backend/ ./backend/
 # copy frontend built files
 COPY --from=frontend-builder /app/dist /usr/share/nginx/html
 # nginx and supervisord settings

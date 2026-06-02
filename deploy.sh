@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+MODE=$(1:-dev)
+
 mkdir -p ./data
 if [ ! -f ./data/taskmaster.db ]; then
     touch ./data/taskmaster.db
@@ -7,9 +9,13 @@ if [ ! -f ./data/taskmaster.db ]; then
 fi
 
 docker compose down
-docker build -t tasktracker:latest .
-# the command below is used for server in China mainland
-#docker build -f Dockerfile.prod -t tasktracker:latest .
+if [ "$MODE" = "prod" ]; then
+    # the command below is used for server in China mainland
+    docker build -f Dockerfile.prod -t tasktracker:latest .
+else
+    docker build -t tasktracker:latest .
+fi
+
 docker compose up -d
 
 echo "Done. Running at http://localhost:8080"
