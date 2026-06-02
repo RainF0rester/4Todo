@@ -1,4 +1,4 @@
-# Task Tracker (COMP9820)
+# Task Tracker
 
 A web-based modern task management application, designed for users to intuitively manage their to-dos, keep track of due dates, and securely organize their daily routines.
 
@@ -6,7 +6,7 @@ A web-based modern task management application, designed for users to intuitivel
 
 - **User / context**: Individuals, students, and professionals looking for a simple yet feature-rich daily task tracking tool with secure authentication capabilities.
 - **Problem**: Solves the problem of forgotten tasks and poorly managed schedules by centralizing tasks with pinning, due dates, and auto-cleanup mechanisms.
-- **Stories**: 
+- **Stories**:
   - User Registration and Login.
   - CRUD operations for Task entries (Create, Read, Update, Delete).
   - Pinning critical tasks to the top.
@@ -15,13 +15,13 @@ A web-based modern task management application, designed for users to intuitivel
 
 ## Tech stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Vue 3 + Ant Design Vue + Vite |
-| Backend | Python + APIFlask |
-| Database | SQLite + SQLAlchemy |
+| Layer      | Technology                             |
+| ---------- | -------------------------------------- |
+| Frontend   | Vue 3 + Ant Design Vue + Vite          |
+| Backend    | Python + APIFlask                      |
+| Database   | SQLite + SQLAlchemy                    |
 | Deployment | Docker + Nginx + Gunicorn + Supervisor |
-| CI/CD | GitLab CI/CD + GitLab Runner |
+| CI/CD      | GitLab CI/CD + GitLab Runner           |
 
 ## Prerequisites
 
@@ -43,7 +43,8 @@ bash deploy.sh
 # Ensure you are at the project root and venv is activated
 pytest tests/
 ```
-*Test coverage is accessible via the `.coverage` tooling and generated reports such as `coverage.xml`.*
+
+_Test coverage is accessible via the `.coverage` tooling and generated reports such as `coverage.xml`._
 
 ## CI pipeline
 
@@ -51,14 +52,13 @@ Our CI pipeline executes on GitLab natively via `.gitlab-ci.yml`. On every merge
 
 ## Where to find project evidence
 
-| Artifact | Where                                                                                                                                                                                           |
-|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Risk report** | [docs/RISK_REPORT.md](./docs/RISK_REPORT.md)                                                                                                                                                    |
-| **Refactoring & complexity report** | [docs.COMPLEXITY_REPORT.md](./docs/COMPLEXITY_REPORT.md)                                                                                                                                        |
-| **Issue board** | [GitLab Issue Board](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/boards)                                                                                |
-| **Team contract** | [docs/team-contract.md](./docs/team-contract.md)                                                                                                                                                |
-| **Meeting notes** | [GitLab Wiki](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/wikis/home)                                                                                   |
-| **Sprint 3 group retrospective** | [Sp3 Retrospective](https://gitlab.cse.unsw.edu.au/coursework/comp9820/26t1/groups/T09A-B/tasktracker/-/wikis/home/Sp3-Retrospective) |
+| Artifact                            | Where                     |
+| ----------------------------------- | ------------------------- |
+| **Risk report**                     | docs/RISK_REPORT.md       |
+| **Refactoring & complexity report** | docs/COMPLEXITY_REPORT.md |
+| **Issue board**                     | GitLab Issue Board        |
+| **Team contract**                   | docs/team-contract.md     |
+| **Meeting notes**                   | GitLab Wiki               |
 
 ## Repository layout
 
@@ -112,6 +112,7 @@ tasktracker/
 ## How It All Works Together
 
 **Request Flow:**
+
 ```
 User Browser
     ↓
@@ -127,8 +128,3 @@ Nginx (port 8080)
             ↓
         SQLAlchemy → SQLite
 ```
-
-## Team & course
-
-- **Course**: COMP9820 — 26T1
-- **Group**: T09A-B
