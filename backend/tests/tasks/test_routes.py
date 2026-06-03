@@ -51,7 +51,7 @@ def auth_headers():
 
 def _auth_patch():
     return patch(
-        "utils.auth_decorator.validate_token",
+        "backend.utils.auth_decorator.validate_token",
         return_value={"state": "active", "payload": {"user_id": 123}},
     )
 
