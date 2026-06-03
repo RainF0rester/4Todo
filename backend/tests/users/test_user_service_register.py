@@ -16,9 +16,9 @@ class TestRegisterUser:
     implementation does not support them yet.
     """
 
-    @patch("modules.users.service.get_user_by_email")
-    @patch("modules.users.service.get_user_by_username")
-    @patch("modules.users.service.create_user")
+    @patch("backend.modules.users.service.get_user_by_email")
+    @patch("backend.modules.users.service.get_user_by_username")
+    @patch("backend.modules.users.service.create_user")
     def test_register_user_success(self, mock_create_user, mock_get_username, mock_get_email):
         """
         A new user with valid input should be registered successfully.
@@ -40,8 +40,8 @@ class TestRegisterUser:
         mock_create_user.assert_called_once()
         assert real_user.password_hash != ""
 
-    @patch("modules.users.service.get_user_by_email")
-    @patch("modules.users.service.get_user_by_username")
+    @patch("backend.modules.users.service.get_user_by_email")
+    @patch("backend.modules.users.service.get_user_by_username")
     def test_register_user_email_conflict(self, mock_get_username, mock_get_email):
         """
         Registration should fail when the email has already been registered.
@@ -55,8 +55,8 @@ class TestRegisterUser:
         mock_get_email.assert_called_once_with(mock_session, "existing@example.com")
         mock_get_username.assert_not_called()
 
-    @patch("modules.users.service.get_user_by_email")
-    @patch("modules.users.service.get_user_by_username")
+    @patch("backend.modules.users.service.get_user_by_email")
+    @patch("backend.modules.users.service.get_user_by_username")
     def test_register_user_username_conflict(self, mock_get_username, mock_get_email):
         """
         Registration should fail when the username has already been registered.
@@ -98,9 +98,9 @@ class TestRegisterUser:
         with pytest.raises(ValueError, match="password is required"):
             register_user(mock_session, "testuser", "test@example.com", "")
 
-    @patch("modules.users.service.get_user_by_email")
-    @patch("modules.users.service.get_user_by_username")
-    @patch("modules.users.service.create_user")
+    @patch("backend.modules.users.service.get_user_by_email")
+    @patch("backend.modules.users.service.get_user_by_username")
+    @patch("backend.modules.users.service.create_user")
     def test_register_user_email_normalization(self, mock_create_user, mock_get_username, mock_get_email):
         """
         Email should be stripped and converted to lowercase before validation and creation.
@@ -119,9 +119,9 @@ class TestRegisterUser:
         mock_get_email.assert_called_once_with(mock_session, "test@example.com")
         assert real_user.password_hash != ""
 
-    @patch("modules.users.service.get_user_by_email")
-    @patch("modules.users.service.get_user_by_username")
-    @patch("modules.users.service.create_user")
+    @patch("backend.modules.users.service.get_user_by_email")
+    @patch("backend.modules.users.service.get_user_by_username")
+    @patch("backend.modules.users.service.create_user")
     def test_register_user_input_stripping(self, mock_create_user, mock_get_username, mock_get_email):
         """
         Username and password should be stripped before user creation.
@@ -140,9 +140,9 @@ class TestRegisterUser:
         mock_get_username.assert_called_once_with(mock_session, "testuser")
         assert real_user.password_hash != ""
 
-    @patch("modules.users.service.get_user_by_email")
-    @patch("modules.users.service.get_user_by_username")
-    @patch("modules.users.service.create_user")
+    @patch("backend.modules.users.service.get_user_by_email")
+    @patch("backend.modules.users.service.get_user_by_username")
+    @patch("backend.modules.users.service.create_user")
     # @pytest.mark.xfail(reason="TDD: username max length validation (<= 16) not implemented yet")
     def test_register_user_rejects_username_longer_than_16(self, mock_create_user, mock_get_username, mock_get_email):
         """
@@ -153,9 +153,9 @@ class TestRegisterUser:
         with pytest.raises(ValueError, match="username must be between 1 and 16 characters"):
             register_user(mock_session, "a" * 17, "test@unsw.edu.au", "password123")
 
-    @patch("modules.users.service.get_user_by_email")
-    @patch("modules.users.service.get_user_by_username")
-    @patch("modules.users.service.create_user")
+    @patch("backend.modules.users.service.get_user_by_email")
+    @patch("backend.modules.users.service.get_user_by_username")
+    @patch("backend.modules.users.service.create_user")
     # @pytest.mark.xfail(reason="TDD: strict UNSW email domain validation not implemented yet")
     def test_register_user_rejects_invalid_email_format(self, mock_create_user, mock_get_username, mock_get_email):
         """
@@ -166,9 +166,9 @@ class TestRegisterUser:
         with pytest.raises(ValueError, match="email format is invalid"):
             register_user(mock_session, "testuser", "testgmail.com", "password123")
 
-    @patch("modules.users.service.get_user_by_email")
-    @patch("modules.users.service.get_user_by_username")
-    @patch("modules.users.service.create_user")
+    @patch("backend.modules.users.service.get_user_by_email")
+    @patch("backend.modules.users.service.get_user_by_username")
+    @patch("backend.modules.users.service.create_user")
     # @pytest.mark.xfail(reason="TDD: password max length validation (<= 30) not implemented yet")
     def test_register_user_rejects_password_longer_than_30(self, mock_create_user, mock_get_username, mock_get_email):
         """

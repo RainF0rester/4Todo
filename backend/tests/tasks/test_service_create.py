@@ -14,7 +14,7 @@ def valid_payload():
 
 
 def test_create_task_success():
-    with patch("modules.tasks.repo.create_task") as mock_create:
+    with patch("backend.modules.tasks.repo.create_task") as mock_create:
         mock_task = MagicMock()
         mock_create.return_value = mock_task
 

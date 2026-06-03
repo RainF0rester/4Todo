@@ -14,8 +14,8 @@ def make_task(task_id=1, user_id=1, is_deleted=0):
 def test_update_task_success():
     fake_task = make_task(task_id=1, user_id=1, is_deleted=0)
 
-    with patch("modules.tasks.repo.get_task", return_value=fake_task), \
-         patch("modules.tasks.repo.update_task", return_value=fake_task):
+    with patch("backend.modules.tasks.repo.get_task", return_value=fake_task), \
+         patch("backend.modules.tasks.repo.update_task", return_value=fake_task):
 
         result = service.update_task(None, 1, {"task_title": "new"}, user_id=1)
 
@@ -24,7 +24,7 @@ def test_update_task_success():
 
 
 def test_update_task_rejects_missing_task():
-    with patch("modules.tasks.repo.get_task", return_value=None):
+    with patch("backend.modules.tasks.repo.get_task", return_value=None):
         with pytest.raises(ValueError, match="Task not found"):
             service.update_task(None, 1, {"task_title": "new"}, user_id=1)
 
@@ -32,7 +32,7 @@ def test_update_task_rejects_missing_task():
 def test_update_task_rejects_deleted_task():
     fake_task = make_task(task_id=1, user_id=1, is_deleted=1)
 
-    with patch("modules.tasks.repo.get_task", return_value=fake_task):
+    with patch("backend.modules.tasks.repo.get_task", return_value=fake_task):
         with pytest.raises(ValueError, match="Task not found"):
             service.update_task(None, 1, {"task_title": "new"}, user_id=1)
 
@@ -40,7 +40,7 @@ def test_update_task_rejects_deleted_task():
 def test_update_task_rejects_task_from_other_user():
     fake_task = make_task(task_id=1, user_id=2, is_deleted=0)
 
-    with patch("modules.tasks.repo.get_task", return_value=fake_task):
+    with patch("backend.modules.tasks.repo.get_task", return_value=fake_task):
         with pytest.raises(ValueError, match="Task not found"):
             service.update_task(None, 1, {"task_title": "new"}, user_id=1)
 
@@ -48,6 +48,6 @@ def test_update_task_rejects_task_from_other_user():
 def test_update_task_rejects_empty_payload():
     fake_task = make_task(task_id=1, user_id=1, is_deleted=0)
 
-    with patch("modules.tasks.repo.get_task", return_value=fake_task):
+    with patch("backend.modules.tasks.repo.get_task", return_value=fake_task):
         with pytest.raises(ValueError, match="No fields to update"):
             service.update_task(None, 1, {}, user_id=1)

@@ -49,7 +49,7 @@ class TestRequireAuth:
         assert response.status_code == 401
         assert 'Invalid authorization' in response.json.get('message', '')
 
-    @patch('utils.auth_decorator.validate_token')
+    @patch('backend.utils.auth_decorator.validate_token')
     def test_require_auth_valid_token(self, mock_validate):
         mock_validate.return_value = {
             'state': 'active',
@@ -69,7 +69,7 @@ class TestRequireAuth:
         assert response.status_code == 200
         assert response.json['user_id'] == 123
 
-    @patch('utils.auth_decorator.validate_token')
+    @patch('backend.utils.auth_decorator.validate_token')
     def test_require_auth_refreshable_token(self, mock_validate):
         mock_validate.return_value = {
             'state': 'refreshable',
@@ -86,7 +86,7 @@ class TestRequireAuth:
         assert response.status_code == 403
         assert 'Token expired' in response.json.get('message', '')
 
-    @patch('utils.auth_decorator.validate_token')
+    @patch('backend.utils.auth_decorator.validate_token')
     def test_require_auth_invalid_token(self, mock_validate):
         from backend.utils.jwt_utils import TokenError
 

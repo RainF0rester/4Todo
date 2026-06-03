@@ -61,7 +61,7 @@ def _auth_patch():
 # =========================
 
 def test_create_task_success(client):
-    with _auth_patch(), patch("modules.tasks.service.create_task", return_value=DummyTask()) as mock_create:
+    with _auth_patch(), patch("backend.modules.tasks.service.create_task", return_value=DummyTask()) as mock_create:
         response = client.post("/tasks", json=valid_payload(), headers=auth_headers())
 
     assert response.status_code == 201
@@ -159,7 +159,7 @@ def test_get_task_invalid_id(client):
 # =========================
 
 def test_delete_task_success(client):
-    with _auth_patch(), patch("modules.tasks.service.soft_delete_task", return_value=None) as mock_delete:
+    with _auth_patch(), patch("backend.modules.tasks.service.soft_delete_task", return_value=None) as mock_delete:
         response = client.patch("/tasks/1/delete", headers=auth_headers())
 
     assert response.status_code == 200
@@ -178,7 +178,7 @@ def test_delete_task_not_found(client):
 
 
 def test_restore_task_success(client):
-    with _auth_patch(), patch("modules.tasks.service.restore_task", return_value=None) as mock_restore:
+    with _auth_patch(), patch("backend.modules.tasks.service.restore_task", return_value=None) as mock_restore:
         response = client.patch("/tasks/1/restore", headers=auth_headers())
 
     assert response.status_code == 200
@@ -203,7 +203,7 @@ def test_restore_task_not_found(client):
 def test_list_tasks(client):
     tasks = [DummyTask(task_id=1), DummyTask(task_id=2)]
 
-    with _auth_patch(), patch("modules.tasks.service.list_tasks", return_value=tasks) as mock_list:
+    with _auth_patch(), patch("backend.modules.tasks.service.list_tasks", return_value=tasks) as mock_list:
         response = client.get("/tasks", headers=auth_headers())
 
     assert response.status_code == 200
@@ -227,7 +227,7 @@ def test_list_tasks_error(client):
 def test_list_deleted_tasks_success(client):
     tasks = [DummyTask(task_id=1, is_pinned=1), DummyTask(task_id=2, is_pinned=0)]
 
-    with _auth_patch(), patch("modules.tasks.service.list_deleted_tasks", return_value=tasks) as mock_list:
+    with _auth_patch(), patch("backend.modules.tasks.service.list_deleted_tasks", return_value=tasks) as mock_list:
         response = client.get("/tasks/deleted", headers=auth_headers())
 
     assert response.status_code == 200
@@ -325,7 +325,7 @@ def test_update_task_empty_payload(client):
 # =========================
 
 def test_pin_task_success(client):
-    with _auth_patch(), patch("modules.tasks.service.pin_task", return_value=None) as mock_pin:
+    with _auth_patch(), patch("backend.modules.tasks.service.pin_task", return_value=None) as mock_pin:
         response = client.patch("/tasks/1/pin", headers=auth_headers())
 
     assert response.status_code == 200
@@ -344,7 +344,7 @@ def test_pin_task_not_found(client):
 
 
 def test_unpin_task_success(client):
-    with _auth_patch(), patch("modules.tasks.service.unpin_task", return_value=None) as mock_unpin:
+    with _auth_patch(), patch("backend.modules.tasks.service.unpin_task", return_value=None) as mock_unpin:
         response = client.patch("/tasks/1/unpin", headers=auth_headers())
 
     assert response.status_code == 200

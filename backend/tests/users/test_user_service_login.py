@@ -13,8 +13,8 @@ class TestLoginUser:
     This file focuses only on login-related business rules.
     """
 
-    @patch("modules.users.service.get_user_by_username_or_email")
-    @patch("modules.users.service.create_token")
+    @patch("backend.modules.users.service.get_user_by_username_or_email")
+    @patch("backend.modules.users.service.create_token")
     def test_login_user_success_with_username(self, mock_create_token, mock_get_user):
         """
         A user should be able to log in successfully using a username.
@@ -46,8 +46,8 @@ class TestLoginUser:
             email="test@example.com",
         )
 
-    @patch("modules.users.service.get_user_by_username_or_email")
-    @patch("modules.users.service.create_token")
+    @patch("backend.modules.users.service.get_user_by_username_or_email")
+    @patch("backend.modules.users.service.create_token")
     def test_login_user_success_with_email(self, mock_create_token, mock_get_user):
         """
         A user should be able to log in successfully using an email address.
@@ -79,7 +79,7 @@ class TestLoginUser:
             email="test@example.com",
         )
 
-    @patch("modules.users.service.get_user_by_username_or_email")
+    @patch("backend.modules.users.service.get_user_by_username_or_email")
     def test_login_user_invalid_identify(self, mock_get_user):
         """
         Login should fail when no matching user is found.
@@ -92,7 +92,7 @@ class TestLoginUser:
 
         mock_get_user.assert_called_once_with(mock_session, "nonexistent")
 
-    @patch("modules.users.service.get_user_by_username_or_email")
+    @patch("backend.modules.users.service.get_user_by_username_or_email")
     def test_login_user_invalid_password(self, mock_get_user):
         """
         Login should fail when the password is incorrect.
@@ -127,8 +127,8 @@ class TestLoginUser:
         with pytest.raises(ValueError, match="password is required"):
             login_user(mock_session, "testuser", "")
 
-    @patch("modules.users.service.get_user_by_username_or_email")
-    @patch("modules.users.service.create_token")
+    @patch("backend.modules.users.service.get_user_by_username_or_email")
+    @patch("backend.modules.users.service.create_token")
     def test_login_user_input_stripping(self, mock_create_token, mock_get_user):
         """
         Identify and password should be stripped before authentication.
