@@ -77,7 +77,7 @@ def test_create_task_success(client):
 
 def test_create_task_validation_error(client):
     with _auth_patch(), patch(
-        "modules.tasks.service.create_task",
+        "backend.modules.tasks.service.create_task",
         side_effect=ValueError("invalid task")
     ):
         response = client.post("/tasks", json=valid_payload(), headers=auth_headers())
@@ -91,7 +91,7 @@ def test_create_task_invalid_due_format(client):
     payload["task_due"] = "2099-01-01"
 
     with _auth_patch(), patch(
-        "modules.tasks.service.create_task",
+        "backend.modules.tasks.service.create_task",
         side_effect=ValueError("Task due time must be in format YYYY-MM-DD HH:MM")
     ):
         response = client.post("/tasks", json=payload, headers=auth_headers())
@@ -104,7 +104,7 @@ def test_create_task_past_due_time(client):
     payload["task_due"] = "2020-01-01 10:30"
 
     with _auth_patch(), patch(
-        "modules.tasks.service.create_task",
+        "backend.modules.tasks.service.create_task",
         side_effect=ValueError("Task due time cannot be in the past")
     ):
         response = client.post("/tasks", json=payload, headers=auth_headers())
@@ -127,7 +127,7 @@ def test_create_task_past_due_time(client):
 
 def test_get_task_success(client):
     with _auth_patch(), patch(
-        "modules.tasks.service.get_task",
+        "backend.modules.tasks.service.get_task",
         return_value=DummyTask(task_id=1)
     ) as mock_get:
         response = client.get("/tasks/1", headers=auth_headers())
@@ -139,7 +139,7 @@ def test_get_task_success(client):
 
 def test_get_task_not_found(client):
     with _auth_patch(), patch(
-        "modules.tasks.service.get_task",
+        "backend.modules.tasks.service.get_task",
         side_effect=ValueError("Task not found")
     ):
         response = client.get("/tasks/999", headers=auth_headers())
@@ -169,7 +169,7 @@ def test_delete_task_success(client):
 
 def test_delete_task_not_found(client):
     with _auth_patch(), patch(
-        "modules.tasks.service.soft_delete_task",
+        "backend.modules.tasks.service.soft_delete_task",
         side_effect=ValueError("Task not found")
     ):
         response = client.patch("/tasks/999/delete", headers=auth_headers())
@@ -188,7 +188,7 @@ def test_restore_task_success(client):
 
 def test_restore_task_not_found(client):
     with _auth_patch(), patch(
-        "modules.tasks.service.restore_task",
+        "backend.modules.tasks.service.restore_task",
         side_effect=ValueError("Task not found")
     ):
         response = client.patch("/tasks/999/restore", headers=auth_headers())
@@ -216,7 +216,7 @@ def test_list_tasks(client):
 
 def test_list_tasks_error(client):
     with _auth_patch(), patch(
-        "modules.tasks.service.list_tasks",
+        "backend.modules.tasks.service.list_tasks",
         side_effect=ValueError("error")
     ):
         response = client.get("/tasks", headers=auth_headers())
@@ -239,7 +239,7 @@ def test_list_deleted_tasks_success(client):
 
 def test_list_deleted_tasks_error(client):
     with _auth_patch(), patch(
-        "modules.tasks.service.list_deleted_tasks",
+        "backend.modules.tasks.service.list_deleted_tasks",
         side_effect=ValueError("error")
     ):
         response = client.get("/tasks/deleted", headers=auth_headers())
@@ -258,7 +258,7 @@ def test_update_task_success(client):
     }
 
     with _auth_patch(), patch(
-        "modules.tasks.service.update_task",
+        "backend.modules.tasks.service.update_task",
         return_value=DummyTask(
             task_id=1,
             task_title="updated task",
@@ -278,7 +278,7 @@ def test_update_task_success(client):
 
 def test_update_task_not_found(client):
     with _auth_patch(), patch(
-        "modules.tasks.service.update_task",
+        "backend.modules.tasks.service.update_task",
         side_effect=ValueError("Task not found")
     ):
         response = client.patch("/tasks/999", json={"task_title": "x"}, headers=auth_headers())
@@ -290,7 +290,7 @@ def test_update_task_invalid_due(client):
     payload = {"task_due": "2020-01-01 10:30"}
 
     with _auth_patch(), patch(
-        "modules.tasks.service.update_task",
+        "backend.modules.tasks.service.update_task",
         side_effect=ValueError("Task due time cannot be in the past")
     ):
         response = client.patch("/tasks/1", json=payload, headers=auth_headers())
@@ -302,7 +302,7 @@ def test_update_task_invalid_due_format(client):
     payload = {"task_due": "2099-01-01"}
 
     with _auth_patch(), patch(
-        "modules.tasks.service.update_task",
+        "backend.modules.tasks.service.update_task",
         side_effect=ValueError("Task due time must be in format YYYY-MM-DD HH:MM")
     ):
         response = client.patch("/tasks/1", json=payload, headers=auth_headers())
@@ -312,7 +312,7 @@ def test_update_task_invalid_due_format(client):
 
 def test_update_task_empty_payload(client):
     with _auth_patch(), patch(
-        "modules.tasks.service.update_task",
+        "backend.modules.tasks.service.update_task",
         side_effect=ValueError("No fields to update")
     ):
         response = client.patch("/tasks/1", json={}, headers=auth_headers())
@@ -335,7 +335,7 @@ def test_pin_task_success(client):
 
 def test_pin_task_not_found(client):
     with _auth_patch(), patch(
-        "modules.tasks.service.pin_task",
+        "backend.modules.tasks.service.pin_task",
         side_effect=ValueError("Task not found")
     ):
         response = client.patch("/tasks/1/pin", headers=auth_headers())
@@ -354,7 +354,7 @@ def test_unpin_task_success(client):
 
 def test_unpin_task_not_found(client):
     with _auth_patch(), patch(
-        "modules.tasks.service.unpin_task",
+        "backend.modules.tasks.service.unpin_task",
         side_effect=ValueError("Task not found")
     ):
         response = client.patch("/tasks/1/unpin", headers=auth_headers())
