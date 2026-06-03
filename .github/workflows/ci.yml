@@ -130,5 +130,5 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd /root/tasktracker/tasktracker
-            git pull origin main
+            git pull github main
             bash deploy.sh prod
