@@ -12,9 +12,9 @@
                 <div v-if="errors.username" class="ant-form-item-explain">{{ errors.username }}</div>
             </a-form-item>
 
-            <a-form-item label="UNSW Email">
+            <a-form-item label="Email">
                 <a-input ref="emailInput" v-model:value="email" @input="onEmailInput" @blur="onEmailBlur"
-                    placeholder="you@unsw.edu.au" autocomplete="email" />
+                    placeholder="your email" autocomplete="email" />
                 <div v-if="errors.email" class="ant-form-item-explain">{{ errors.email }}</div>
             </a-form-item>
 
@@ -86,11 +86,11 @@ function validateEmailField() {
         errors.value.email = 'Email is required.'
         return false
     }
-    const unswRegex = /^[^@\s]+@([a-z0-9.-]+\.)?unsw\.edu\.au$/i
-    if (!unswRegex.test(v)) {
-        errors.value.email = 'Please enter your UNSW email address (must end with @unsw.edu.au).'
-        return false
-    }
+    // const unswRegex = /^[^@\s]+@([a-z0-9.-]+\.)?unsw\.edu\.au$/i
+    // if (!unswRegex.test(v)) {
+    //     errors.value.email = 'Please enter your UNSW email address (must end with @unsw.edu.au).'
+    //     return false
+    // }
     errors.value.email = ''
     return true
 }
@@ -114,10 +114,10 @@ function onUsernameInput() { validateUsernameField() }
 function onUsernameBlur() { validateUsernameField() }
 function onEmailInput() { validateEmailField() }
 function onEmailBlur() {
-    // If user typed local part only (no @), append UNSW domain on blur
-    if (email.value && !email.value.includes('@')) {
-        email.value = email.value.trim() + '@unsw.edu.au'
-    }
+    // // If user typed local part only (no @), append UNSW domain on blur
+    // if (email.value && !email.value.includes('@')) {
+    //     email.value = email.value.trim() + '@unsw.edu.au'
+    // }
     validateEmailField()
 }
 function onPasswordInput() { validatePasswordField() }
@@ -318,7 +318,7 @@ onMounted(() => {
     }
     // Prefill domain on initial render so user can type local part before it
     if (!email.value) {
-        email.value = '@unsw.edu.au'
+        email.value = ''
         nextTick(() => {
             try {
                 const comp = emailInput.value
