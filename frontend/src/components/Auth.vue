@@ -14,7 +14,7 @@
 
             <a-form-item label="Email">
                 <a-input ref="emailInput" v-model:value="email" @input="onEmailInput" @blur="onEmailBlur"
-                    placeholder="your email" autocomplete="email" />
+                    placeholder="Enter Eemail" autocomplete="email" />
                 <div v-if="errors.email" class="ant-form-item-explain">{{ errors.email }}</div>
             </a-form-item>
 
@@ -86,11 +86,11 @@ function validateEmailField() {
         errors.value.email = 'Email is required.'
         return false
     }
-    // const unswRegex = /^[^@\s]+@([a-z0-9.-]+\.)?unsw\.edu\.au$/i
-    // if (!unswRegex.test(v)) {
-    //     errors.value.email = 'Please enter your UNSW email address (must end with @unsw.edu.au).'
-    //     return false
-    // }
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    if(!emailRegex.test(v)){
+        errors.value.email = "Please enter a valid email address."
+        return false
+    }
     errors.value.email = ''
     return true
 }
@@ -113,13 +113,7 @@ function validatePasswordField() {
 function onUsernameInput() { validateUsernameField() }
 function onUsernameBlur() { validateUsernameField() }
 function onEmailInput() { validateEmailField() }
-function onEmailBlur() {
-    // // If user typed local part only (no @), append UNSW domain on blur
-    // if (email.value && !email.value.includes('@')) {
-    //     email.value = email.value.trim() + '@unsw.edu.au'
-    // }
-    validateEmailField()
-}
+function onEmailBlur() {validateEmailField() }
 function onPasswordInput() { validatePasswordField() }
 function onPasswordBlur() { validatePasswordField() }
 
