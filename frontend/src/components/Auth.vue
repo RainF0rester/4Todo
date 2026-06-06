@@ -50,6 +50,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
 import { addTask, saveGuestTasks } from '../api/tasks'
 import { initUiSettings } from '../stores/uiSettings'
+import { request } from '../api/request.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -151,11 +152,16 @@ async function handleSubmit() {
                 password: password.value,
             }
 
-            const res = await fetch('/api/users/register', {
+            const res = await request('/users/register', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             })
+
+            // const res = await fetch('/api/users/register', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify(payload),
+            // })
             // read full response text for better debugging
             const text = await res.text().catch(() => '')
             let data = null
@@ -168,11 +174,17 @@ async function handleSubmit() {
             }
             let token = data?.token || data?.access_token || data?.auth_token
             if (!token) {
-                const loginRes = await fetch('/api/users/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+
+                const loginRes = await request('/users/login', {
+                    method: "POST",
                     body: JSON.stringify({ identify: email.value.trim(), password: password.value }),
                 })
+
+                // const loginRes = await fetch('/api/users/login', {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify({ identify: email.value.trim(), password: password.value }),
+                // })
                 const loginText = await loginRes.text().catch(() => '')
                 let loginData = null
                 try { loginData = loginText ? JSON.parse(loginText) : null } catch (err) { loginData = null }
@@ -200,11 +212,17 @@ async function handleSubmit() {
                 password: password.value,
             }
 
-            const res = await fetch('/api/users/login', {
+            const res = await request('/users/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             })
+
+            // const res = await fetch('/api/users/login', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify(payload),
+            // })
+
             // read full response text for better debugging
             const text = await res.text().catch(() => '')
             let data = null

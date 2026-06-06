@@ -28,7 +28,7 @@ def require_auth(f):
 
             # If token is expired but refreshable, return 403 with refresh hint
             if state == 'refreshable':
-                abort(403, message="Token expired, please refresh your token")
+                abort(401, message="Token expired, please refresh your token")
 
             # Token is active, inject user_id and payload into function
             user_id = payload.get('user_id')

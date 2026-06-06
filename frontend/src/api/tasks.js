@@ -1,6 +1,7 @@
 // get task list
+import { request } from "./request";
 
-const TASKS_API = "/api/tasks";
+const TASKS_API = "/tasks";
 const GUEST_KEY = "guest_tasks";
 const GUEST_LIMIT = 8;
 
@@ -57,9 +58,10 @@ export async function getTaskList() {
     return tasks.map(normalizeTask);
   }
 
-  const res = await fetch(TASKS_API,{
-    headers: getAuthHeaders(),
-  });
+  const res = await request(TASKS_API)
+  // const res = await fetch(TASKS_API,{
+  //   headers: getAuthHeaders(),
+  // });
   if (!res.ok) throw new Error("Unable to get tasks list");
   const data = await res.json();
   return data.map(normalizeTask);
@@ -71,9 +73,10 @@ export async function getDeletedTaskList() {
     return tasks.map(normalizeTask);
   }
 
-  const res = await fetch(`${TASKS_API}/deleted`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await request(`${TASKS_API}/deleted`)
+  // const res = await fetch(`${TASKS_API}/deleted`, {
+  //   headers: getAuthHeaders(),
+  // });
   if (!res.ok) throw new Error("Unable to get deleted tasks");
   const data = await res.json();
   return data.map(normalizeTask);
@@ -106,11 +109,16 @@ export async function addTask(task) {
     return Promise.resolve(newTask);
   }
 
-  const res = await fetch(TASKS_API, {
+  const res = await request(TASKS_API, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-    body: JSON.stringify(task),
-  });
+    body: JSON.stringify(task)
+  })
+
+  // const res = await fetch(TASKS_API, {
+  //   method: "POST",
+  //   headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+  //   body: JSON.stringify(task),
+  // });
   if (!res.ok) {
     const data = await res.json().catch(() => null);
     throw new Error(data?.message || "Unable to add task");
@@ -134,11 +142,17 @@ export async function updateTask(id, task) {
     return Promise.resolve(updated);
   }
 
-  const res = await fetch(`${TASKS_API}/${id}`, {
+  const res = await request(`${TASKS_API}/${id}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify(task),
-  });
+  })
+
+  // const res = await fetch(`${TASKS_API}/${id}`, {
+  //   method: "PATCH",
+  //   headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+  //   body: JSON.stringify(task),
+  // });
+
   if (!res.ok) {
     const data = await res.json().catch(() => null);
     throw new Error(data?.message || "Unable to update task");
@@ -159,10 +173,15 @@ export async function deleteTask(id) {
     return Promise.resolve({ status: "ok" });
   }
 
-  const res = await fetch(`${TASKS_API}/${id}/delete`, {
-    method: "PATCH",
-    headers: getAuthHeaders(),
-  });
+  const res = await request(`${TASKS_API}/${id}/delete`, {
+    method: "PATCH"
+  })
+
+  // const res = await fetch(`${TASKS_API}/${id}/delete`, {
+  //   method: "PATCH",
+  //   headers: getAuthHeaders(),
+  // });
+
   if (!res.ok) throw new Error("Unable to delete task");
   return res.json();
 }
@@ -176,10 +195,16 @@ export async function restoreTask(id) {
     saveGuestTasks(tasks);
     return Promise.resolve({ status: "ok" });
   }
-  const res = await fetch(`${TASKS_API}/${id}/restore`, {
-    method: "PATCH",
-    headers: getAuthHeaders(),
-  });
+
+  const res = await request(`${TASKS_API}/${id}/restore`, {
+    method: "PATCH"
+  })
+
+  // const res = await fetch(`${TASKS_API}/${id}/restore`, {
+  //   method: "PATCH",
+  //   headers: getAuthHeaders(),
+  // });
+
   if (!res.ok) {
     const data = await res.json().catch(() => null);
     throw new Error(data?.message || "Unable to restore task");
@@ -198,10 +223,16 @@ export async function pinTask(id) {
     saveGuestTasks(tasks);
     return Promise.resolve(tasks[idx]);
   }
-  const res = await fetch(`${TASKS_API}/${id}/pin`, {
-    method: "PATCH",
-    headers: getAuthHeaders(),
-  });
+
+  const res = await request(`${TASKS_API}/${id}/pin`, {
+    method: "PATCH"
+  })
+
+  // const res = await fetch(`${TASKS_API}/${id}/pin`, {
+  //   method: "PATCH",
+  //   headers: getAuthHeaders(),
+  // });
+
   if (!res.ok) {
     const data = await res.json().catch(() => null);
     throw new Error(data?.message || "Unable to pin task");
@@ -220,10 +251,14 @@ export async function unpinTask(id) {
     saveGuestTasks(tasks);
     return Promise.resolve(tasks[idx]);
   }
-  const res = await fetch(`${TASKS_API}/${id}/unpin`, {
-    method: "PATCH",
-    headers: getAuthHeaders(),
-  });
+
+  const res = await request(`${TASKS_API}/${id}/unpin`, {
+    method: "PATCH"
+  })
+  // const res = await fetch(`${TASKS_API}/${id}/unpin`, {
+  //   method: "PATCH",
+  //   headers: getAuthHeaders(),
+  // });
   if (!res.ok) {
     const data = await res.json().catch(() => null);
     throw new Error(data?.message || "Unable to unpin task");
