@@ -14,7 +14,7 @@
 
             <a-form-item label="Email">
                 <a-input ref="emailInput" v-model:value="email" @input="onEmailInput" @blur="onEmailBlur"
-                    placeholder="your email" autocomplete="email" />
+                    placeholder="Enter Eemail" autocomplete="email" />
                 <div v-if="errors.email" class="ant-form-item-explain">{{ errors.email }}</div>
             </a-form-item>
 
@@ -50,6 +50,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
 import { addTask, saveGuestTasks } from '../api/tasks'
 import { initUiSettings } from '../stores/uiSettings'
+import { request } from '../api/request.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -86,11 +87,11 @@ function validateEmailField() {
         errors.value.email = 'Email is required.'
         return false
     }
-    // const unswRegex = /^[^@\s]+@([a-z0-9.-]+\.)?unsw\.edu\.au$/i
-    // if (!unswRegex.test(v)) {
-    //     errors.value.email = 'Please enter your UNSW email address (must end with @unsw.edu.au).'
-    //     return false
-    // }
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    if(!emailRegex.test(v)){
+        errors.value.email = "Please enter a valid email address."
+        return false
+    }
     errors.value.email = ''
     return true
 }
@@ -113,13 +114,7 @@ function validatePasswordField() {
 function onUsernameInput() { validateUsernameField() }
 function onUsernameBlur() { validateUsernameField() }
 function onEmailInput() { validateEmailField() }
-function onEmailBlur() {
-    // // If user typed local part only (no @), append UNSW domain on blur
-    // if (email.value && !email.value.includes('@')) {
-    //     email.value = email.value.trim() + '@unsw.edu.au'
-    // }
-    validateEmailField()
-}
+function onEmailBlur() {validateEmailField() }
 function onPasswordInput() { validatePasswordField() }
 function onPasswordBlur() { validatePasswordField() }
 
@@ -157,11 +152,16 @@ async function handleSubmit() {
                 password: password.value,
             }
 
-            const res = await fetch('/api/users/register', {
+            const res = await request('/users/register', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             })
+
+            // const res = await fetch('/api/users/register', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify(payload),
+            // })
             // read full response text for better debugging
             const text = await res.text().catch(() => '')
             let data = null
@@ -174,11 +174,17 @@ async function handleSubmit() {
             }
             let token = data?.token || data?.access_token || data?.auth_token
             if (!token) {
-                const loginRes = await fetch('/api/users/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+
+                const loginRes = await request('/users/login', {
+                    method: "POST",
                     body: JSON.stringify({ identify: email.value.trim(), password: password.value }),
                 })
+
+                // const loginRes = await fetch('/api/users/login', {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify({ identify: email.value.trim(), password: password.value }),
+                // })
                 const loginText = await loginRes.text().catch(() => '')
                 let loginData = null
                 try { loginData = loginText ? JSON.parse(loginText) : null } catch (err) { loginData = null }
@@ -206,11 +212,17 @@ async function handleSubmit() {
                 password: password.value,
             }
 
-            const res = await fetch('/api/users/login', {
+            const res = await request('/users/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             })
+
+            // const res = await fetch('/api/users/login', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify(payload),
+            // })
+
             // read full response text for better debugging
             const text = await res.text().catch(() => '')
             let data = null

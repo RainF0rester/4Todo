@@ -83,7 +83,7 @@ class TestRequireAuth:
         client = _build_test_client(test_route)
         response = client.get('/test_auth', headers={'Authorization': 'Bearer expired_token'})
 
-        assert response.status_code == 403
+        assert response.status_code == 401
         assert 'Token expired' in response.json.get('message', '')
 
     @patch('backend.utils.auth_decorator.validate_token')

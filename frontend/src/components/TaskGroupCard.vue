@@ -68,11 +68,11 @@
       </a-list>
       <div class="list-controls">
         <div class="switch-control">
-          <a-switch v-model:checked="showCompleted" checkedChildren="" unCheckedChildren="" />
+          <!-- <a-switch v-model:checked="showCompleted" checkedChildren="" unCheckedChildren="" />
           <span>
             {{ showCompleted ? 'Show completed tasks' : 'Hide completed tasks' }}
             <component :is="showCompleted ? EyeOutlined : EyeInvisibleOutlined" class="toggle-icon" />
-          </span>
+          </span> -->
         </div>
         <a-pagination :current="currentPage" :page-size="pageSize" :total="filteredTasks.length" simple
           :show-less-items="true" @change="onPageChange" />
