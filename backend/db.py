@@ -20,6 +20,7 @@ def init_db():
     # Import models so Base can see them
     from backend.modules.tasks import models
     from backend.modules.users import models
+    from backend.modules.pomodoro import models
     Base.metadata.create_all(bind=engine)
 
 def get_session():
