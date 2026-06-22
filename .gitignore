@@ -23,3 +23,7 @@ taskmaster.db
 .coverage
 .coverage.*
 htmlcov/
+
+# ai coding related files
+CLAUDE.md
+MEMORY.md
