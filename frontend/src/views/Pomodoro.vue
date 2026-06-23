@@ -17,7 +17,7 @@
     <div class="timer">
       <span>Working on</span>
       <a-select v-model:value="selectedTaskId" placeholder="related task (optimal)" allow-clear style="width: 300px;">
-        <a-select-option v-for="task in tasks" :key="task.id" :value="task.id">{{ task.title }}</a-select-option>
+        <a-select-option v-for="task in tasks" :key="task.id" :value="task.id" :style="{color: levelColor(task.task_level)}">{{ task.title }}</a-select-option>
       </a-select>
       <p class="time-display">{{ formattedTime }}</p>
       <div class="round-dots">
@@ -32,14 +32,17 @@
       </div>
     </div>
     <a-divider/>
-    
+    <div ref="chartRef" style="width: 100%; height: 250px;"></div>
   </a-card>
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from 'vue';
 import { getTaskList, increaseTaskPomodoro } from '../api/tasks';
 import { getPomodoroRange, getPomodoroToday, logPomodoro } from '../api/pomodoro'
+
+import * as echarts from 'echarts'
+import { getPalette, getThemeColor, uiSettings } from '../stores/uiSettings'
 
 // pomodoro related variables
 const mode = ref(localStorage.getItem('pomodoroMode') || 'focus') // 'focus' | 'short' | 'long'
@@ -63,6 +66,10 @@ const selectedTaskId = ref(null)
 const todayCount = ref(0)
 const weekCount = ref(0)
 const totalCount = ref(0)
+
+// everyday pomodoro statics
+const chartRef = ref(null)
+let chartInstance = null
 
 onMounted(async () => {
   tasks.value = await getTaskList()
@@ -103,6 +110,13 @@ onMounted(async () => {
 
   const totalRecords = await getPomodoroRange('1970-01-01', todayStr)
   totalCount.value = totalRecords.reduce((sum, r) => sum + r.count, 0)
+
+  await nextTick()
+  if (chartRef.value) {
+    chartInstance = echarts.init(chartRef.value)
+    await renderHeatmap()
+    window.addEventListener('resize', () => chartInstance?.resize())
+  }
 })
 
 onBeforeUnmount(() => {
@@ -114,6 +128,7 @@ onBeforeUnmount(() => {
     localStorage.setItem('pomodoroRound', round.value)
   }
   clearInterval(timer)
+  chartInstance?.dispose()
 })
 
 const activeDots = computed(() => {
@@ -177,6 +192,71 @@ async function onPomodoroComplete(){
   } else{
     switchMode('focus')
   }
+}
+
+function levelColor(level){
+  const colors = {
+    1: '#ef4444',
+    2: '#f59e0b',
+    3: '#3b82f6',
+    4: '#10b981',
+  }
+
+  return colors[level] || '#666'
+}
+
+async function renderHeatmap() {
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const year = new Date().getFullYear()
+  const records = await getPomodoroRange(`${year}-01-01`, todayStr)
+  const data = records.map(r => [r.date, r.count])
+
+  const primaryColor = getThemeColor(uiSettings.theme)
+  const palette = getPalette()
+
+  chartInstance.setOption({
+    tooltip: {
+      formatter: (params) => `${params.value[0]}: ${params.value[1]} 🍅`,
+    },
+    visualMap: {
+      min: 0,
+      max: Math.max(...records.map(r => r.count), 4),
+      calculable: false,
+      show: false,
+      inRange: {
+        color: ['#f5f5f5', primaryColor],
+      },
+    },
+    calendar: {
+      top: 30,
+      left: 30,
+      right: 30,
+      cellSize: ['auto', 20],
+      range: year,
+      itemStyle: {
+        borderWidth: 1,
+        borderColor: palette.border,
+      },
+      yearLabel: {
+        show: false,
+      },
+      dayLabel: {
+        firstDay: 1,
+        nameMap: 'en',
+        color: palette.subtext,
+      },
+      monthLabel: {
+        color: palette.subtext,
+      },
+    },
+    series: [
+      {
+        type: 'heatmap',
+        coordinateSystem: 'calendar',
+        data,
+      },
+    ],
+  })
 }
 
 </script>
