@@ -1,5 +1,6 @@
 <template>
   <a-card title="Pomodoro">
+    <!-- pomodoro statics -->
     <div class="statics-row">
       <a-card>
         <a-statistic title="Today" :value="todayCount" suffix="🍅"></a-statistic>
@@ -12,6 +13,7 @@
       </a-card>
     </div>
     <a-divider />
+    <!-- pomodoro timer -->
     <div class="timer">
       <span>Working on</span>
       <a-select v-model:value="selectedTaskId" placeholder="related task (optimal)" allow-clear style="width: 300px;">
@@ -29,6 +31,8 @@
         <a-button @click="resetTimer">reset</a-button>
       </div>
     </div>
+    <a-divider/>
+    
   </a-card>
 </template>
 

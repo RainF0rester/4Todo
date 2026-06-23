@@ -49,6 +49,7 @@ export function normalizeTask(t) {
     done: t.is_finished ? true : false,
     pinned: t.is_pinned ? true : false,
     task_level: limitTaskLevel(Number(t.task_level)),
+    pomodoroCount: t.pomodoro_count || 0,
   };
 }
 
