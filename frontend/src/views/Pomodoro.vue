@@ -1,5 +1,17 @@
 <template>
   <a-card title="Pomodoro">
+    <div class="statics-row">
+      <a-card>
+        <a-statistic title="Today" :value="todayCount" suffix="🍅"></a-statistic>
+      </a-card>
+      <a-card>
+        <a-statistic title="This Week" :value="weekCount" suffix="🍅"></a-statistic>
+      </a-card>
+      <a-card>
+        <a-statistic title="Total" :value="totalCount" suffix="🍅"></a-statistic>
+      </a-card>
+    </div>
+    <a-divider />
     <div class="timer">
       <span>Working on</span>
       <a-select v-model:value="selectedTaskId" placeholder="related task (optimal)" allow-clear style="width: 300px;">
@@ -23,7 +35,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { getTaskList, increaseTaskPomodoro } from '../api/tasks';
-import { logPomodoro } from '../api/pomodoro'
+import { getPomodoroRange, getPomodoroToday, logPomodoro } from '../api/pomodoro'
 
 // pomodoro related variables
 const mode = ref(localStorage.getItem('pomodoroMode') || 'focus') // 'focus' | 'short' | 'long'
@@ -42,6 +54,11 @@ let timer = null
 // tasks
 const tasks = ref([])
 const selectedTaskId = ref(null)
+
+// statics
+const todayCount = ref(0)
+const weekCount = ref(0)
+const totalCount = ref(0)
 
 onMounted(async () => {
   tasks.value = await getTaskList()
@@ -66,6 +83,22 @@ onMounted(async () => {
       toggleTimer()
     }
   }
+
+  const todayRecord = await getPomodoroToday()
+  todayCount.value = todayRecord?.count ?? 0
+
+  const today = new Date()
+  const dayOfWeek = today.getDay()
+  const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1)
+  const startOfWeek = new Date(today.setDate(diff))
+  const startOfWeekStr = startOfWeek.toISOString().slice(0, 10)
+  const todayStr = new Date().toISOString().slice(0, 10)
+
+  const weekRecords = await getPomodoroRange(startOfWeekStr, todayStr)
+  weekCount.value = weekRecords.reduce((sum, r) => sum + r.count, 0)
+
+  const totalRecords = await getPomodoroRange('1970-01-01', todayStr)
+  totalCount.value = totalRecords.reduce((sum, r) => sum + r.count, 0)
 })
 
 onBeforeUnmount(() => {
@@ -178,5 +211,16 @@ async function onPomodoroComplete(){
 
 .dot.active {
   background: var(--app-primary, #ff4d4f);
+}
+
+.statics-row{
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.statics-row .ant-card{
+  flex: 1;
+  text-align: center;
 }
 </style>
