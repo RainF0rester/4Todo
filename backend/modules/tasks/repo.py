@@ -90,6 +90,13 @@ def cleanup_deleted_tasks(session: Session) -> int:
     return deleted_count
 
 
+def increment_pomodoro(session: Session, task: Task) -> Task:
+    task.pomodoro_count += 1
+    session.commit()
+    session.refresh(task)
+    return task
+
+
 def pin_task(session: Session, task_id: int) -> bool:
     task = session.get(Task, task_id)
     if task is None:

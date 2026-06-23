@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     is_deleted INTEGER NOT NULL DEFAULT 0,  -- 0=false, 1=true (soft delete)
     user_id INTEGER NOT NULL,
     is_pinned INTEGER NOT NULL DEFAULT 0,  -- 0=false, 1=true
+    pomodoro_count INTEGER NOT NULL DEFAULT 0, -- pomodoro count for this task
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
