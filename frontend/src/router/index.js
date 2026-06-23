@@ -6,6 +6,7 @@ import Dashboard from "../views/Dashboard.vue";
 import Auth from "../components/Auth.vue";
 import PageSettings from "../views/PageSettings.vue";
 import Home from "../views/Home.vue";
+import Pomodoro from "../views/Pomodoro.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -16,7 +17,7 @@ const router = createRouter({
     { path: "/list", component: List },
     { path: "/calendar", component: Calendar },
     { path: "/dashboard", component: Dashboard },
-    // todo: { path: "/pomodoro", component: Pomodoro },
+    { path: "/pomodoro", component: Pomodoro },
     { path: "/settings", component: PageSettings },
 
   ],

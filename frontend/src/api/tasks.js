@@ -265,3 +265,15 @@ export async function unpinTask(id) {
   }
   return res.json();
 }
+
+
+export async function increaseTaskPomodoro(id) {
+    const res = await request(`${TASKS_API}/${id}/pomodoro`, {
+      method: "PATCH"
+    })
+    if (!res.ok){
+      const data = await res.json.catch(() => null)
+      throw new Error(data?.message || "increment task pomodoro fail")
+    }
+    return res.json()
+}
