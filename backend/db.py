@@ -1,5 +1,5 @@
 # db.py
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from flask import g
 from backend.config import Config
@@ -22,6 +22,15 @@ def init_db():
     from backend.modules.users import models
     from backend.modules.pomodoro import models
     Base.metadata.create_all(bind=engine)
+    _run_migrations()
+
+def _run_migrations():
+    with engine.connect() as conn:
+        result = conn.execute(text("PRAGMA table_info(tasks)"))
+        columns = [row[1] for row in result]
+        if 'pomodoro_count' not in columns:
+            conn.execute(text("ALTER TABLE tasks ADD COLUMN pomodoro_count INTEGER NOT NULL DEFAULT 0"))
+            conn.commit()
 
 def get_session():
     # One session per request
