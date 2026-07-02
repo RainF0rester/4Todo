@@ -24,8 +24,9 @@ def init_db():
     Base.metadata.create_all(bind=engine)
     _run_migrations()
 
-def _run_migrations():
-    with engine.connect() as conn:
+def _run_migrations(target_engine=None):
+    target_engine = target_engine or engine
+    with target_engine.connect() as conn:
         result = conn.execute(text("PRAGMA table_info(tasks)"))
         columns = [row[1] for row in result]
         if 'pomodoro_count' not in columns:
