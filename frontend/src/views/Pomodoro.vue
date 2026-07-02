@@ -153,7 +153,7 @@ function toggleTimer() {
     isRunning.value = false
   } else {
     isRunning.value = true
-    timer = setInterval(() => {
+    timer = setInterval(async () => {
       if (timeLeft.value <= 0) {
         await onPomodoroComplete()
       } else {
