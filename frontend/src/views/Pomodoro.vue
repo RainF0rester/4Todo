@@ -46,7 +46,7 @@ import { getPalette, getThemeColor, uiSettings } from '../stores/uiSettings'
 
 // pomodoro related variables
 const mode = ref(localStorage.getItem('pomodoroMode') || 'focus') // 'focus' | 'short' | 'long'
-const round = ref(localStorage.getItem('pomodoroRound') || 0)
+const round = ref(parseInt(localStorage.getItem('pomodoroRound')) || 0)
 watch(mode, (val) => localStorage.setItem('pomodoroMode', val))
 watch(round, (val) => {localStorage.setItem('pomodoroRound', val)})
 const DURATIONS = {
@@ -70,6 +70,7 @@ const totalCount = ref(0)
 // everyday pomodoro statics
 const chartRef = ref(null)
 let chartInstance = null
+function onResize() { chartInstance?.resize() }
 
 onMounted(async () => {
   tasks.value = await getTaskList()
@@ -89,7 +90,7 @@ onMounted(async () => {
     timeLeft.value = restored > 0 ? restored : 0
     
     if (restored <= 0){
-      onPomodoroComplete()
+      await onPomodoroComplete()
     }else{
       toggleTimer()
     }
@@ -115,7 +116,7 @@ onMounted(async () => {
   if (chartRef.value) {
     chartInstance = echarts.init(chartRef.value)
     await renderHeatmap()
-    window.addEventListener('resize', () => chartInstance?.resize())
+    window.addEventListener('resize', onResize)
   }
 })
 
@@ -128,6 +129,7 @@ onBeforeUnmount(() => {
     localStorage.setItem('pomodoroRound', round.value)
   }
   clearInterval(timer)
+  window.removeEventListener('resize', onResize)
   chartInstance?.dispose()
 })
 
@@ -153,7 +155,7 @@ function toggleTimer() {
     isRunning.value = true
     timer = setInterval(() => {
       if (timeLeft.value <= 0) {
-        onPomodoroComplete()
+        await onPomodoroComplete()
       } else {
         timeLeft.value -= 1
       }
