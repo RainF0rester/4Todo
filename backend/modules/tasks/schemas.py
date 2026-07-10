@@ -9,6 +9,7 @@ class TaskSchema(Schema):
     task_level = Integer()
     is_finished = Integer()
     is_pinned = Integer()
+    pomodoro_count = Integer()
 
 class TaskCreateSchema(Schema):
     task_title = String(required=True)

@@ -17,6 +17,7 @@ class Task(Base):
 
     is_finished: Mapped[int] = mapped_column(Integer, nullable=False ,default=0) # 0/1
     is_deleted: Mapped[int] = mapped_column(Integer, nullable=False ,default=0) # 0/1
+    pomodoro_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     scheduled_delete_time: Mapped[DateTime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True
@@ -44,6 +45,7 @@ class Task(Base):
             "updated_at": str(self.updated_at),
             "is_deleted": self.is_deleted,
             "scheduled_delete_time": str(self.scheduled_delete_time) if self.scheduled_delete_time else None,
+            "pomodoro_count": self.pomodoro_count,
         }
 
     def to_json(self) -> dict:
@@ -56,4 +58,5 @@ class Task(Base):
             "is_finished": self.is_finished,
             "is_pinned": self.is_pinned,
             "scheduled_delete_time": str(self.scheduled_delete_time) if self.scheduled_delete_time else None,
+            "pomodoro_count": self.pomodoro_count,
         }

@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     is_deleted INTEGER NOT NULL DEFAULT 0,  -- 0=false, 1=true (soft delete)
     user_id INTEGER NOT NULL,
     is_pinned INTEGER NOT NULL DEFAULT 0,  -- 0=false, 1=true
+    pomodoro_count INTEGER NOT NULL DEFAULT 0, -- pomodoro count for this task
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -19,4 +20,15 @@ CREATE TABLE IF NOT EXISTS users(
     password_hash VARCHAR(255) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS pomodoro_records (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    date VARCHAR(10) NOT NULL, -- 'YYYY-MM-DD'
+    count INTEGER NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    UNIQUE(user_id, date)
 );

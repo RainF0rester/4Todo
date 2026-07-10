@@ -3,10 +3,11 @@
     <a-layout style="min-height:100vh;background:#f5f7fb">
     <!-- Top Nav -->
     <a-layout-header v-if="showHeader" class="topbar">
-      <div class="brand" @click="homePage">Task Tracker</div>
+      <div class="brand" @click="homePage">4Todo</div>
       <a-menu mode="horizontal" :selectedKeys="[activeKey]" class="topmenu" @click="onMenuClick">
-        <a-menu-item key="/list">List</a-menu-item>
-        <a-menu-item key="/dashboard">Dashboard</a-menu-item>
+        <a-menu-item key="/list">Tasks</a-menu-item>
+        <a-menu-item key="/pomodoro">Pomodoro</a-menu-item>
+        <a-menu-item key="/dashboard">List</a-menu-item>
         <a-menu-item key="/calendar">Calendar</a-menu-item>
         <!--todo: <a-menu-item key="/pomodoro" disabled>Pomodoro</a-menu-item> -->
       </a-menu>

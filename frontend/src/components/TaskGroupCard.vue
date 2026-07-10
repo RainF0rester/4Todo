@@ -28,6 +28,7 @@
                 <a-tooltip :title="item.title.length > 15 ? item.title : null">
                   <div class="name" :class="{ done: item.done }" @click="!item.pendingDelete && showEditDialog(item)">
                     {{ item.title }}
+                    <span v-if="item.pomodoroCount > 0" class="pomodoro-badge">🍅{{ item.pomodoroCount }}</span>
                   </div>
                 </a-tooltip>
                 <div v-if="item.dueDate" class="meta">{{ dueText(item.dueDate) }}</div>

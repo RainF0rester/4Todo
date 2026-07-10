@@ -49,6 +49,7 @@ export function normalizeTask(t) {
     done: t.is_finished ? true : false,
     pinned: t.is_pinned ? true : false,
     task_level: limitTaskLevel(Number(t.task_level)),
+    pomodoroCount: t.pomodoro_count || 0,
   };
 }
 
@@ -264,4 +265,16 @@ export async function unpinTask(id) {
     throw new Error(data?.message || "Unable to unpin task");
   }
   return res.json();
+}
+
+
+export async function increaseTaskPomodoro(id) {
+    const res = await request(`${TASKS_API}/${id}/pomodoro`, {
+      method: "PATCH"
+    })
+    if (!res.ok){
+      const data = await res.json.catch(() => null)
+      throw new Error(data?.message || "increment task pomodoro fail")
+    }
+    return res.json()
 }

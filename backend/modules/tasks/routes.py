@@ -124,6 +124,20 @@ def list_deleted_tasks():
     except ValueError as e:
         return abort(400, message=str(e))
 
+@bp.patch("/<int:task_id>/pomodoro")
+@bp.output(TaskSchema)
+@bp.doc(security=[{"BearerAuth": []}])
+@require_auth
+def increment_pomodoro(task_id: int):
+    session = get_session()
+    try:
+        user_id = int(g.user_id)
+        task = service.increment_pomodoro(session, task_id, user_id=user_id)
+        return task.to_dict()
+    except ValueError as e:
+        abort(400, message=str(e))
+
+
 @bp.patch("<int:task_id>/pin")
 @bp.output(StatusSchema)
 @bp.doc(security=[{"BearerAuth": []}])
