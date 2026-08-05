@@ -35,11 +35,12 @@ jobs:
         run: npm run build
 
       - name: Deploy to Cloudflare Pages
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=4todo
+          command: pages deploy frontend/dist --project-name=4todo
 
   # backend test
   backend-test:
