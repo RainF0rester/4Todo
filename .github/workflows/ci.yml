@@ -1,5 +1,5 @@
 name: CI
-# run CI when some code was pushed to main branch or someone create a PR to main
+
 on:
   push:
     branches: [main]
@@ -7,21 +7,17 @@ on:
     branches: [main]
 
 jobs:
-  # build frontend
-  frontend-build:
-    name: Frontend Build
+  # frontend build & deploy to Cloudflare Pages
+  frontend:
+    name: Frontend Build & Deploy
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: frontend
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
@@ -35,35 +31,28 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # TODO: add lint check later
-      # - name: Lint
-      #   run: npm run lint
-
       - name: Build
         run: npm run build
-      
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+
+      - name: Deploy to Cloudflare Pages
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: cloudflare/wrangler-action@v4
         with:
-          name: frontend-dist
-          path: frontend/dist/
-          retention-days: 10
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy frontend/dist --project-name=4todo
 
   # backend test
   backend-test:
     name: Backend Test
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: backend
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -88,37 +77,35 @@ jobs:
           path: backend/test-report.xml
           retention-days: 10
 
-  # ============================================================
-  # security check
-  # ============================================================
-  # security:
-  #   name: Security Scan
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Python dependency audit
-  #       run: pip install pip-audit && pip-audit -r backend/requirements.txt
-  #     - name: Frontend dependency audit
-  #       working-directory: frontend
-  #       run: npm audit --audit-level=high
-
-  # Docker build
-  docker-build:
-    name: Docker Build Check
+  # build docker image and push to GHCR
+  docker-push:
+    name: Build & Push Docker Image
     runs-on: ubuntu-latest
-    needs: [frontend-build, backend-test]
+    needs: [backend-test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: docker build -t tasktracker:ci .
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-  # deploy
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.backend
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/4todo-backend:latest
+
+  # deploy to AWS server
   deploy:
-    name: Deploy
+    name: Deploy to AWS
     runs-on: ubuntu-latest
-    needs: [docker-build]
+    needs: [docker-push]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - name: Deploy via SSH
@@ -129,6 +116,13 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            cd /root/tasktracker/tasktracker
-            git pull github main
-            bash deploy.sh prod
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            docker pull ghcr.io/${{ github.repository_owner }}/4todo-backend:latest
+            docker stop 4todo-backend || true
+            docker rm 4todo-backend || true
+            docker run -d \
+              --name 4todo-backend \
+              -p 80:5000 \
+              -v ~/data/taskmaster.db:/app/taskmaster.db \
+              --restart always \
+              ghcr.io/${{ github.repository_owner }}/4todo-backend:latest
