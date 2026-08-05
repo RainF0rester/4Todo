@@ -1,5 +1,6 @@
 # Minimal Flask app
 from apiflask import APIFlask
+from flask_cors import CORS
 from backend.db import init_db, close_session
 from backend.modules.tasks.routes import bp as tasks_bp
 from backend.modules.users.routes import bp as users_bp
@@ -21,6 +22,8 @@ def create_app():
             "bearerFormat": "JWT",
         }
     }
+
+    CORS(flaskapp, origins=["http://4todo.site", "https://4todo.site"])
 
     # create tables
     init_db()
