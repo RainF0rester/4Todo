@@ -23,7 +23,7 @@ def create_app():
         }
     }
 
-    CORS(flaskapp, origins=["http://4todo.site", "https://4todo.site", "https://4todo.pages.dev"])
+    CORS(flaskapp, origins=["http://4todo.site", "https://4todo.site", "https://4todo.pages.dev"], supports_credentials=True, allow_headers=["Content-Type", "Authorization"], methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 
     # create tables
     init_db()
