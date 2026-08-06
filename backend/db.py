@@ -21,7 +21,7 @@ def init_db():
     from backend.modules.tasks import models
     from backend.modules.users import models
     from backend.modules.pomodoro import models
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine, checkfirst=True)
     _run_migrations()
 
 def _run_migrations(target_engine=None):

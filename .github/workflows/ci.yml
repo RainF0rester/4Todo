@@ -129,7 +129,7 @@ jobs:
             docker run -d \
               --name 4todo-backend \
               -p 80:5000 \
-              -e DATABASE_URL=sqlite:////app/taskmaster.db \
-              -v /home/ubuntu/data/taskmaster.db:/app/taskmaster.db \
+              -e DATABASE_URL=sqlite:////app/data/taskmaster.db \
+              -v /home/ubuntu/data:/app/data \
               --restart always \
               ghcr.io/rainf0rester/4todo-backend:latest

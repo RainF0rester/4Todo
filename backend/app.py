@@ -23,7 +23,7 @@ def create_app():
         }
     }
 
-    CORS(flaskapp, origins=["http://4todo.site", "https://4todo.site"])
+    CORS(flaskapp, origins=["http://4todo.site", "https://4todo.site", "https://4todo.pages.dev"])
 
     # create tables
     init_db()
