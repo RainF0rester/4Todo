@@ -1,0 +1,31 @@
+services:
+  backend:
+    image: python:3.12-slim
+    container_name: todo-backend
+    working_dir: /app
+    volumes:
+      - ./backend:/app/backend
+      - ./data:/app/data
+    environment:
+      - FLASK_APP=backend.app:create_app
+      - FLASK_DEBUG=1
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - DATABASE_URL=sqlite:////app/data/taskmaster.db
+    command: >
+      sh -c "pip install -r backend/requirements.txt -q &&
+             python -m flask run --host=0.0.0.0 --port=5077"
+    ports:
+      - "5077:5077"
+
+  frontend:
+    image: node:20-alpine
+    container_name: todo-frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
