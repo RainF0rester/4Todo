@@ -35,6 +35,18 @@ def list_tasks(session: Session, user_id: int, include_deleted: bool = False) ->
     )
     return list(session.scalars(statement).all())
 
+def list_unfinished_tasks(session: Session, user_id: int) -> list[Task]:
+    statement = select(Task)
+    statement = statement.where(Task.user_id == user_id)
+    statement = statement.where(Task.is_deleted == 0)
+    statement = statement.where(Task.is_finished == 0)
+    statement = statement.order_by(
+        desc(Task.is_pinned),
+        asc(Task.task_due),
+        asc(Task.id),
+    )
+    return list(session.scalars(statement).all())
+
 def list_deleted_tasks(session: Session, user_id: int) -> list[Task]:
     statement = select(Task)
     statement = statement.where(Task.is_deleted == 1)
