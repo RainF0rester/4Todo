@@ -1,5 +1,7 @@
 import os
+import json
 import anthropic
+import redis
 from anthropic.types import ToolParam
 from datetime import datetime, timezone
 
@@ -8,7 +10,28 @@ from backend.modules.tasks import repo as task_repo
 from backend.modules.tasks.service import _normalize as task_normalize
 
 client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+redis_client = redis.from_url(os.environ.get("REDIS_URL", "redis://localhost:6379"))
 current_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+
+CONVERSATION_TTL = 1800  # 30 minutes
+CONVERSATION_MAX_MESSAGES = 20
+
+def _get_history(user_id: int) -> list:
+    data = redis_client.get(f"conv:{user_id}")
+    return json.loads(data) if data else []
+
+def _serialize_messages(messages: list) -> list:
+    result = []
+    for msg in messages:
+        content = msg["content"]
+        if isinstance(content, list) and content and hasattr(content[0], "model_dump"):
+            content = [block.model_dump() for block in content]
+        result.append({"role": msg["role"], "content": content})
+    return result
+
+def _save_history(user_id: int, messages: list):
+    trimmed = messages[-CONVERSATION_MAX_MESSAGES:]
+    redis_client.setex(f"conv:{user_id}", CONVERSATION_TTL, json.dumps(_serialize_messages(trimmed)))
 
 SYSTEM_PROMPT = (
         "You are a smart task management assistant for a todo application. "
@@ -204,7 +227,8 @@ def _dispatch(tool_name: str, tool_input: dict, session, user_id) -> str:
         return "Unknown tool"
 
 def ask(prompt: str, session, user_id: int) -> str:
-    messages = [{"role": "user", "content": prompt}]
+    messages = _get_history(user_id)
+    messages.append({"role": "user", "content": prompt})
 
     # agent loop
     while True:
@@ -219,7 +243,9 @@ def ask(prompt: str, session, user_id: int) -> str:
         messages.append({"role": "assistant", "content": response.content})
 
         if response.stop_reason == "end_turn":
-            return next(b.text for b in response.content if hasattr(b, "text"))
+            reply = next(b.text for b in response.content if hasattr(b, "text"))
+            _save_history(user_id, messages)
+            return reply
         elif response.stop_reason == "tool_use":
             tool_results = []
             for block in response.content:
