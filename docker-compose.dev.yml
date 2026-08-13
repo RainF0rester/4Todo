@@ -7,14 +7,12 @@ services:
       - ./backend:/app/backend
       - ./data:/app/data
     environment:
-      - FLASK_APP=backend.app:create_app
-      - FLASK_DEBUG=1
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - DATABASE_URL=sqlite:////app/data/taskmaster.db
       - REDIS_URL=redis://redis:6379
     command: >
       sh -c "pip install -r backend/requirements.txt -q &&
-             python -m flask run --host=0.0.0.0 --port=5077"
+             python -m backend.app"
     ports:
       - "5077:5077"
     depends_on:

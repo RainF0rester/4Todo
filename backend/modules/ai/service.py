@@ -230,8 +230,9 @@ def _dispatch(tool_name: str, tool_input: dict, session, user_id) -> str:
         return "Unknown tool"
 
 MAX_STEPS = 10
+TOOLS_REQUIRE_CONFIRM = {"create_tasks", "complete_task", "delete_task", "update_task"}
 
-def ask(prompt: str, session, user_id: int) -> str:
+def ask(prompt: str, session, user_id: int, confirm_callback=None) -> str:
     messages = _get_history(user_id)
     messages.append({"role": "user", "content": prompt})
 
@@ -263,7 +264,15 @@ def ask(prompt: str, session, user_id: int) -> str:
             tool_results = []
             for block in response.content:
                 if block.type == "tool_use":
-                    result = _dispatch(block.name, block.input, session, user_id)
+                    # need confirm
+                    if confirm_callback and block.name in TOOLS_REQUIRE_CONFIRM:
+                        confirmed = confirm_callback(block.name, block.input)
+                        if not confirmed:
+                            result = "User cancelled this action."
+                        else:
+                            result = _dispatch(block.name, block.input, session, user_id)
+                    else:
+                        result = _dispatch(block.name, block.input, session, user_id)
                     tool_results.append({
                         "type": "tool_result",
                         "tool_use_id": block.id,
