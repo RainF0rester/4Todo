@@ -34,6 +34,13 @@ def _serialize_messages(messages: list) -> list:
 
 def _save_history(user_id: int, messages: list):
     trimmed = messages[-CONVERSATION_MAX_MESSAGES:]
+    # ensure history starts with a plain user text message (not tool_result)
+    for i, msg in enumerate(trimmed):
+        if msg["role"] == "user":
+            content = msg["content"]
+            if isinstance(content, str) or (isinstance(content, list) and content and isinstance(content[0], dict) and content[0].get("type") != "tool_result"):
+                trimmed = trimmed[i:]
+                break
     redis_client.setex(f"conv:{user_id}", CONVERSATION_TTL, json.dumps(_serialize_messages(trimmed)))
 
 SYSTEM_PROMPT = (
