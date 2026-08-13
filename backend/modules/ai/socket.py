@@ -1,9 +1,12 @@
 import threading
+import logging
 from flask import request, current_app
 from flask_socketio import emit, disconnect
 from backend.db import get_session
 from backend.utils.jwt_utils import validate_token, TokenError
 from backend.modules.ai import service
+
+logger = logging.getLogger(__name__)
 
 # sid as key, store Event and result
 confirm_events: dict[str, threading.Event] = {}
@@ -63,7 +66,8 @@ def register_handlers(socketio):
                     reply = service.ask(prompt, session, user_id, confirm_callback=confirm_callback)
                     socketio.emit("ai_reply", {"reply": reply}, to=sid)
             except Exception as e:
-                socketio.emit("ai_error", {"error": str(e)}, to=sid)
+                logger.exception("AI agent error for user %s: %s", user_id, e)
+                socketio.emit("ai_error", {"error": "Something went wrong. Please try again."}, to=sid)
 
         socketio.start_background_task(run_agent)
 
