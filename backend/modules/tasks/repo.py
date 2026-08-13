@@ -12,6 +12,12 @@ def create_task(session: Session, task: Task) -> Task:
     session.refresh(task)
     return task
 
+def bulk_create_tasks(session: Session, tasks: list[Task]) -> list[Task]:
+    session.add_all(tasks)
+    session.commit()
+    for task in tasks:
+        session.refresh(task)
+    return tasks
 
 def get_task(session: Session, task_id: int) -> Task | None:
     return session.get(Task, task_id)
