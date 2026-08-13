@@ -1,0 +1,26 @@
+services:
+  backend:
+    image: ghcr.io/rainf0rester/4todo-backend:latest
+    container_name: 4todo-backend
+    ports:
+      - "80:5000"
+    environment:
+      - DATABASE_URL=sqlite:////app/data/taskmaster.db
+      - REDIS_URL=redis://redis:6379
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - /home/ubuntu/data:/app/data
+    depends_on:
+      - redis
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: 4todo-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    restart: always
+
+volumes:
+  redis_data:

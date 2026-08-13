@@ -1,9 +1,0 @@
-services:
-  tasktracker:
-    image: tasktracker:latest
-    container_name: tasktracker
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./data/taskmaster.db:/app/taskmaster.db
-    restart: always

@@ -114,6 +114,18 @@ jobs:
     needs: [docker-push]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy compose file to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: docker-compose.prod.yml
+          target: /home/ubuntu/
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
         with:
@@ -123,13 +135,8 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker pull ghcr.io/rainf0rester/4todo-backend:latest
-            docker stop 4todo-backend || true
-            docker rm 4todo-backend || true
-            docker run -d \
-              --name 4todo-backend \
-              -p 80:5000 \
-              -e DATABASE_URL=sqlite:////app/data/taskmaster.db \
-              -v /home/ubuntu/data:/app/data \
-              --restart always \
-              ghcr.io/rainf0rester/4todo-backend:latest
+            mkdir -p /home/ubuntu/data
+            ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }} \
+            docker compose -f /home/ubuntu/docker-compose.prod.yml pull
+            ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }} \
+            docker compose -f /home/ubuntu/docker-compose.prod.yml up -d
