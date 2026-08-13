@@ -29,8 +29,8 @@
       <!-- Confirm Banner -->
       <div v-if="pendingConfirm" class="confirm-banner">
         <div class="confirm-text">
-          <span class="confirm-tool">{{ pendingConfirm.tool }}</span>
-          <pre class="confirm-input">{{ JSON.stringify(pendingConfirm.input, null, 2) }}</pre>
+          <div class="confirm-title">{{ formatConfirmTitle(pendingConfirm.tool) }}</div>
+          <div class="confirm-desc">{{ formatConfirmDesc(pendingConfirm.tool, pendingConfirm.input) }}</div>
         </div>
         <div class="confirm-actions">
           <a-button size="small" type="primary" @click="sendConfirm(true)">Confirm</a-button>
@@ -170,6 +170,34 @@ function send() {
   })
 }
 
+function formatConfirmTitle(tool) {
+  const titles = {
+    create_tasks: 'Create Tasks',
+    complete_task: 'Complete Task',
+    delete_task: 'Delete Task',
+    update_task: 'Update Task',
+  }
+  return titles[tool] ?? tool
+}
+
+function formatConfirmDesc(tool, input) {
+  if (tool === 'create_tasks') {
+    const tasks = input.tasks ?? []
+    return tasks.map(t => `• ${t.task_title}`).join('\n')
+  }
+  if (tool === 'complete_task') return `Mark "${input.task_title}" as done`
+  if (tool === 'delete_task') return `Delete "${input.task_title}"`
+  if (tool === 'update_task') {
+    const changes = []
+    if (input.new_title) changes.push(`Rename to "${input.new_title}"`)
+    if (input.new_due) changes.push(`Due: ${input.new_due}`)
+    if (input.new_level) changes.push(`Priority: ${input.new_level}`)
+    if (input.new_description) changes.push(`Description updated`)
+    return `"${input.task_title}"\n` + changes.map(c => `• ${c}`).join('\n')
+  }
+  return ''
+}
+
 function sendConfirm(confirmed) {
   pendingConfirm.value = null
   socket?.emit('confirm', { confirmed })
@@ -244,18 +272,18 @@ function sendConfirm(confirmed) {
   gap: 8px;
 }
 
-.confirm-tool {
+.confirm-title {
   font-weight: 600;
   font-size: 13px;
   color: #d48806;
+  margin-bottom: 4px;
 }
 
-.confirm-input {
-  font-size: 12px;
-  margin: 4px 0 0;
+.confirm-desc {
+  font-size: 13px;
   color: #555;
   white-space: pre-wrap;
-  word-break: break-all;
+  line-height: 1.6;
 }
 
 .confirm-actions {
