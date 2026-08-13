@@ -27,7 +27,16 @@ SYSTEM_PROMPT = (
 TOOLS: list[ToolParam] = [
     {
         "name": "task_suggestion",
-        "description": "When user ask for task suggestions, which task should be done first or the recommended sequence to complete tasks, call this tool.",
+        "description": "When user asks for task suggestions, which task should be done first, or the recommended sequence to complete tasks, call this tool.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        }
+    },
+    {
+        "name": "list_tasks",
+        "description": "When user wants to see their tasks, asks what tasks they have, or asks about their task list, call this tool.",
         "input_schema": {
             "type": "object",
             "properties": {},
@@ -36,7 +45,7 @@ TOOLS: list[ToolParam] = [
     },
     {
         "name": "create_tasks",
-        "description": "When user wants to create on or more tasks, call this tool to extract task information from the user's message.",
+        "description": "When user wants to create one or more tasks, or break down a complex task into subtasks, call this tool.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -47,8 +56,8 @@ TOOLS: list[ToolParam] = [
                         "properties": {
                             "task_title": {"type": "string"},
                             "task_description": {"type": "string"},
-                            "task_due": {"type": "string", "description": "Format: YYYY-MM-DD HH:MM, or null if not mentioned. 12am means 23:59 and using 00:00 instead of 24:00, 12pm means 12:00."},
-                            "task_level": {"type": "integer", "description": "Priority 1-4, infer from context if not specified. 1 means important and urgent, 2 means important but not urgent, 3 means not important but urgent, 4 means not important and not urgent."}
+                            "task_due": {"type": "string", "description": "Format: YYYY-MM-DD HH:MM, or null if not mentioned. Use 23:59 instead of 24:00. 12am means 00:00, 12pm means 12:00."},
+                            "task_level": {"type": "integer", "description": "Priority 1-4. 1=important and urgent, 2=important but not urgent, 3=not important but urgent, 4=not important and not urgent. Infer from context if not specified."}
                         },
                         "required": ["task_title", "task_level"]
                     }
@@ -56,8 +65,50 @@ TOOLS: list[ToolParam] = [
             },
             "required": ["tasks"]
         }
+    },
+    {
+        "name": "complete_task",
+        "description": "When user says they finished, completed, or done with a task, call this tool. If you don't know the exact task title, call list_tasks first.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "task_title": {"type": "string", "description": "The title or partial title of the task to mark as complete"}
+            },
+            "required": ["task_title"]
+        }
+    },
+    {
+        "name": "delete_task",
+        "description": "When user wants to delete or remove a task, call this tool. If you don't know the exact task title, call list_tasks first.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "task_title": {"type": "string", "description": "The title or partial title of the task to delete"}
+            },
+            "required": ["task_title"]
+        }
+    },
+    {
+        "name": "update_task",
+        "description": "When user wants to modify, edit, or update an existing task's title, description, due date, or priority, call this tool. If you don't know the exact task title, call list_tasks first.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "task_title": {"type": "string", "description": "The title or partial title of the task to update"},
+                "new_title": {"type": "string", "description": "New title if user wants to rename the task"},
+                "new_description": {"type": "string", "description": "New description if user wants to update it"},
+                "new_due": {"type": "string", "description": "New due date in format YYYY-MM-DD HH:MM, or null to clear it"},
+                "new_level": {"type": "integer", "description": "New priority level 1-4"}
+            },
+            "required": ["task_title"]
+        }
     }
 ]
+
+def _find_task_by_title(session, user_id: int, title: str):
+    tasks = task_repo.list_tasks(session, user_id=user_id, include_deleted=False)
+    title_lower = title.lower()
+    return next((t for t in tasks if title_lower in t.task_title.lower()), None)
 
 def _handle_task_suggestion(session, user_id):
     unfinished_tasks = task_repo.list_unfinished_tasks(session, user_id)
@@ -70,6 +121,50 @@ def _handle_task_suggestion(session, user_id):
 
     return "\n".join(lines)
 
+def _handle_list_tasks(session, user_id: int) -> str:
+    tasks = task_repo.list_tasks(session, user_id=user_id, include_deleted=False)
+    if not tasks:
+        return "The user has no tasks."
+    lines = []
+    for t in tasks:
+        status = "done" if t.is_finished else "pending"
+        lines.append(f"- [id:{t.id}] {t.task_title} | due: {t.task_due or 'none'} | level: {t.task_level} | status: {status}")
+    return "\n".join(lines)
+
+def _handle_complete_task(session, user_id: int, tool_input: dict) -> str:
+    task = _find_task_by_title(session, user_id, tool_input["task_title"])
+    if not task:
+        return f"Task '{tool_input['task_title']}' not found."
+    task.is_finished = 1
+    task_repo.update_task(session, task)
+    return f"Task '{task.task_title}' marked as complete."
+
+def _handle_delete_task(session, user_id: int, tool_input: dict) -> str:
+    task = _find_task_by_title(session, user_id, tool_input["task_title"])
+    if not task:
+        return f"Task '{tool_input['task_title']}' not found."
+    task_repo.soft_delete_task(session, task.id)
+    return f"Task '{task.task_title}' deleted."
+
+def _handle_update_task(session, user_id: int, tool_input: dict) -> str:
+    task = _find_task_by_title(session, user_id, tool_input["task_title"])
+    if not task:
+        return f"Task '{tool_input['task_title']}' not found."
+    if "new_title" in tool_input:
+        task.task_title = tool_input["new_title"]
+    if "new_description" in tool_input:
+        task.task_description = tool_input["new_description"]
+    if "new_level" in tool_input:
+        task.task_level = tool_input["new_level"]
+    if "new_due" in tool_input:
+        try:
+            from backend.modules.tasks.service import _parse_due_time
+            task.task_due = _parse_due_time(tool_input["new_due"])
+        except ValueError:
+            pass
+    task_repo.update_task(session, task)
+    return f"Task '{task.task_title}' updated."
+
 def _handle_create_tasks(session, user_id, tool_input: dict) -> str:
     tasks_from_agent = tool_input["tasks"]
 
@@ -80,53 +175,63 @@ def _handle_create_tasks(session, user_id, tool_input: dict) -> str:
             normalized["user_id"] = user_id
             tasks.append(Task(**normalized))
         except ValueError:
+            # due date always cause ValueError
             data.pop("task_due", None)
             normalized = task_normalize(data)
             normalized["user_id"] = user_id
             tasks.append(Task(**normalized))
 
     created = task_repo.bulk_create_tasks(session, tasks)
-    prompt_lines_return = ["Successfully created {len(created)} tasks:"]
+    prompt_lines_return = [f"Successfully created {len(created)} tasks:"]
     for t in created:
         prompt_lines_return.append(f"- [id:{t.id}] {t.task_title} | due: {t.task_due or 'none'} | level: {t.task_level}")
     return "\n".join(prompt_lines_return)
 
-def ask(prompt: str, session, user_id: int) -> str:
-    response = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=1024,
-        tools=TOOLS,
-        system= SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": prompt}]
-    )
-
-    if response.stop_reason != "tool_use":
-        return next(block.text for block in response.content if hasattr(block, "text"))
-
-    tool_call = next(b for b in response.content if b.type == "tool_use")
-    if tool_call.name == "task_suggestion":
-        tool_result = _handle_task_suggestion(session, user_id)
-    elif tool_call.name == "create_tasks":
-        tool_result = _handle_create_tasks(session, user_id, tool_input=tool_call.input)
+def _dispatch(tool_name: str, tool_input: dict, session, user_id) -> str:
+    if tool_name == "task_suggestion":
+        return _handle_task_suggestion(session, user_id)
+    elif tool_name == "list_tasks":
+        return _handle_list_tasks(session, user_id)
+    elif tool_name == "create_tasks":
+        return _handle_create_tasks(session, user_id, tool_input=tool_input)
+    elif tool_name == "complete_task":
+        return _handle_complete_task(session, user_id, tool_input=tool_input)
+    elif tool_name == "delete_task":
+        return _handle_delete_task(session, user_id, tool_input=tool_input)
+    elif tool_name == "update_task":
+        return _handle_update_task(session, user_id, tool_input=tool_input)
     else:
-        return "Unkown tool"
+        return "Unknown tool"
 
-    second_response = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=1024,
-        tools=TOOLS,
-        system=SYSTEM_PROMPT,
-        messages=[
-            {"role": "user", "content": prompt},
-            {"role":"assistant", "content": response.content},
-            {
-                "role": "user",
-                "content": [{
-                    "type": "tool_result",
-                    "tool_use_id": tool_call.id,
-                    "content": tool_result
-                }]
-            }
-        ]
-    )
-    return next(b.text for b in second_response.content if hasattr(b, "text"))
+def ask(prompt: str, session, user_id: int) -> str:
+    messages = [{"role": "user", "content": prompt}]
+
+    # agent loop
+    while True:
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=1024,
+            tools=TOOLS,
+            system=SYSTEM_PROMPT,
+            messages=messages
+        )
+
+        messages.append({"role": "assistant", "content": response.content})
+
+        if response.stop_reason == "end_turn":
+            return next(b.text for b in response.content if hasattr(b, "text"))
+        elif response.stop_reason == "tool_use":
+            tool_results = []
+            for block in response.content:
+                if block.type == "tool_use":
+                    result = _dispatch(block.name, block.input, session, user_id)
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": result
+                    })
+            messages.append({"role": "user", "content": tool_results})
+        else:
+            break
+
+    return "Something went wrong"
