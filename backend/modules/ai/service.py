@@ -9,7 +9,10 @@ from backend.modules.tasks.models import Task
 from backend.modules.tasks import repo as task_repo
 from backend.modules.tasks.service import _normalize as task_normalize
 
-client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+client = anthropic.Anthropic(
+    api_key=os.environ.get("ANTHROPIC_API_KEY"),
+    timeout=30.0
+)
 redis_client = redis.from_url(os.environ.get("REDIS_URL", "redis://localhost:6379"))
 current_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
@@ -226,19 +229,29 @@ def _dispatch(tool_name: str, tool_input: dict, session, user_id) -> str:
     else:
         return "Unknown tool"
 
+MAX_STEPS = 10
+
 def ask(prompt: str, session, user_id: int) -> str:
     messages = _get_history(user_id)
     messages.append({"role": "user", "content": prompt})
 
-    # agent loop
-    while True:
-        response = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=1024,
-            tools=TOOLS,
-            system=SYSTEM_PROMPT,
-            messages=messages
-        )
+    steps = 0
+    while steps < MAX_STEPS:
+        steps += 1
+        try:
+            response = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=1024,
+                tools=TOOLS,
+                system=SYSTEM_PROMPT,
+                messages=messages
+            )
+        except anthropic.APITimeoutError:
+            _save_history(user_id, messages)
+            return "Request timed out. Please try again."
+        except anthropic.APIStatusError as e:
+            _save_history(user_id, messages)
+            return f"API error: {e.message}"
 
         messages.append({"role": "assistant", "content": response.content})
 
@@ -260,4 +273,5 @@ def ask(prompt: str, session, user_id: int) -> str:
         else:
             break
 
-    return "Something went wrong"
+    _save_history(user_id, messages)
+    return "I was unable to complete the request. Please try again."
