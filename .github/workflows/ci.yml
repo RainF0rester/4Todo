@@ -139,4 +139,4 @@ jobs:
             ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }} \
             docker compose -f /home/ubuntu/docker-compose.prod.yml pull
             ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }} \
-            docker compose -f /home/ubuntu/docker-compose.prod.yml up -d
+            docker compose -f /home/ubuntu/docker-compose.prod.yml up -d --force-recreate
