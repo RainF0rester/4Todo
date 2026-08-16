@@ -10,4 +10,5 @@ anthropic==0.120.2
 redis==5.2.1
 flask-socketio==5.5.1
 eventlet==0.40.0
+gunicorn==21.2.0
 simple-websocket==1.1.0
