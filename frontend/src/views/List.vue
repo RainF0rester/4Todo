@@ -10,7 +10,7 @@
       <TaskGroupCard title="Not Important & Not Urgent" color="green" :task-level="4"
         :initialItems="notUrgentNotImportant" @reload="loadTasks" @task-moved="handleTaskMoved" />
     </div>
-    <a-dropdown placement="topRight" :trigger="['hover']">
+    <!-- <a-dropdown placement="topRight" :trigger="['hover']">
       <a-button type="primary" shape="circle" size="large" class="export-btn">
         <template #icon>
           <DownloadOutlined />
@@ -22,7 +22,7 @@
           <a-menu-item key="excel">Export as Excel</a-menu-item>
         </a-menu>
       </template>
-    </a-dropdown>
+    </a-dropdown> -->
   </div>
 </template>
 

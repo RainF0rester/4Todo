@@ -24,6 +24,9 @@ taskmaster.db
 .coverage.*
 htmlcov/
 
+# environment variables
+.env
+
 # ai coding related files
 CLAUDE.md
 MEMORY.md

@@ -1,0 +1,43 @@
+services:
+  backend:
+    image: python:3.12-slim
+    container_name: todo-backend
+    working_dir: /app
+    volumes:
+      - ./backend:/app/backend
+      - ./data:/app/data
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - DATABASE_URL=sqlite:////app/data/taskmaster.db
+      - REDIS_URL=redis://redis:6379
+    command: >
+      sh -c "pip install -r backend/requirements.txt -q &&
+             python -m backend.app"
+    ports:
+      - "5077:5077"
+    depends_on:
+      - redis
+
+  frontend:
+    image: node:20-alpine
+    container_name: todo-frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+  redis:
+    image: redis:7-alpine
+    container_name: todo-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    restart: always
+
+volumes:
+  redis_data:

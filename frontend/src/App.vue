@@ -41,6 +41,7 @@
     <a-layout-content :class="['content', { centered: !showHeader }]">
       <router-view />
     </a-layout-content>
+    <AiChatDrawer />
     </a-layout>
   </a-config-provider>
 </template>
@@ -49,6 +50,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getFontFamilyToken, getFontSizeToken, getThemeColor, initUiSettings, resetUiThemeToDefault, uiSettings } from './stores/uiSettings'
+import AiChatDrawer from './components/AiChatDrawer.vue'
 
 const route = useRoute()
 const router = useRouter()

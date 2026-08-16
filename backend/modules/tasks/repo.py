@@ -12,6 +12,12 @@ def create_task(session: Session, task: Task) -> Task:
     session.refresh(task)
     return task
 
+def bulk_create_tasks(session: Session, tasks: list[Task]) -> list[Task]:
+    session.add_all(tasks)
+    session.commit()
+    for task in tasks:
+        session.refresh(task)
+    return tasks
 
 def get_task(session: Session, task_id: int) -> Task | None:
     return session.get(Task, task_id)
@@ -28,6 +34,18 @@ def list_tasks(session: Session, user_id: int, include_deleted: bool = False) ->
     statement = statement.where(Task.user_id == user_id)
     if not include_deleted:
         statement = statement.where(Task.is_deleted == 0)
+    statement = statement.order_by(
+        desc(Task.is_pinned),
+        asc(Task.task_due),
+        asc(Task.id),
+    )
+    return list(session.scalars(statement).all())
+
+def list_unfinished_tasks(session: Session, user_id: int) -> list[Task]:
+    statement = select(Task)
+    statement = statement.where(Task.user_id == user_id)
+    statement = statement.where(Task.is_deleted == 0)
+    statement = statement.where(Task.is_finished == 0)
     statement = statement.order_by(
         desc(Task.is_pinned),
         asc(Task.task_due),
