@@ -30,3 +30,5 @@ htmlcov/
 # ai coding related files
 CLAUDE.md
 MEMORY.md
+
+data/

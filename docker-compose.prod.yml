@@ -5,13 +5,30 @@ services:
     ports:
       - "80:5000"
     environment:
-      - DATABASE_URL=sqlite:////app/data/taskmaster.db
+      - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=redis://redis:6379
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-    volumes:
-      - /home/ubuntu/data:/app/data
     depends_on:
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: always
+
+  db:
+    image: postgres:16-alpine
+    container_name: 4todo-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - /home/ubuntu/4todo/data/pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: always
 
   redis:
@@ -19,8 +36,5 @@ services:
     container_name: 4todo-redis
     command: redis-server --appendonly yes
     volumes:
-      - redis_data:/data
+      - /home/ubuntu/4todo/data/redis:/data
     restart: always
-
-volumes:
-  redis_data:

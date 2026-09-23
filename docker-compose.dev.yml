@@ -8,7 +8,7 @@ services:
       - ./data:/app/data
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - DATABASE_URL=sqlite:////app/data/taskmaster.db
+      - DATABASE_URL=postgresql://4todo:4todo@db:5432/4todo
       - REDIS_URL=redis://redis:6379
     command: >
       sh -c "pip install -r backend/requirements.txt -q &&
@@ -16,7 +16,10 @@ services:
     ports:
       - "5077:5077"
     depends_on:
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   frontend:
     image: node:20-alpine
@@ -31,13 +34,26 @@ services:
     depends_on:
       - backend
 
+  db:
+    image: postgres:16-alpine
+    container_name: todo-db
+    environment:
+      POSTGRES_USER: 4todo
+      POSTGRES_PASSWORD: 4todo
+      POSTGRES_DB: 4todo
+    volumes:
+      - ./data/pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U 4todo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+
   redis:
     image: redis:7-alpine
     container_name: todo-redis
     command: redis-server --appendonly yes
     volumes:
-      - redis_data:/data
+      - ./data/redis:/data
     restart: always
-
-volumes:
-  redis_data:
