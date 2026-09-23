@@ -1,130 +1,160 @@
-# Task Tracker
+# 4Todo
 
-A web-based modern task management application, designed for users to intuitively manage their to-dos, keep track of due dates, and securely organize their daily routines.
+A full-stack task management application with web and mobile clients, featuring AI-powered assistance, Pomodoro timer, and real-time updates.
 
-## What this project does
+## Features
 
-- **User / context**: Individuals, students, and professionals looking for a simple yet feature-rich daily task tracking tool with secure authentication capabilities.
-- **Problem**: Solves the problem of forgotten tasks and poorly managed schedules by centralizing tasks with pinning, due dates, and auto-cleanup mechanisms.
-- **Stories**:
-  - User Registration and Login.
-  - CRUD operations for Task entries (Create, Read, Update, Delete).
-  - Pinning critical tasks to the top.
-  - Scheduled auto-deletion / soft deletion for expired tasks.
-  - Setting and tracking Task Due Times.
+- **User authentication** — JWT-based registration and login
+- **Task management** — Create, read, update, delete tasks with pinning, due dates, and soft deletion
+- **Pomodoro timer** — Built-in focus timer with session tracking
+- **AI assistant** — Chat-based AI assistant powered by Claude (Anthropic)
+- **Dashboard & analytics** — Task statistics with ECharts visualizations
+- **Real-time updates** — WebSocket support via Socket.IO
+- **Export** — Export tasks to Excel (xlsx)
+- **Mobile app** — Cross-platform Flutter app (iOS & Android)
 
-## Tech stack
+## Tech Stack
 
-| Layer      | Technology                             |
-| ---------- | -------------------------------------- |
-| Frontend   | Vue 3 + Ant Design Vue + Vite          |
-| Backend    | Python + APIFlask                      |
-| Database   | SQLite + SQLAlchemy                    |
-| Deployment | Docker + Nginx + Gunicorn + Supervisor |
-| CI/CD      | GitLab CI/CD + GitLab Runner           |
+| Layer      | Technology                                          |
+| ---------- | --------------------------------------------------- |
+| Frontend   | Vue 3 + Ant Design Vue + Vite + ECharts             |
+| Backend    | Python + APIFlask + SQLAlchemy + Redis + Socket.IO  |
+| AI         | Anthropic Claude API                                |
+| Database   | SQLite                                              |
+| Mobile     | Flutter (iOS & Android)                             |
+| Deployment | Docker + Nginx + Gunicorn + Supervisor              |
+| CI/CD      | GitHub Actions + GitLab CI/CD                       |
 
 ## Prerequisites
 
-- **Python 3.10+** (For backend API operations)
-- **Node.js LTS** (For frontend Vue dependencies)
-- **Docker** (For running production-grade deployments through `docker-compose`)
+- **Python 3.10+** (backend)
+- **Node.js LTS** (frontend)
+- **Flutter SDK** (mobile)
+- **Docker** (production deployment)
+- **Redis** (real-time features)
 
-## How to run it
+## Getting Started
 
-Getting started is simple. Just run:
-
-```bash
-bash deploy.sh
-```
-
-## How to run tests and checks
+### Development (Docker)
 
 ```bash
-# Ensure you are at the project root and venv is activated
-pytest tests/
+docker-compose -f docker-compose.dev.yml up
 ```
 
-_Test coverage is accessible via the `.coverage` tooling and generated reports such as `coverage.xml`._
+### Production
 
-## CI pipeline
-
-Our CI pipeline executes on GitLab natively via `.gitlab-ci.yml`. On every merge request / push to `main`, it spins up a testing environment to validate code integrity and executes all `pytest` suites to ensure backward compatibility and feature safety.
-
-## Where to find project evidence
-
-| Artifact                            | Where                     |
-| ----------------------------------- | ------------------------- |
-| **Risk report**                     | docs/RISK_REPORT.md       |
-| **Refactoring & complexity report** | docs/COMPLEXITY_REPORT.md |
-| **Issue board**                     | GitLab Issue Board        |
-| **Team contract**                   | docs/team-contract.md     |
-| **Meeting notes**                   | GitLab Wiki               |
-
-## Repository layout
-
+```bash
+docker-compose -f docker-compose.prod.yml up -d
 ```
-tasktracker/
-├── app.py                      # Flask application entry point
-├── config.py                   # App configuration
-├── db.py                       # Database setup
-├── schema.sql                  # Database schema
-├── requirements.txt            # Python dependencies
-├── requirements-dev.txt        # Python dev dependencies
-├── modules/
-│   ├── tasks/                  # Task module
-│   │   ├── models.py           # Task data models
-│   │   ├── repo.py             # Task database operations
-│   │   ├── routes.py           # Task API routes
-│   │   ├── schemas.py          # Task request/response schemas
-│   │   └── service.py         # Task business logic
-│   └── users/                  # User module
-│       ├── models.py           # User data models
-│       ├── repo.py             # User database operations
-│       ├── routes.py           # User API routes
-│       ├── schemas.py          # User request/response schemas
-│       └── service.py         # User business logic
-├── utils/
-│   ├── auth_decorator.py       # Auth middleware
-│   └── jwt_utils.py            # JWT utilities
-├── tests/
-│   ├── tasks/                  # Task unit tests
-│   ├── users/                  # User unit tests
-│   └── utils/                  # Utility unit tests
-├── frontend/                   # Vue 3 frontend
+
+### Frontend only
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Backend only
+
+```bash
+cd backend
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+flask run
+```
+
+### Mobile
+
+```bash
+cd mobile
+flutter pub get
+flutter run
+```
+
+## Running Tests
+
+```bash
+# From project root, with venv activated
+pytest backend/tests/
+```
+
+Test coverage is tracked via `.coverage` and `coverage.xml`.
+
+## CI Pipeline
+
+- **GitHub Actions** (`.github/workflows/ci.yml`) — runs on every push/PR to `main`: builds frontend and deploys to Cloudflare Pages, runs backend pytest suite
+- **GitLab CI/CD** (`.gitlab-ci.yml`) — mirrors pipeline for GitLab environments
+
+## Repository Layout
+
+```text
+4todo/
+├── backend/                    # Python APIFlask backend
+│   ├── app.py                  # Application entry point
+│   ├── config.py               # App configuration
+│   ├── db.py                   # Database setup
+│   ├── schema.sql              # Database schema
+│   ├── requirements.txt        # Python dependencies
+│   ├── requirements-dev.txt    # Dev dependencies
+│   ├── modules/
+│   │   ├── ai/                 # AI assistant (Claude API + WebSocket)
+│   │   ├── tasks/              # Task CRUD module
+│   │   ├── users/              # User auth module
+│   │   └── pomodoro/           # Pomodoro timer module
+│   ├── utils/
+│   │   ├── auth_decorator.py   # Auth middleware
+│   │   └── jwt_utils.py        # JWT utilities
+│   └── tests/                  # pytest test suites
+├── frontend/                   # Vue 3 web frontend
 │   ├── src/
-│   │   ├── api/                # API calls
-│   │   ├── components/         # Reusable Vue components
+│   │   ├── api/                # API client
+│   │   ├── components/         # Reusable components
 │   │   ├── views/              # Page views
 │   │   ├── router/             # Vue Router config
-│   │   └── stores/             # State management
+│   │   ├── stores/             # Pinia state management
+│   │   └── styles/             # Global styles
 │   ├── package.json
 │   └── vite.config.js
+├── mobile/                     # Flutter mobile app (iOS & Android)
+│   ├── lib/
+│   │   └── main.dart
+│   ├── android/
+│   ├── ios/
+│   └── pubspec.yaml
 ├── docs/                       # Project documentation
-├── Dockerfile                  # For non-China environments
-├── Dockerfile.prod             # For China environments (with mirror sources)
-├── docker-compose.yml          # Container orchestration
+├── data/                       # SQLite database file
+├── Dockerfile.backend          # Backend Docker image
+├── docker-compose.dev.yml      # Dev environment
+├── docker-compose.prod.yml     # Production environment
 ├── nginx.conf                  # Nginx configuration
 ├── supervisord.conf            # Supervisor configuration
-├── deploy.sh                   # Deployment script
-└── .gitlab-ci.yml              # CI/CD pipeline config
+├── .github/workflows/ci.yml    # GitHub Actions CI/CD
+└── .gitlab-ci.yml              # GitLab CI/CD
 ```
 
-## How It All Works Together
+## License
 
-**Request Flow:**
+[MIT](LICENSE) © 2026 yulinliu
 
-```
-User Browser
-    ↓
-Nginx (port 8080)
-    ↓
-    ├── Static files (/, *.js, *.css)  →  Vue 3 Frontend
-    │
-    └── API requests (/api/*)
-            ↓
-        Gunicorn (port 5000, 4 workers)
-            ↓
-        APIFlask
-            ↓
-        SQLAlchemy → SQLite
+---
+
+## Request Flow
+
+```text
+User Browser / Mobile App
+        ↓
+   Nginx (port 8080)
+        ↓
+        ├── Static files (/, *.js, *.css)  →  Vue 3 Frontend
+        │
+        └── API requests (/api/*)
+                ↓
+           Gunicorn (port 5000)
+                ↓
+           APIFlask
+                ↓
+           SQLAlchemy → SQLite
+                ↓
+           Redis (sessions / real-time pub-sub)
 ```
