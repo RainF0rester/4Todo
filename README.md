@@ -133,6 +133,12 @@ Test coverage is tracked via `.coverage` and `coverage.xml`.
 └── .gitlab-ci.yml              # GitLab CI/CD
 ```
 
+## License
+
+[MIT](LICENSE) © 2026 yulinliu
+
+---
+
 ## Request Flow
 
 ```text
