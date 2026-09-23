@@ -1,5 +1,5 @@
 # db.py
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from flask import g
 from backend.config import Config
@@ -22,6 +22,10 @@ def init_db():
     from backend.modules.tasks import models
     from backend.modules.users import models
     from backend.modules.pomodoro import models
+    from backend.modules.ai import models
+    with engine.connect() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+        conn.commit()
     Base.metadata.create_all(bind=engine, checkfirst=True)
 
 
