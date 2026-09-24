@@ -19,14 +19,11 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, futu
 
 
 def init_db():
+    # Import models so Base is aware of them (used by Alembic env.py)
     from backend.modules.tasks import models
     from backend.modules.users import models
     from backend.modules.pomodoro import models
     from backend.modules.ai import models
-    with engine.connect() as conn:
-        conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
-        conn.commit()
-    Base.metadata.create_all(bind=engine, checkfirst=True)
 
 
 def get_session():

@@ -10,7 +10,7 @@ class Conversation(Base):
     __table_args__ = (
         Index(
             "ix_conversations_messages_fts",
-            text("messages::text gin_trgm_ops"),
+            text("CAST(messages AS text) gin_trgm_ops"),
             postgresql_using="gin"
         ),
     )
