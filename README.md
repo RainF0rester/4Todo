@@ -72,6 +72,39 @@ flutter pub get
 flutter run
 ```
 
+## Database Migrations
+
+This project uses [Alembic](https://alembic.sqlalchemy.org/) for database migrations. Migrations run automatically on app startup via `alembic upgrade head`.
+
+### Create a new migration
+
+After modifying any model, generate a migration script:
+
+```bash
+# Enter the backend container
+docker exec -it todo-backend bash
+
+# Auto-generate migration based on model changes
+alembic -c backend/alembic.ini revision --autogenerate -m "describe your change"
+```
+
+Review the generated file in `backend/migrations/versions/` before committing.
+
+### Apply migrations manually
+
+```bash
+docker exec -it todo-backend bash
+alembic -c backend/alembic.ini upgrade head
+```
+
+### Roll back
+
+```bash
+alembic -c backend/alembic.ini downgrade -1
+```
+
+---
+
 ## Running Tests
 
 ```bash

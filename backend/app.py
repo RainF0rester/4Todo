@@ -2,7 +2,10 @@
 from apiflask import APIFlask
 from flask_cors import CORS
 from flask_socketio import SocketIO
-from backend.db import init_db, close_session
+from alembic.config import Config as AlembicConfig
+from alembic import command
+from backend.db import close_session
+import os
 from backend.modules.tasks.routes import bp as tasks_bp
 from backend.modules.users.routes import bp as users_bp
 from backend.modules.pomodoro.route import bp as pomodoro_bp
@@ -25,8 +28,9 @@ def create_app():
 
     socketio.init_app(flaskapp, cors_allowed_origins="*", async_mode="threading", manage_session=False)
 
-    # create tables
-    init_db()
+    # run database migrations
+    alembic_cfg = AlembicConfig(os.path.join(os.path.dirname(__file__), "alembic.ini"))
+    command.upgrade(alembic_cfg, "head")
     flaskapp.register_blueprint(tasks_bp)
     flaskapp.register_blueprint(users_bp)
     flaskapp.register_blueprint(pomodoro_bp)
