@@ -5,6 +5,8 @@ from sqlalchemy.orm import sessionmaker
 
 from backend.modules.tasks.models import Base
 from backend.modules.users.models import User
+from backend.modules.subjects.models import Subject
+from backend.modules.stages.models import Stage
 from backend.utils.jwt_utils import create_token
 
 

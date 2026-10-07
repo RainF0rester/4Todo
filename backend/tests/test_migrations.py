@@ -33,6 +33,13 @@ def test_migration_is_idempotent(old_engine):
     _run_migrations(old_engine)  # should not raise
     assert 'pomodoro_count' in get_columns(old_engine)
 
+def test_migration_adds_subject_and_stage_id(old_engine):
+    assert 'subject_id' not in get_columns(old_engine)
+    assert 'stage_id' not in get_columns(old_engine)
+    _run_migrations(old_engine)
+    assert 'subject_id' in get_columns(old_engine)
+    assert 'stage_id' in get_columns(old_engine)
+
 
 def test_migration_skips_if_column_exists():
     """If column already exists (new DB), migration should do nothing."""
