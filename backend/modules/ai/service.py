@@ -41,38 +41,37 @@ def _serialize_messages(messages: list) -> list:
     return result
 
 
-def _extract_display_messages(messages: list) -> list:
-    result = []
-    for msg in messages:
-        if msg["role"] == "user" and isinstance(msg["content"], str):
-            result.append(msg)
-        elif msg["role"] == "assistant":
-            content = msg["content"]
-            if isinstance(content, list):
-                text = next((b.get("text") for b in content if isinstance(b, dict) and b.get("type") == "text"), None)
-            else:
-                text = content if isinstance(content, str) else None
-            if text:
-                result.append({"role": "assistant", "content": text})
-    return result
+def _generate_title(prompt: str) -> str:
+    try:
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=30,
+            messages=[{"role": "user", "content": prompt}],
+            system="Generate a short title (max 8 words) summarizing what the user wants to do. Reply with the title only, no punctuation."
+        )
+        return response.content[0].text.strip()  # type: ignore
+    except Exception:
+        return prompt[:50]
 
 
-def _save_history(conv_id: str, messages: list, session):
-    trimmed = messages[-CONVERSATION_MAX_MESSAGES:]
-    # ensure history starts with a plain user text message (not tool_result)
+def _save_history(conv_id: str, full_messages: list, prompt: str, reply: str, session):
+    # save full messages (including tool calls) to Redis for Claude API context
+    trimmed = full_messages[-CONVERSATION_MAX_MESSAGES:]
     for i, msg in enumerate(trimmed):
         if msg["role"] == "user":
             content = msg["content"]
             if isinstance(content, str) or (isinstance(content, list) and content and isinstance(content[0], dict) and content[0].get("type") != "tool_result"):
                 trimmed = trimmed[i:]
                 break
-    serialized = _serialize_messages(trimmed)
-    # save full messages to Redis
-    redis_client.setex(f"conv:{conv_id}", CONVERSATION_TTL, json.dumps(serialized))
-    # save display-only messages to PostgreSQL
+    redis_client.setex(f"conv:{conv_id}", CONVERSATION_TTL, json.dumps(_serialize_messages(trimmed)))
+
+    # append only user prompt + final reply to PostgreSQL
     conversation = conv_repo.get_conversation(session, uuid.UUID(conv_id))
     if conversation:
-        conv_repo.update_messages(session, conversation, _extract_display_messages(serialized))
+        existing = conversation.messages or []
+        existing.append({"role": "user", "content": prompt})
+        existing.append({"role": "assistant", "content": reply})
+        conv_repo.update_messages(session, conversation, existing)
 
 SYSTEM_PROMPT = (
         "You are a smart task management assistant for a todo application. "
@@ -271,9 +270,9 @@ MAX_STEPS = 10
 TOOLS_REQUIRE_CONFIRM = {"create_tasks", "complete_task", "delete_task", "update_task"}
 
 def ask(prompt: str, session, user_id: int, conv_id: str | None = None, confirm_callback=None) -> tuple[str, str]:
-    # create new conversation if no conv_id
-    if not conv_id:
-        conversation = conv_repo.create_conversation(session, user_id, title=prompt[:50])
+    is_new = not conv_id
+    if is_new:
+        conversation = conv_repo.create_conversation(session, user_id)
         conv_id = str(conversation.id)
 
     messages = _get_history(conv_id, session)
@@ -291,17 +290,20 @@ def ask(prompt: str, session, user_id: int, conv_id: str | None = None, confirm_
                 messages=messages
             )
         except anthropic.APITimeoutError:
-            _save_history(conv_id, messages, session)
             return "Request timed out. Please try again.", conv_id
         except anthropic.APIStatusError as e:
-            _save_history(conv_id, messages, session)
             return f"API error: {e.message}", conv_id
 
         messages.append({"role": "assistant", "content": response.content})
 
         if response.stop_reason == "end_turn":
             reply = next(b.text for b in response.content if b.type == "text")
-            _save_history(conv_id, messages, session)
+            if is_new:
+                title = _generate_title(prompt)
+                conversation = conv_repo.get_conversation(session, uuid.UUID(conv_id))
+                if conversation:
+                    conv_repo.update_title(session, conversation, title)
+            _save_history(conv_id, messages, prompt, reply, session)
             return reply, conv_id
         elif response.stop_reason == "tool_use":
             tool_results = []
@@ -324,5 +326,4 @@ def ask(prompt: str, session, user_id: int, conv_id: str | None = None, confirm_
         else:
             break
 
-    _save_history(conv_id, messages, session)
     return "I was unable to complete the request. Please try again.", conv_id
