@@ -54,6 +54,11 @@ def _generate_title(prompt: str) -> str:
         return prompt[:50]
 
 
+def _create_conversation(session, user_id: int, prompt: str):
+    title = _generate_title(prompt)
+    return conv_repo.create_conversation(session, user_id, title=title)
+
+
 def _save_history(conv_id: str, full_messages: list, prompt: str, reply: str, session):
     # save full messages (including tool calls) to Redis for Claude API context
     trimmed = full_messages[-CONVERSATION_MAX_MESSAGES:]
@@ -270,9 +275,8 @@ MAX_STEPS = 10
 TOOLS_REQUIRE_CONFIRM = {"create_tasks", "complete_task", "delete_task", "update_task"}
 
 def ask(prompt: str, session, user_id: int, conv_id: str | None = None, confirm_callback=None) -> tuple[str, str]:
-    is_new = not conv_id
-    if is_new:
-        conversation = conv_repo.create_conversation(session, user_id)
+    if not conv_id:
+        conversation = _create_conversation(session, user_id, prompt)
         conv_id = str(conversation.id)
 
     messages = _get_history(conv_id, session)
@@ -298,11 +302,6 @@ def ask(prompt: str, session, user_id: int, conv_id: str | None = None, confirm_
 
         if response.stop_reason == "end_turn":
             reply = next(b.text for b in response.content if b.type == "text")
-            if is_new:
-                title = _generate_title(prompt)
-                conversation = conv_repo.get_conversation(session, uuid.UUID(conv_id))
-                if conversation:
-                    conv_repo.update_title(session, conversation, title)
             _save_history(conv_id, messages, prompt, reply, session)
             return reply, conv_id
         elif response.stop_reason == "tool_use":
