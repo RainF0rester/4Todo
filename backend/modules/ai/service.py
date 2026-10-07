@@ -1,5 +1,6 @@
 import os
 import json
+import uuid
 import anthropic
 import redis
 from anthropic.types import ToolParam
@@ -8,6 +9,7 @@ from datetime import datetime, timezone
 from backend.modules.tasks.models import Task
 from backend.modules.tasks import repo as task_repo
 from backend.modules.tasks.service import _normalize as task_normalize
+from backend.modules.ai import repo as conv_repo
 
 client = anthropic.Anthropic(
     api_key=os.environ.get("ANTHROPIC_API_KEY"),
@@ -19,9 +21,15 @@ current_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 CONVERSATION_TTL = 1800  # 30 minutes
 CONVERSATION_MAX_MESSAGES = 20
 
-def _get_history(user_id: int) -> list:
-    data = redis_client.get(f"conv:{user_id}")
-    return json.loads(data) if data else []
+
+def _get_history(conv_id: str, session) -> list:
+    data = redis_client.get(f"conv:{conv_id}")
+    if data:
+        return json.loads(data)
+    # load from PostgreSQL if not in Redis
+    conversation = conv_repo.get_conversation(session, uuid.UUID(conv_id))
+    return conversation.messages if conversation else []
+
 
 def _serialize_messages(messages: list) -> list:
     result = []
@@ -32,7 +40,24 @@ def _serialize_messages(messages: list) -> list:
         result.append({"role": msg["role"], "content": content})
     return result
 
-def _save_history(user_id: int, messages: list):
+
+def _extract_display_messages(messages: list) -> list:
+    result = []
+    for msg in messages:
+        if msg["role"] == "user" and isinstance(msg["content"], str):
+            result.append(msg)
+        elif msg["role"] == "assistant":
+            content = msg["content"]
+            if isinstance(content, list):
+                text = next((b.get("text") for b in content if isinstance(b, dict) and b.get("type") == "text"), None)
+            else:
+                text = content if isinstance(content, str) else None
+            if text:
+                result.append({"role": "assistant", "content": text})
+    return result
+
+
+def _save_history(conv_id: str, messages: list, session):
     trimmed = messages[-CONVERSATION_MAX_MESSAGES:]
     # ensure history starts with a plain user text message (not tool_result)
     for i, msg in enumerate(trimmed):
@@ -41,7 +66,13 @@ def _save_history(user_id: int, messages: list):
             if isinstance(content, str) or (isinstance(content, list) and content and isinstance(content[0], dict) and content[0].get("type") != "tool_result"):
                 trimmed = trimmed[i:]
                 break
-    redis_client.setex(f"conv:{user_id}", CONVERSATION_TTL, json.dumps(_serialize_messages(trimmed)))
+    serialized = _serialize_messages(trimmed)
+    # save full messages to Redis
+    redis_client.setex(f"conv:{conv_id}", CONVERSATION_TTL, json.dumps(serialized))
+    # save display-only messages to PostgreSQL
+    conversation = conv_repo.get_conversation(session, uuid.UUID(conv_id))
+    if conversation:
+        conv_repo.update_messages(session, conversation, _extract_display_messages(serialized))
 
 SYSTEM_PROMPT = (
         "You are a smart task management assistant for a todo application. "
@@ -239,8 +270,13 @@ def _dispatch(tool_name: str, tool_input: dict, session, user_id) -> str:
 MAX_STEPS = 10
 TOOLS_REQUIRE_CONFIRM = {"create_tasks", "complete_task", "delete_task", "update_task"}
 
-def ask(prompt: str, session, user_id: int, confirm_callback=None) -> str:
-    messages = _get_history(user_id)
+def ask(prompt: str, session, user_id: int, conv_id: str | None = None, confirm_callback=None) -> tuple[str, str]:
+    # create new conversation if no conv_id
+    if not conv_id:
+        conversation = conv_repo.create_conversation(session, user_id, title=prompt[:50])
+        conv_id = str(conversation.id)
+
+    messages = _get_history(conv_id, session)
     messages.append({"role": "user", "content": prompt})
 
     steps = 0
@@ -255,23 +291,22 @@ def ask(prompt: str, session, user_id: int, confirm_callback=None) -> str:
                 messages=messages
             )
         except anthropic.APITimeoutError:
-            _save_history(user_id, messages)
-            return "Request timed out. Please try again."
+            _save_history(conv_id, messages, session)
+            return "Request timed out. Please try again.", conv_id
         except anthropic.APIStatusError as e:
-            _save_history(user_id, messages)
-            return f"API error: {e.message}"
+            _save_history(conv_id, messages, session)
+            return f"API error: {e.message}", conv_id
 
         messages.append({"role": "assistant", "content": response.content})
 
         if response.stop_reason == "end_turn":
-            reply = next(b.text for b in response.content if hasattr(b, "text"))
-            _save_history(user_id, messages)
-            return reply
+            reply = next(b.text for b in response.content if b.type == "text")
+            _save_history(conv_id, messages, session)
+            return reply, conv_id
         elif response.stop_reason == "tool_use":
             tool_results = []
             for block in response.content:
                 if block.type == "tool_use":
-                    # need confirm
                     if confirm_callback and block.name in TOOLS_REQUIRE_CONFIRM:
                         confirmed = confirm_callback(block.name, block.input)
                         if not confirmed:
@@ -289,5 +324,5 @@ def ask(prompt: str, session, user_id: int, confirm_callback=None) -> str:
         else:
             break
 
-    _save_history(user_id, messages)
-    return "I was unable to complete the request. Please try again."
+    _save_history(conv_id, messages, session)
+    return "I was unable to complete the request. Please try again.", conv_id

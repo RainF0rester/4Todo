@@ -29,6 +29,7 @@ def register_handlers(socketio):
     def handle_chat(data):
         token = data.get("token", "")
         prompt = data.get("prompt", "")
+        conv_id = data.get("conv_id")
 
         user_id = _get_user_id_from_token(token)
         if not user_id:
@@ -37,7 +38,7 @@ def register_handlers(socketio):
             return
 
         session = get_session()
-        sid = request.sid
+        sid = request.sid # type: ignore
 
         # callback function
         def confirm_callback(tool_name: str, tool_input: dict) -> bool:
@@ -58,13 +59,13 @@ def register_handlers(socketio):
                 return False
             return confirm_results.get(sid, False)
 
-        app = current_app._get_current_object()
+        app = current_app._get_current_object() # type: ignore
 
         def run_agent():
             try:
                 with app.app_context():
-                    reply = service.ask(prompt, session, user_id, confirm_callback=confirm_callback)
-                    socketio.emit("ai_reply", {"reply": reply}, to=sid)
+                    (reply, conv_id) = service.ask(prompt, session, user_id, conv_id, confirm_callback=confirm_callback)
+                    socketio.emit("ai_reply", {"reply": reply, "conv_id": conv_id}, to=sid)
             except Exception as e:
                 logger.exception("AI agent error for user %s: %s", user_id, e)
                 socketio.emit("ai_error", {"error": "Something went wrong. Please try again."}, to=sid)
@@ -73,7 +74,7 @@ def register_handlers(socketio):
 
     @socketio.on("confirm")
     def handle_confirm(data):
-        sid = request.sid
+        sid = request.sid # type: ignore
         confirm_results[sid] = data.get("confirmed", False)
         event = confirm_events.pop(sid, None)
         if event:
