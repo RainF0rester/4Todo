@@ -2,7 +2,7 @@ import threading
 import logging
 from flask import request, current_app
 from flask_socketio import emit, disconnect
-from backend.db import get_session
+from backend.db import get_session, SessionLocal
 from backend.utils.jwt_utils import validate_token, TokenError
 from backend.modules.ai import service
 
@@ -37,7 +37,6 @@ def register_handlers(socketio):
             disconnect()
             return
 
-        session = get_session()
         sid = request.sid # type: ignore
 
         # callback function
@@ -62,13 +61,16 @@ def register_handlers(socketio):
         app = current_app._get_current_object() # type: ignore
 
         def run_agent():
-            try:
-                with app.app_context():
-                    (reply, conv_id) = service.ask(prompt, session, user_id, conv_id, confirm_callback=confirm_callback)
-                    socketio.emit("ai_reply", {"reply": reply, "conv_id": conv_id}, to=sid)
-            except Exception as e:
-                logger.exception("AI agent error for user %s: %s", user_id, e)
-                socketio.emit("ai_error", {"error": "Something went wrong. Please try again."}, to=sid)
+            with app.app_context():
+                session = SessionLocal()
+                try:
+                    reply, returned_conv_id = service.ask(prompt, session, user_id, conv_id, confirm_callback=confirm_callback)
+                    socketio.emit("ai_reply", {"reply": reply, "conv_id": returned_conv_id}, to=sid)
+                except Exception as e:
+                    logger.exception("AI agent error for user %s: %s", user_id, e)
+                    socketio.emit("ai_error", {"error": "Something went wrong. Please try again."}, to=sid)
+                finally:
+                    session.close()
 
         socketio.start_background_task(run_agent)
 
